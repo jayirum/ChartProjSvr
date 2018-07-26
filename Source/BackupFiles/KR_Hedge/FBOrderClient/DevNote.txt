@@ -1,0 +1,15 @@
+# 흐름
+
+1) OnInitDialog
+  - Timer 
+2) OnTimer
+  - OnBnClickedOk 호출
+3) OnBnClickedOk
+  - api dll load
+  - API ConnectServer : 로그인시도
+4) OnAccList : 계좌번호 가져옴
+5) OnServerConnect
+  - ResumeThreads
+  - OnClickedButtonAuto
+5) OnClickedButtonAuto
+  - 자동업데이트 등록

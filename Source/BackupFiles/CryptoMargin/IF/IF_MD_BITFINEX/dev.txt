@@ -1,0 +1,179 @@
+
+struct winhttp_traits
+{
+	using pointer = HINTERNET;
+
+	static auto invalid() throw() -> pointer
+	{
+		return nullptr;
+	}
+
+	static auto close(pointer value) throw() -> void
+	{
+		VERIFY(WinHttpCloseHandle(value));
+	}
+};
+
+using winhttp = unique_handle<winhttp_traits>;
+
+PSMH_Head = ^TSMH_Head;
+  TSMH_Head = packed record
+    TR: Byte;  
+		DataLen: Integer;
+  end;
+PSMH_Head(pMsgBuffer)^.TR := Byte(ctDestPushSend);
+
+    PWord(pMsgBuffer + SizeOf(TSMH_Head))^ := Length(SMessage.Destination);
+    Move(SMessage.Destination[1], (pMsgBuffer + SizeOf(TSMH_Head) + SizeOf(word))^, Length(SMessage.Destination));
+
+    FSMClient.WriteBuffer(pMsgBuffer^,SendSize );
+
+
+function TfrmFXSiseGWE.ConnectSMServer(Sender: TObject) : boolean;
+var
+  log: String;
+  fIniFile: TIniFile;
+  sSMSvrIP: String;
+  sSMSvrPort: String;
+  sMktSMSvrIP: String;
+  sMktSMSvrPort: String;
+  sDBSvrIP: String;
+  sDBUser: string;
+  sDBPass: string;
+  sDevelop: string;
+begin
+  // SMServer Config
+  begin
+    try
+      fIniFile      := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'TRADE2010.cfg');
+      sMktSMSvrIP   := fIniFile.ReadString('MKTSMSERVER', 'IP', '');
+      sMktSMSvrPort := fIniFile.ReadString('MKTSMSERVER', 'PORT', '');
+      sSMSvrIP      := fIniFile.ReadString('SMSERVER', 'IP', '');
+      sSMSvrPort    := fIniFile.ReadString('SMSERVER', 'PORT', '');
+      sDBSvrIP      := fIniFile.ReadString('DBSERVER', 'IP', '');
+      sDBUser       := fIniFile.ReadString('DBSERVER', 'USER', '');
+      sDBPass       := fIniFile.ReadString('DBSERVER', 'PASS', '');
+      sTradeServer  := fIniFile.ReadString('TRADESERVER', 'TYPE', ''); //0: Real 1:Test
+      sUser         := fIniFile.ReadString('TRADESERVER', 'USER', '');
+      sPass         := fIniFile.ReadString('TRADESERVER', 'PASS', '');
+      sCPas         := fIniFile.ReadString('TRADESERVER', 'CPAS', '');
+      sDevelop      := fIniFile.ReadString('DBCONNECTION', 'DEVELOP', '');
+    finally
+      fIniFile.Free;
+    end;
+  end;
+
+  MSConnection1.Server := sDBSvrIP;
+  if (sDevelop = 'Y') then
+  begin
+    MSConnection1.Database := 'TRADE_MINI';
+    MSConnection1.Username := 'trade_mini';
+    MSConnection1.Password := 'trade_mini';
+  end
+  else
+  begin
+    MSConnection1.Database := 'TRADE2010';
+    MSConnection1.Username := sDBUser;
+    MSConnection1.Password := sDBPass;
+  end;
+  MSConnection1.Connect;
+
+  log := '이트레이드에 접속되었습니다.!!!';
+  LogWrite.LogWriter('FXSiseGW', log);
+
+  //----------------------------------------------------------------------------
+  // RealTime 시세 요청
+  //----------------------------------------------------------------------------
+  SMClient1.Connect(sMktSMSvrIP, StrToInt(sMktSMSvrPort));
+  SMClient2.Connect(sMktSMSvrIP, StrToInt(sMktSMSvrPort));
+  SMClient3.Connect(sSMSvrIP, StrToInt(sSMSvrPort));
+  //SMEvent3.AddDest(ALL_SERVER, MSGP_RESTART);
+  Result := true;
+end;
+
+
+
+
+function TSMClient.Connect(const IP: String; Port: Integer): boolean;
+const
+  Options: array[Boolean] of Integer = (1, 0);
+
+type
+  TCP_KeepAlive = record
+    OnOff: Cardinal;
+    KeepAliveTime: Cardinal;
+    KeepAliveInterval: Cardinal
+  end;
+
+var
+  //nRecvBuf, nSendBuf: Integer;
+ 	PDestRecord: PDestinationRecord;
+  I, ThreadCount: Integer;
+	WorkThread: TWorkThread;
+	Val: TCP_KeepAlive;
+//  Ret: DWord;
+begin
+  Result := false;
+  if FTCPClient.Connected then
+    raise SMEAlreadyConnected.Create('Already connected.');
+
+  try
+    FRcvCount := 0;
+    FSendThreadCount  := 0;
+    FBeginTransaction := 0;
+    FEndTransaction   := 0;
+	  FlthreadCnt := 0;
+    FTCPClient.Host := IP;
+    FTCPClient.Port := Port;
+    FTCPClient.Connect;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // 유저식별값
+    ServerClientUniqKey;
+    ////////////////////////////////////////////////////////////////////////////
+
+    //nSendBuf := 0;
+    //setsockopt(FTCPClient.Socket.Binding.Handle,SOL_SOCKET,SO_RCVBUF,PChar(@nSendBuf),sizeof(integer));
+    //setsockopt(FTCPClient.Socket.Binding.Handle,SOL_SOCKET,SO_SNDBUF,PChar(@nSendBuf),sizeof(integer)); //이옵션적용후 속도 느림
+
+    if not UseNagle then
+      setsockopt(FTCPClient.Socket.Binding.Handle,IPPROTO_TCP,TCP_NODELAY,PChar(@Options[false]), SizeOf(Options[false]));
+
+    Val.OnOff := 1;
+ 	  Val.KeepAliveTime := 1000 * 15;
+    Val.KeepAliveInterval := 5000;
+// 	  WSAIoctl(FTCPClient.Socket.Binding.Handle, IOC_IN or IOC_VENDOR or 4, @Val, SizeOf(Val), nil, 0, @Ret, nil, nil);
+
+    Result      := true;
+    FIFOQueue   := TFIFOQueue.Create;
+   	ThreadCount := FThreadCount;
+    if FThreadMode = tbAutoMulti then
+      ThreadCount := GetAutoThreadCount;
+
+    for I := 0 to ThreadCount - 1 do
+    begin
+      WorkThread := TWorkThreadClass(FWorkThreadClass).Create(Self);
+      FWorkThreadList.Add(WorkThread);
+    end;
+    FSMSConnectThread := TSMSConnectThread.Create(self);
+{
+    ////////////////////////////////////////////////////////////////////////////
+    // 유저식별값
+    ServerClientUniqKey;
+    ////////////////////////////////////////////////////////////////////////////
+}
+    // RR용 Dest 등록
+    New(PDestRecord);
+    PDestRecord^.Destination := StrNew(PChar(ClientUniqKey));
+    PDestRecord^.Msg 			 	 := NIL;
+    PDestRecord^.RcvHandle   := FWindowHandle;
+    //
+    SendMessage(FWindowHandle, SM_ADD_MSG, WPARAM(PDestRecord), 0);
+    //
+    StrDispose(PDestRecord^.Destination);
+	  Dispose(PDestRecord);
+  except
+    raise;
+    //SetWindowText(ClientMainForm.Handle, PChar(SysErrorMessage(GetLastError)));
+  end;
+end;

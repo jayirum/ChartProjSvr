@@ -1,0 +1,7 @@
+go to 112.216.247.163
+run D:\IRUM\SERVER\BIN\chartshmqueue.exe /debug in command, as admin first
+run D:\IRUM\SERVER\BIN\chartmaker.exe /debug in command, as admin 
+
+then go to folder D:\IRUM\SERVER\_log and check the log files ...
+
+this is to run the sharedmemory checker tool to snapshot their data...

@@ -1,0 +1,13 @@
+
+# 유저별로 스레드를 만든다.
+
+# 메인에서 개별스레드로는 NanoMsg pub/sub 으로 한다.
+
+# 구조
+  * ESApiDllDlgDlg 에서 
+	- SHM OPEN (InitSHM)
+	- MEMORY POOL 생성 => 시세수신 후 개별 유저들에게 전송하기 위한 메모리 (InitMemPool)
+	- DB OPEN (DBOpen)
+	- 유저별 스레드 생성 (InitUserThread - CFBOrdThread)
+	- KR Chart 프로세스에서 시세 수신할 스레드 및 NanoMsg 생성 (InitSock)
+	- 시세수신 스레드에서 유저스레드에게 publishing 할 준비 (InitPublish)

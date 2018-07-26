@@ -1,0 +1,26 @@
+[TRINFO]
+TRName    =주식선물마스터
+TRCode    =s31001;
+ScreenNo  =; 실제 화면 번호
+Server    =1			; 접속 서버
+Compress  =0; 압축 	0/1
+Encrypt   =0; 암호화	0/1
+PublicAuth=0; 공인인증 0/1
+OutputCnt =1;Fid 출력값 갯수
+DataHeader=5; 2:해외주문, 3:해외조회, 4:국내주문, 5:국내조회
+
+[INPUT]
+종목코드=0, 8, 0, A
+조회모드=8, 1, 0, A	; 1:LT 2:LE 3:EQ 4:GE 5:GT
+조회건수=9, 4, 0, A	;
+
+[OUTPUT]
+
+@START_OutRec1=1 ; Fid 출력값 갯수
+	단축코드     =  0,  8, 0, A ;000
+	체결시간	 =  8, 10, 0, A ;059
+	현재가       = 18, 07, 0, A ;060
+	누적거래량   = 25, 12, 0, A ;066
+	고가         = 37, 07, 0, A ;062
+@END_OutRec1
+
