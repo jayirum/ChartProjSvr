@@ -1,0 +1,8 @@
+[ 9-1 ]
+
+# 전략결과는 패킷으로 클라이언트에게 전달하고, DB 도 저장한다.
+  - Mapping 서버하고는 main 에서 connect 해야 하므로 각 종목스레드에서 결과 전달은 postthreadmessag 로 한다.
+
+[2017.12.04]
+# ChartApiKR 에서 멀티캐스팅 한 것을 각 스레드에서 받아서 처리하게 한다.
+# LABEL : MCAST
