@@ -1,0 +1,1 @@
+forfiles /p C:\Windows\SysWOW64\config\systemprofile\AppData\LocalLow\SignKorea\SKCert\log /s /m *.log /d -2 /c "cmd /c del @FILE"
