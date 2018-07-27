@@ -43,7 +43,7 @@ CMemPool::~CMemPool()
 void CMemPool::clear()
 {
 	LOCK();
-	__try {
+	try {
 		std::list<char*>::iterator it;
 		for (it = m_listPool.begin(); it != m_listPool.end(); it++)
 		{
@@ -52,16 +52,18 @@ void CMemPool::clear()
 		}
 		m_listPool.clear();
 	}
-	__finally {
+	catch(...) {
 		UNLOCK();
+		return;
 	}
+	UNLOCK();
 }
 
 char*	CMemPool::get()
 {
 	char* p;
 	LOCK();
-	__try
+	try
 	{
 		if (m_listPool.empty())
 		{
@@ -75,10 +77,12 @@ char*	CMemPool::get()
 		}
 		ZeroMemory(p, m_nBlockSize);
 	}
-	__finally
+	catch(...)
 	{
 		UNLOCK();
+		return NULL;
 	}
+	UNLOCK();
 	return p;
 }
 

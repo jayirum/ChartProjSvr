@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B50A992E-23FD-4987-A268-991463E37CD4}</ProjectGuid>
+    <ProjectGuid>{767486F7-67AA-459E-BBA7-EB0D50960425}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ChartSHM</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

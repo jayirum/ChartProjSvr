@@ -45,15 +45,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\poco-1.7.8\Foundation\include;C:\poco-1.7.8\Data\include;C:\poco-1.7.8\Data\ODBC\include;C:\Program Files (x86)\nanomsg\include</IncludePath>
+    <OutDir>$(SolutionDir)bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\poco-1.7.8\Foundation\include;C:\poco-1.7.8\Data\include;C:\poco-1.7.8\Data\ODBC\include;C:\ta-lib\c\include;C:\poco-1.7.8\poco-1.7.8\Foundation\include;C:\poco-1.7.8\poco-1.7.8\Data\include;</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;C:\poco-1.7.8\poco-1.7.8\lib;</LibraryPath>
+    <OutDir>$(SolutionDir)bin\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_OUTCOMP</PreprocessorDefinitions>
@@ -62,8 +64,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>../BIN_Debug/$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>nanomsg.lib;ta_libc_cmr.lib;</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>C:\poco-1.7.8\lib;C:\Program Files (x86)\nanomsg\lib</AdditionalLibraryDirectories>
@@ -82,7 +83,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -96,7 +97,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>../BIN/$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>C:\poco-1.7.8\lib;C:\Program Files (x86)\nanomsg\lib;C:\ta-lib\c\lib;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ta_libc_cmr.lib;nafxcw.lib;libcmt.lib;</AdditionalDependencies>
+      <AdditionalDependencies>nanomsg.lib;ta_libc_cmr.lib;</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcw.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
