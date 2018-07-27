@@ -2,108 +2,38 @@
 
 #pragma warning(disable:4996)
 
-//#define BROKER_HD	"HD_FUTURES"
-//#define BROKER_KR	"KR_FUTURES"
+/*
+종목 : MAX 50개
+차트종류 : 5개 (1분,5분,10분,30분,60분)
+==> 종목당 차트 5개 = 50* 5 = 250	==> GROUP_CNT
 
+차트당 MAX : 1440 개 (1분차트 고려)	==> STRUCT_CNT
+==> 250 * 1440 * 45(sizeof(struct))
+GROUP KEY :
+종목 - GROUP KEY : 50개
+차트 - STRUCT KEY :
+
+GROUP KEY : CLK71
+STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
+
+*/
+
+//DEF-REGISTRY
 #define	IRUM_ROOT			"Software\\IRUMSYSTEMS"
 #define	IRUM_DIRECTORY		"Software\\IRUMSYSTEMS\\DIRECTORY"
+
 
 ////////////////////////////////////////////////////////////////////
 #define IR_BROKER_HD	"HD"
 #define IR_BROKER_KR	"KR"
 
-//#define COMP_RCS	"ROCCESS"
+//DEF-COMPANY CODE
 #define COMP_FB	"FB"
+#define COMP_DEMO "DEMO"
 
 ///////////////////////////////////////////////////////////
-// LEN
+//DEF-LEN
 #define IRLEN_KR_FULLCODE	32
-
-
-///////////////////////////////////////////////////////////
-//
-// 각종 구분자. 주문관련 DEFINE
-//
-///////////////////////////////////////////////////////////
-
-// LEGACY
-#define	DEF_BUY	'1'
-#define DEF_SELL '2'
-
-#define DEF_LIMIT_ORD '1'
-#define DEF_MARKET_ORD '2'
-
-
-#define DEF_RSLT_NEW	'1'	//신규주문접수
-#define DEF_RSLT_MATCH	'2'	//체결
-#define DEF_RSLT_MDFY	'3'	//정정
-#define DEF_RSLT_CNCL	'4'	//취소
-#define DEF_RSLT_RJCT_NEW	'5'
-#define DEF_RSLT_RJCT_MDFY	'6'
-#define DEF_RSLT_RJCT_CNCL	'5'
-
-#define	ORD_TYPE_NEW	'1'
-#define	ORD_TYPE_MDFY	'2'
-#define	ORD_TYPE_CNCL	'3'
-
-enum STOPORD_TP { STOPORD_OPEN = 1, STOPORD_ASSIST_BUY, STOPORD_ASSIST_SELL, STOPORD_AFTERSIGNAL, STOPORD_OPENHILO };	// 1=진입되는 경우 STOP, 2=보조지표 설정 STOP
-// LEGACY
-
-#define CD_BUY	'B'
-#define CD_SELL	'S'
-
-#define CD_ORD_TP_LIMIT		'1' // 지정가
-#define CD_ORD_TP_MARKET	'2' // 시장가
-#define CD_ORD_TP_SL		'3' // 손절
-#define CD_ORD_TP_PT		'4' // 익절
-#define CD_ORD_TP_SLPT		'5'	// 손절+익절
-#define CD_ORD_TP_MIT		'6'
-
-#define ORDTP2NAME(cd,out){\
-	if(cd==CD_ORD_TP_LIMIT)	sprintf(out,"지정");	\
-	if(cd==CD_ORD_TP_MARKET)sprintf(out,"시장");	\
-	if(cd==CD_ORD_TP_SL)	sprintf(out,"손절");	\
-	if(cd==CD_ORD_TP_PT)	sprintf(out,"익절");	\
-	if(cd==CD_ORD_TP_SLPT)	sprintf(out,"손익");	\
-	if(cd==CD_ORD_TP_MIT)	sprintf(out,"예약");	\
-}
-
-
-#define CD_ORD_PROC_NEW		'1'	//신규
-#define CD_ORD_PROC_MDFY	'2'	//정정
-#define CD_ORD_PROC_CNCL	'3'	//취소
-#define CD_ORD_PROC_RJCT	'4'	//거부
-#define	CD_ORD_PROC_SYMBOL_CNCL	'A'	//종목취소, 
-#define CD_ORD_PROC_SYMBOL_CLR	'B'	//종목청산
-#define	CD_ORD_PROC_ALL_CNCL	'C'	//전종목취소, 
-#define CD_ORD_PROC_ALL_CLR		'D'	//전종목청산
-
-#define ORDPROC2NAME(cd,out){\
-	if(cd==CD_ORD_PROC_NEW)			sprintf(out,"신규");	\
-	if(cd==CD_ORD_PROC_MDFY)		sprintf(out,"정정");	\
-	if(cd==CD_ORD_PROC_CNCL)		sprintf(out,"취소");	\
-	if(cd==CD_ORD_PROC_RJCT)		sprintf(out,"거부");	\
-	if(cd==CD_ORD_PROC_SYMBOL_CNCL)	sprintf(out,"종취");	\
-	if(cd==CD_ORD_PROC_SYMBOL_CLR)	sprintf(out,"종청");	\
-	if(cd==CD_ORD_PROC_ALL_CNCL)	sprintf(out,"전취");	\
-	if(cd==CD_ORD_PROC_ALL_CLR)		sprintf(out,"전청");	\
-}
-
-
-#define DEF_CANDLE_PLUS		'1'		//LEGACY
-#define DEF_CANDLE_MINUS	'2'		//LEGACY
-#define DEFINE_NO_CHART		"NONE"	//LEGACY
-#define CD_PLUS_CANDLE		DEF_CANDLE_PLUS
-#define CD_MINUS_CANDLE		DEF_CANDLE_MINUS
-#define CD_OPENSIG_MINUS	'1'
-#define CD_OPENSIG_PLUS		'2'
-
-
-
-#define DEF_TRADEGB_COPY	'1'
-#define DEF_TRADEGB_HEDGE	'1'
-
-
 #define	LEN_SYMBOL	7			//FDAXU17
 #define LEN_PRC		20
 #define LEN_SEQNO	10
@@ -124,9 +54,77 @@ enum STOPORD_TP { STOPORD_OPEN = 1, STOPORD_ASSIST_BUY, STOPORD_ASSIST_SELL, STO
 #define LEN_PACKET_CODE		6
 #define SIZE_PACKET_LEN		4
 
-#define STRAT_TP_SIGNAL		'S'
-#define STRAT_TP_ORDER		'O'
-#define STRAT_TP_BOTH		'B'
+
+
+//DEF-BUY, DEF-SELL
+#define CD_BUY	'B'
+#define CD_SELL	'S'
+
+
+//DEF-ORD_TP
+#define CD_ORD_TP_LIMIT		'1' // 지정가
+#define CD_ORD_TP_MARKET	'2' // 시장가
+#define CD_ORD_TP_SL		'3' // 손절
+#define CD_ORD_TP_PT		'4' // 익절
+#define CD_ORD_TP_SLPT		'5'	// 손절+익절
+#define CD_ORD_TP_MIT		'6'
+
+#define ORDTP2NAME(cd,out){\
+	if(cd==CD_ORD_TP_LIMIT)	sprintf(out,"지정");	\
+	if(cd==CD_ORD_TP_MARKET)sprintf(out,"시장");	\
+	if(cd==CD_ORD_TP_SL)	sprintf(out,"손절");	\
+	if(cd==CD_ORD_TP_PT)	sprintf(out,"익절");	\
+	if(cd==CD_ORD_TP_SLPT)	sprintf(out,"손익");	\
+	if(cd==CD_ORD_TP_MIT)	sprintf(out,"예약");	\
+}
+
+
+//DEF-ORD_PROC
+#define CD_ORD_PROC_NEW		'1'	//신규
+#define CD_ORD_PROC_MDFY	'2'	//정정
+#define CD_ORD_PROC_CNCL	'3'	//취소
+#define CD_ORD_PROC_RJCT	'4'	//거부
+#define	CD_ORD_PROC_SYMBOL_CNCL	'A'	//종목취소, 
+#define CD_ORD_PROC_SYMBOL_CLR	'B'	//종목청산
+#define	CD_ORD_PROC_ALL_CNCL	'C'	//전종목취소, 
+#define CD_ORD_PROC_ALL_CLR		'D'	//전종목청산
+
+#define ORDPROC2NAME(cd,out){\
+	if(cd==CD_ORD_PROC_NEW)			sprintf(out,"신규");	\
+	if(cd==CD_ORD_PROC_MDFY)		sprintf(out,"정정");	\
+	if(cd==CD_ORD_PROC_CNCL)		sprintf(out,"취소");	\
+	if(cd==CD_ORD_PROC_RJCT)		sprintf(out,"거부");	\
+	if(cd==CD_ORD_PROC_SYMBOL_CNCL)	sprintf(out,"종취");	\
+	if(cd==CD_ORD_PROC_SYMBOL_CLR)	sprintf(out,"종청");	\
+	if(cd==CD_ORD_PROC_ALL_CNCL)	sprintf(out,"전취");	\
+	if(cd==CD_ORD_PROC_ALL_CLR)		sprintf(out,"전청");	\
+}
+
+//DEF-CANDLE
+//#define DEF_CANDLE_PLUS		'1'		//LEGACY
+//#define DEF_CANDLE_MINUS	'2'		//LEGACY
+#define DEFINE_NO_CHART		"NONE"	//LEGACY
+#define CD_PLUS_CANDLE		'+'
+#define CD_MINUS_CANDLE		'-'
+#define CD_OPENSIG_MINUS	'1'
+#define CD_OPENSIG_PLUS		'2'
+
+
+
+//DEF-PACKET CODES
+#define CD_SIG_OPENPRC		"SS0001"
+#define CD_SIG_ASSIST		"SS0002"
+#define CD_SIG_MACROSS		"SS0003"
+#define CD_SIG_SIDEWAY		"SS0004"
+#define CD_SIG_OPEN_ASSIST	"SS0005"
+#define CD_SIG_OPEN_ASSIST2	"SS0006"
+#define CD_STRAT_ORD		"SO0001"
+#define CD_C_ORDER			"SO0001"
+#define CD_C_NCLR			"ST0001"
+#define CD_C_REMAIN_ORD		"ST0002"
+
+#define DEF_EOL				0x0a	// delphi ipworks 와 통신하기 위해
+
 
 enum CHART_TP {
 	TP_1MIN = 0,
@@ -151,24 +149,17 @@ enum CHART_TP {
 	TP_TICK60
 };
 
+
+//DEF-SHART SHM, DEF-CHARTSHM
 #define CHART_TP_CNT		20
 #define MAX_CHART_TP_CNT	CHART_TP_CNT
 #define MAX_SYMBOL_PER_ARTC	2		//	품목당 2개의 월물(종목)에 대해서만 지원한다.
 #define MAX_GROUPKEY_CNT	MAX_SYMBOL_PER_ARTC * CHART_TP_CNT
 #define MAX_CHART_UNIT_CNT	1000	//	한 GROUP당 (한종목, 한차트당 'CLU7 00')
-#define MAX_ARTC_CNT		20
-
-//#define	LASTCHART_SHM_NM	"Global\\LASTCHART_SHM"
-//#define	LASTCHART_LOCK_NM	"Global\\LASTCHART_LOCK"
+#define MAX_ARTC_CNT		10		//	10개의 품목만 
 
 
-
-#define NOTIFY_ORD_TP_NEW		'1'
-#define NOTIFY_ORD_TP_ALLCNCL	'2'
-#define NOTIFY_ORD_TP_ALLCLR	'3'
-#define NOTIFY_PRC_TP_LIMIT		'1'
-#define NOTIFY_PRC_TP_MARKET	'2'
-
+//DEF-CROSS
 // 골든크로스 (단기>장기), 데드크로스(단기<장기)
 enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define CROSS2NAME(cross,out){\
@@ -177,6 +168,9 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 	if (cross == NONE_CROSS) strcpy(out, "노크");	\
 }
 
+//DEF-SMA
+#define	SMA_SHORT_CNT	10	// 단기 SMA 갯수
+#define	SMA_LONG_CNT	20	// 장기 SMA 갯수
 
 #define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 #define	FORMAT_PRC(prc,dotcnt,out) { sprintf(out, "%0*.*f", LEN_PRC, dotcnt, prc); } // 000000012.12
@@ -188,17 +182,7 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define FORMAT_USERID(id,out) { sprintf(out, "%*.*s", LEN_USERID, LEN_USERID, id);}
 #define FORMAT_SYMBOL(symbol) { CUtil::TrimAll(symbol, strlen(symbol));}
 
-// KR 은 CLQ7, 다른곳은 CLQ17
-//#define CVTCODE_17_7(symbol, out){sprintf(out,"%.*s%c", strlen(symbol) - 2, symbol, symbol[strlen(symbol) - 1]);}
-//
-//#define CVTCODE_URO_6E(symbol,out){ \
-//	if(strncmp(symbol,"URO",3)==0) sprintf(out,"6E%s",symbol+3);\
-//	else if(strncmp(symbol,"AD",2)==0) sprintf(out,"6A%s",symbol+3);	\
-//	else if(strncmp(symbol,"BP",2)==0) sprintf(out,"6B%s",symbol+3);	\
-//	else if(strncmp(symbol,"JY",2)==0) sprintf(out,"6J%s",symbol+3);	\
-//	else strcpy(out, symbol);	\
-//}
-
+//DEF_WM CODE
 #define WM_CHART_ALL_KILL	WM_USER + 800
 #define WM_CHART_DATA		WM_USER + 801
 #define WM_MANAGER_NOTIFY	WM_USER + 802
@@ -212,41 +196,6 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define WM_RECV_API_MD		WM_USER + 810	// recv data from client - TR, real
 #define WM_DIE				WM_USER + 999
 
-
-
-// 관리자 작업
-/*
-"1)로쎄스 계좌 추가
-2)로쎄스 헷지대상 설정
-3)로쎄스 헷지대상 해제
-4)로쎄스 헷지계좌 설정
-5)로쎄스 계좌 삭제
-6)FB 계좌 추가
-7)FB 자동주문종목 설정
-8)FB 자동주문종목 해제
-9)FB 계좌 삭제
-10) FB특정계좌 전략설정
-11) FB특정계좌 전략해제
-*/
-enum MANAGER_JOB {
-	MNG_ACNT_ADD = 1
-	, MNG_ACNT_AUTOORD_SET		//2
-	, MNG_ACNT_AUTOORD_RELEASE	//3
-	, MNG_HEDGE_ACNT_ADD		//4
-	, MNG_ACNT_DEL				//5
-	, MNG_FB_ACNT_ADD			//6
-	, MNG_FB_ORDSYMBOL_ADD		//7
-	, MNG_FB_ORDSYMBOL_RELEASE	//8
-	, MNG_FB_ACNT_DEL			//9
-	, MGN_FB_STRAT_SET			//10
-	, MGN_FB_STRAT_RELEASE		//11
-	, MGN_FB_CROSS_CHECK = 17
-	, MNG_FB_CROSS_UNCHECK = 18
-	, MNG_FB_CLEAR_ALL = 19
-	, MNG_FB_CNCL_ALL = 20
-	, MNG_FB_PROFIT_TICK = 21
-	, MNG_FB_LOSS_TICK = 22
-};
 
 
 
@@ -304,9 +253,6 @@ time -> hh:mm:ss
 
 #define GET_TICKCHART_NM(seq,out){ sprintf(out, "%0*d", LEN_CHART_NM, seq);}
 
-
-#define	SMA_SHORT_CNT	10	// 단기 SMA 갯수
-#define	SMA_LONG_CNT	20	// 장기 SMA 갯수
 
 
 /****************************************************************************************
@@ -402,19 +348,6 @@ typedef struct _ST_SHM_INDICATOR
 //	char	Reserved[20];
 //}PACK_STRAT_HEADER;
 
-// PACKET CODES
-#define CD_SIG_OPENPRC		"SS0001"
-#define CD_SIG_ASSIST		"SS0002"
-#define CD_SIG_MACROSS		"SS0003"
-#define CD_SIG_SIDEWAY		"SS0004"
-#define CD_SIG_OPEN_ASSIST	"SS0005"
-#define CD_SIG_OPEN_ASSIST2	"SS0006"
-#define CD_STRAT_ORD		"SO0001"
-#define CD_C_ORDER			"SO0001"
-#define CD_C_NCLR			"ST0001"
-#define CD_C_REMAIN_ORD		"ST0002"
-
-#define DEF_EOL				0x0a	// delphi ipworks 와 통신하기 위해
 
 typedef struct _PACK_HEADER_S2C
 {
@@ -716,3 +649,79 @@ char* ir_cvtcode_uro_6e(char* pzIn, char* pzOut);
 char* ir_cvtcode_6e_uro(char* pzIn, char* pzOut);
 char* pack_header_fields(char* pData, char* pzName, char* pzOut);
 
+
+// LEGACY
+//#define	DEF_BUY	'1'
+//#define DEF_SELL '2'
+
+//#define DEF_LIMIT_ORD '1'
+//#define DEF_MARKET_ORD '2'
+//
+//
+//#define DEF_RSLT_NEW	'1'	//신규주문접수
+//#define DEF_RSLT_MATCH	'2'	//체결
+//#define DEF_RSLT_MDFY	'3'	//정정
+//#define DEF_RSLT_CNCL	'4'	//취소
+//#define DEF_RSLT_RJCT_NEW	'5'
+//#define DEF_RSLT_RJCT_MDFY	'6'
+//#define DEF_RSLT_RJCT_CNCL	'5'
+//
+//#define	ORD_TYPE_NEW	'1'
+//#define	ORD_TYPE_MDFY	'2'
+//#define	ORD_TYPE_CNCL	'3'
+//
+//enum STOPORD_TP { STOPORD_OPEN = 1, STOPORD_ASSIST_BUY, STOPORD_ASSIST_SELL, STOPORD_AFTERSIGNAL, STOPORD_OPENHILO };	// 1=진입되는 경우 STOP, 2=보조지표 설정 STOP
+
+//#define DEF_TRADEGB_COPY	'1'
+//#define DEF_TRADEGB_HEDGE	'1'
+//
+//
+//
+//#define STRAT_TP_SIGNAL		'S'
+//#define STRAT_TP_ORDER		'O'
+//#define STRAT_TP_BOTH		'B'
+
+//#define NOTIFY_ORD_TP_NEW		'1'
+//#define NOTIFY_ORD_TP_ALLCNCL	'2'
+//#define NOTIFY_ORD_TP_ALLCLR	'3'
+//#define NOTIFY_PRC_TP_LIMIT		'1'
+//#define NOTIFY_PRC_TP_MARKET	'2'
+
+
+
+
+// 관리자 작업
+/*
+"1)로쎄스 계좌 추가
+2)로쎄스 헷지대상 설정
+3)로쎄스 헷지대상 해제
+4)로쎄스 헷지계좌 설정
+5)로쎄스 계좌 삭제
+6)FB 계좌 추가
+7)FB 자동주문종목 설정
+8)FB 자동주문종목 해제
+9)FB 계좌 삭제
+10) FB특정계좌 전략설정
+11) FB특정계좌 전략해제
+*/
+//enum MANAGER_JOB {
+//	MNG_ACNT_ADD = 1
+//	, MNG_ACNT_AUTOORD_SET		//2
+//	, MNG_ACNT_AUTOORD_RELEASE	//3
+//	, MNG_HEDGE_ACNT_ADD		//4
+//	, MNG_ACNT_DEL				//5
+//	, MNG_FB_ACNT_ADD			//6
+//	, MNG_FB_ORDSYMBOL_ADD		//7
+//	, MNG_FB_ORDSYMBOL_RELEASE	//8
+//	, MNG_FB_ACNT_DEL			//9
+//	, MGN_FB_STRAT_SET			//10
+//	, MGN_FB_STRAT_RELEASE		//11
+//	, MGN_FB_CROSS_CHECK = 17
+//	, MNG_FB_CROSS_UNCHECK = 18
+//	, MNG_FB_CLEAR_ALL = 19
+//	, MNG_FB_CNCL_ALL = 20
+//	, MNG_FB_PROFIT_TICK = 21
+//	, MNG_FB_LOSS_TICK = 22
+//};
+
+// LEGACY

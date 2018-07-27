@@ -179,7 +179,6 @@
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
-    <ClInclude Include="..\Common\ChartCommon.h" />
     <ClInclude Include="CreateSaveShm.h" />
     <ClInclude Include="Main.h" />
   </ItemGroup>

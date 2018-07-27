@@ -106,7 +106,7 @@ int CQueueShm::Create(HANDLE hFile, INIT_DATA_Q *shmData, LPCTSTR lpShmName, LPC
 	if (!ClearData(TRUE, TRUE, TRUE))
 		return -1;
 
-	return 1;
+	return nTotSize;
 }
 
 

@@ -7,7 +7,7 @@
 
 #define	SERVICENAME		"IRUM_ChartShmQueue"
 #define DISPNAME		"IRUM_ChartShmQueue"
-#define DESC			"차트용 SHM을 구성하고 DB저장"
+#define DESC			"차트용 SHM을 구성"
 #define EXENAME			"ChartShmQueue.exe"
 
 

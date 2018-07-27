@@ -2,7 +2,6 @@
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "../../IRUM_UTIL/BaseThread.h"
 #include "../../IRUM_UTIL/QueueShm.h"
-//#include "../../IRUM_UTIL/SharedMem.h"
 #include <string>
 
 #define MAX_TP_CNT	20
@@ -33,6 +32,6 @@ private:
 	char			m_zConfig[_MAX_PATH];
 	char			m_zMsg[1024];
 	BOOL			m_bContinue;
-	std::string		m_sLastSaveNm[MAX_TP_CNT];
+	//std::string		m_sLastSaveNm[MAX_TP_CNT];
 };
 

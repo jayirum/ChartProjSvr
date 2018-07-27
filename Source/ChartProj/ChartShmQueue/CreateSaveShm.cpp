@@ -71,8 +71,8 @@ BOOL CCreateSaveShm::Create()
 	shmData.lMaxStructCnt = MAX_CHART_UNIT_CNT;
 	
 	//	CREATE SHM
-	int nRet = m_shmQ.Create(NULL, &shmData, m_zShmNm, m_zMutexNm);
-	if (nRet<1)
+	int nTotSize = m_shmQ.Create(NULL, &shmData, m_zShmNm, m_zMutexNm);
+	if (nTotSize<1)
 	{
 		sprintf(m_zMsg,"[SHM CREATE ERROR](%s)(%s)(%s)", m_zShmNm, m_zMutexNm, m_shmQ.GetErr());
 		g_log.log(LOGTP_ERR, "%s", m_zMsg);
@@ -80,7 +80,7 @@ BOOL CCreateSaveShm::Create()
 	}
 
 	// already created
-	else if (nRet == 0)
+	else if (nTotSize == 0)
 	{
 		if (!m_shmQ.Open(m_zShmNm, m_zMutexNm))
 		{
@@ -106,11 +106,11 @@ BOOL CCreateSaveShm::Create()
 		//	return FALSE;
 		//}
 	}
-	int Size = shmData.lMaxGroupCnt*CHART_TP_CNT*MAX_CHART_UNIT_CNT * sizeof(ST_SHM_CHART_UNIT);
+	//int Size = shmData.lMaxGroupCnt*CHART_TP_CNT*MAX_CHART_UNIT_CNT * sizeof(ST_SHM_CHART_UNIT);
 	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = 총그룹갯수(심볼수:%d)*차트수(%d)*차트당UNIT수(%d)*UNIT크기(%d) = %d (%10.2f MB)",
 		m_zShmNm, m_zMutexNm,
 		MAX_SYMBOL_PER_ARTC, CHART_TP_CNT, MAX_CHART_UNIT_CNT, sizeof(ST_SHM_CHART_UNIT),
-		Size, (double)Size/1024./1024.);
+		nTotSize, (double)nTotSize /1024./1024.);
 
 	g_log.log(LOGTP_SUCC, m_zMsg);
 	printf("%s\n", m_zMsg);

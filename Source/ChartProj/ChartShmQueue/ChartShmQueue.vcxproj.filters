@@ -18,7 +18,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp">
+    <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp">
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
@@ -46,7 +46,7 @@
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h">
+    <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
@@ -54,11 +54,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ChartShmDB.ini" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Common">
-      <UniqueIdentifier>{4f249de6-fcf8-4eab-b1b5-a1c0ff26c8bb}</UniqueIdentifier>
+      <UniqueIdentifier>{7a537dc7-65dd-4626-acab-aefbc94763f4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
