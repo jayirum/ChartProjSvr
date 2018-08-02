@@ -126,6 +126,9 @@ enum { EN_SUNDAY=0, EN_MONDAY, EN_TUESDAY, EN_WEDNESDAY, EN_THURSDAY, EN_FRIDAY,
 #define	TRUNCDBL2(src, point)			CUtil::TruncDbl2(src,point)
 #define	ROUND(src, OffSet)				CUtil::Round(src, OffSet)
 
+
+char* MakeGUID(char *pzGUID);
+
 class GetSvcNameT
 	: public std::unary_function<VOID, LPCTSTR>
 {

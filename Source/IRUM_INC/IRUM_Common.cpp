@@ -52,56 +52,56 @@ char* ir_cvtcode_6e_uro(char* pzIn, char* pzOut)
 }
 
 
-char* pack_header_fields(char* pData, char* pzName, char* pzOut)
-{
-	*pzOut = 0x00;
-	PACK_HEADER_S2C* h = (PACK_HEADER_S2C*)pData;
-	char zCode[32];
-	sprintf(zCode, "%.*s", LEN_PACKET_CODE, h->Code);
-
-	if (!strcmp(pzName, "STRAT_ID"))
-	{
-		if (!strcmp(zCode, CD_SIG_OPENPRC))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->StratID), ((PACK_STRAT_FB_OPENPRC*)pData)->StratID);
-		if (!strcmp(zCode, CD_SIG_ASSIST))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->StratID), ((PACK_STRAT_FB_ASSIST*)pData)->StratID);
-		if (!strcmp(zCode, CD_SIG_MACROSS))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->StratID), ((PACK_STRAT_FB_CROSSMA*)pData)->StratID);
-		if (!strcmp(zCode, CD_SIG_SIDEWAY))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->StratID), ((PACK_STRAT_FB_SIDEWAY*)pData)->StratID);
-	}
-	if (!strcmp(pzName, "CHART_TP"))
-	{
-		if (!strcmp(zCode, CD_SIG_OPENPRC))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->ChartTp), ((PACK_STRAT_FB_OPENPRC*)pData)->ChartTp);
-		if (!strcmp(zCode, CD_SIG_ASSIST))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->ChartTp), ((PACK_STRAT_FB_ASSIST*)pData)->ChartTp);
-		if (!strcmp(zCode, CD_SIG_MACROSS))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->ChartTp), ((PACK_STRAT_FB_CROSSMA*)pData)->ChartTp);
-		if (!strcmp(zCode, CD_SIG_SIDEWAY))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->ChartTp), ((PACK_STRAT_FB_SIDEWAY*)pData)->ChartTp);
-	}
-	if (!strcmp(pzName, "CHART_NM"))
-	{
-		if (!strcmp(zCode, CD_SIG_OPENPRC))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->ChartNm), ((PACK_STRAT_FB_OPENPRC*)pData)->ChartNm);
-		if (!strcmp(zCode, CD_SIG_ASSIST))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->ChartNm), ((PACK_STRAT_FB_ASSIST*)pData)->ChartNm);
-		if (!strcmp(zCode, CD_SIG_MACROSS))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->ChartNm), ((PACK_STRAT_FB_CROSSMA*)pData)->ChartNm);
-		if (!strcmp(zCode, CD_SIG_SIDEWAY))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->ChartNm), ((PACK_STRAT_FB_SIDEWAY*)pData)->ChartNm);
-	}
-	if (!strcmp(pzName, "STRAT_PRC"))
-	{
-		if (!strcmp(zCode, CD_SIG_OPENPRC))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->StratPrc), ((PACK_STRAT_FB_OPENPRC*)pData)->StratPrc);
-		if (!strcmp(zCode, CD_SIG_ASSIST))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->StratPrc), ((PACK_STRAT_FB_ASSIST*)pData)->StratPrc);
-		if (!strcmp(zCode, CD_SIG_MACROSS))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->StratPrc), ((PACK_STRAT_FB_CROSSMA*)pData)->StratPrc);
-		if (!strcmp(zCode, CD_SIG_SIDEWAY))
-			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->StratPrc), ((PACK_STRAT_FB_SIDEWAY*)pData)->StratPrc);
-	}
-	return pzOut;
-}
+//char* pack_header_fields(char* pData, char* pzName, char* pzOut)
+//{
+//	*pzOut = 0x00;
+//	PACK_HEADER_S2C* h = (PACK_HEADER_S2C*)pData;
+//	char zCode[32];
+//	sprintf(zCode, "%.*s", LEN_PACKET_CODE, h->Code);
+//
+//	if (!strcmp(pzName, "STRAT_ID"))
+//	{
+//		if (!strcmp(zCode, CD_SIG_OPENPRC))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->StratID), ((PACK_STRAT_FB_OPENPRC*)pData)->StratID);
+//		if (!strcmp(zCode, CD_SIG_ASSIST))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->StratID), ((PACK_STRAT_FB_ASSIST*)pData)->StratID);
+//		if (!strcmp(zCode, CD_SIG_MACROSS))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->StratID), ((PACK_STRAT_FB_CROSSMA*)pData)->StratID);
+//		if (!strcmp(zCode, CD_SIG_SIDEWAY))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->StratID), ((PACK_STRAT_FB_SIDEWAY*)pData)->StratID);
+//	}
+//	if (!strcmp(pzName, "CHART_TP"))
+//	{
+//		if (!strcmp(zCode, CD_SIG_OPENPRC))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->ChartTp), ((PACK_STRAT_FB_OPENPRC*)pData)->ChartTp);
+//		if (!strcmp(zCode, CD_SIG_ASSIST))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->ChartTp), ((PACK_STRAT_FB_ASSIST*)pData)->ChartTp);
+//		if (!strcmp(zCode, CD_SIG_MACROSS))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->ChartTp), ((PACK_STRAT_FB_CROSSMA*)pData)->ChartTp);
+//		if (!strcmp(zCode, CD_SIG_SIDEWAY))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->ChartTp), ((PACK_STRAT_FB_SIDEWAY*)pData)->ChartTp);
+//	}
+//	if (!strcmp(pzName, "CHART_NM"))
+//	{
+//		if (!strcmp(zCode, CD_SIG_OPENPRC))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->ChartNm), ((PACK_STRAT_FB_OPENPRC*)pData)->ChartNm);
+//		if (!strcmp(zCode, CD_SIG_ASSIST))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->ChartNm), ((PACK_STRAT_FB_ASSIST*)pData)->ChartNm);
+//		if (!strcmp(zCode, CD_SIG_MACROSS))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->ChartNm), ((PACK_STRAT_FB_CROSSMA*)pData)->ChartNm);
+//		if (!strcmp(zCode, CD_SIG_SIDEWAY))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->ChartNm), ((PACK_STRAT_FB_SIDEWAY*)pData)->ChartNm);
+//	}
+//	if (!strcmp(pzName, "STRAT_PRC"))
+//	{
+//		if (!strcmp(zCode, CD_SIG_OPENPRC))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_OPENPRC*)pData)->StratPrc), ((PACK_STRAT_FB_OPENPRC*)pData)->StratPrc);
+//		if (!strcmp(zCode, CD_SIG_ASSIST))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_ASSIST*)pData)->StratPrc), ((PACK_STRAT_FB_ASSIST*)pData)->StratPrc);
+//		if (!strcmp(zCode, CD_SIG_MACROSS))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_CROSSMA*)pData)->StratPrc), ((PACK_STRAT_FB_CROSSMA*)pData)->StratPrc);
+//		if (!strcmp(zCode, CD_SIG_SIDEWAY))
+//			sprintf(pzOut, "%.*s", sizeof(((PACK_STRAT_FB_SIDEWAY*)pData)->StratPrc), ((PACK_STRAT_FB_SIDEWAY*)pData)->StratPrc);
+//	}
+//	return pzOut;
+//}

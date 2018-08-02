@@ -2,8 +2,8 @@
 #pragma warning(disable:4503)
 
 
+
 #include "../../IRUM_UTIL/TcpClient.h"
-#include "ChartMaker.h"
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "main.h"
 #include <winsvc.h>
@@ -13,12 +13,15 @@
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/LogMsg.h"
-//#include "../../IRUM_UTIL/NanoPubSub.h"
 #include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/QueueShm.h"
+#include "SignalMaker.h"
 #include <list>
 #include <map>
 #include <string>
+
 #include <Windows.h>
+
 
 //서비스 메인 본체
 void __stdcall ServiceStart(DWORD argc, LPTSTR* argv);
@@ -41,37 +44,40 @@ SECURITY_ATTRIBUTES sa;
 SERVICE_STATUS_HANDLE g_hXSS;		//서비스 환경 글로벌 핸들
 DWORD	g_XSS;						//서비스 현재 상태 저장변수
 
-BOOL	g_bDebug;
+volatile BOOL	g_bDebug;
 HANDLE	g_hDieEvent;				// 프로그램 전체를 끝내는 이벤트
-volatile BOOL	g_bContinue = TRUE;			// 프로그램 전체를 끝내는 플래그
+volatile BOOL	g_bContinue = TRUE;	// 프로그램 전체를 끝내는 플래그
 char	g_zConfig[_MAX_PATH];
-char	g_zMsg[1024];
+
 
 
 BOOL	DBOpen();
 BOOL	LoadSymbol();
 BOOL	InitApiClient();
 BOOL	InitMemPool();
-static unsigned WINAPI RecvMDThread(LPVOID lp);
-void RecvMDThreadFn();
-static unsigned WINAPI ChartSaveThread(LPVOID lp);
+//MCAST	BOOL	InitPublish();
+BOOL	InitSigSend();
+//BOOL	InitChartShm();
+
+static unsigned WINAPI Thread_RecvApiData(LPVOID lp);
+static unsigned WINAPI Thread_SendSignal(LPVOID lp);
+static unsigned WINAPI Thread_SaveSignal(LPVOID lp);
 
 
 
 CRITICAL_SECTION	g_Console;
 CLogMsg				g_log;
-CDBPoolAdo			*g_ado		= NULL;
-//TODO CSiseRecv			*g_pMDSub = NULL;
-//CNanoPubSub			*g_pMDSub = NULL;
-//CMCastRecv			*g_pMcastRecv = NULL;
-CTcpClient			*g_pApiRecv = NULL;
-CMemPool			*g_pMemPool = NULL;
+CDBPoolAdo			*g_pDBPool		= NULL;
+CTcpClient			*g_pSendSig2Clnt= NULL;
+CTcpClient			*g_pApiRecv		= NULL;
+CMemPool			*g_pMemPool		= NULL;
 
-HANDLE				g_hRecvThread = NULL, g_hSaveThread = NULL;
-unsigned int		g_unRecvThread = 0, g_unSaveThread = 0;
-std::map<std::string, CChartMaker*>	g_mapSymbol;
+HANDLE				g_hApiRecvThread = NULL, g_hSaveThread = NULL, g_hSendThread = NULL;
+unsigned int		g_unApiRecvThread = 0, g_unSaveThread = 0, g_unSendThread = 0;
 
+std::map<std::string, CSignalMaker*>	g_mapSymbol;
 
+#define SEND_TIMEOUT_MILI	500
 
 int  _Start()
 {
@@ -107,47 +113,96 @@ int  _Start()
 		//log.LogEventInf(-1," 서비스를 시작합니다.");
 	}
 
+
 	if (!InitMemPool()) {
 		return 0;
 	}
 
 	if (!DBOpen())
 		return 0;
+	
 
+	//if (!InitSigSend())
+	//	return 0;
+
+	//if (!InitChartShm())
+	//	return 0;
 
 	InitApiClient();
 
-	// 차트 저장 스레드
-	g_hRecvThread = (HANDLE)_beginthreadex(NULL, 0, &RecvMDThread, NULL, 0, &g_unRecvThread);
-	g_hSaveThread = (HANDLE)_beginthreadex(NULL, 0, &ChartSaveThread, NULL, 0, &g_unSaveThread);
+	// Thread for receiving api data
+	g_hApiRecvThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_RecvApiData, NULL, 0, &g_unApiRecvThread);
+
+	// Thread for saving singal data
+	g_hSaveThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveSignal, NULL, 0, &g_unSaveThread);
+
+	// Thread for sending signal data to client
+	//g_hSendThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_SendSignal, NULL, 0, &g_unSendThread);
 
 
 	if (!LoadSymbol())
 		return 0;
-	
 
 	DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);
 
-	std::map<std::string, CChartMaker*>::iterator it;
-	for (it = g_mapSymbol.begin(); it != g_mapSymbol.end();it++)
+
+	std::map<std::string, CSignalMaker*>::iterator it;
+	for (it = g_mapSymbol.begin(); it != g_mapSymbol.end(); it++)
 	{
-		CChartMaker* p = (*it).second;
+		CSignalMaker* p = (*it).second;
 		delete p;
 	}
 
-	SAFE_DELETE(g_ado);
+	g_bContinue = FALSE;
+
+	SAFE_DELETE(g_pDBPool);
 	SAFE_DELETE(g_pApiRecv);
-	SAFE_CLOSEHANDLE(g_hRecvThread);
+	SAFE_CLOSEHANDLE(g_hApiRecvThread);
 	SAFE_CLOSEHANDLE(g_hSaveThread);
+	SAFE_CLOSEHANDLE(g_hSendThread);
 	SAFE_DELETE(g_pMemPool);
+	SAFE_DELETE(g_pSendSig2Clnt);
+	
 	CoUninitialize();
 
 	return 0; 
 }
 
 
+BOOL	InitApiClient()
+{
+	// ChartApiKR 로 부터 시세 수신
+	char zIP[32], port[32];
+	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", zIP);
+	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
+
+	g_pApiRecv = new CTcpClient();
+	printf("TCP CLIENT 초기화 시도(IP:%s)(PORT:%s)", zIP, port);
+	if (!g_pApiRecv->Begin(zIP, atoi(port), 10))
+	{
+		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());
+	}
+	else {
+		g_log.log(LOGTP_SUCC, "TCP CLIENT 초기화 및 connect 성공(IP:%s)(PORT:%s)", zIP, port);
+		printf ("TCP CLIENT 초기화 및 connect 성공(IP:%s)(PORT:%s)", zIP, port);
+	}
+
+	g_pApiRecv->StartRecvData();
+
+	return TRUE;
+}
+
+
+//BOOL InitChartShm()
+//{
+//	//TODO g_pQueueShm = new CQueueShm();
+//	return TRUE;
+//}
+
+
 BOOL	InitMemPool()
 {
+	
 	g_pMemPool = new CMemPool(MEM_PRE_ALLOC, MEM_MAX_ALLOC, MEM_BLOCK_SIZE);
 	
 	if(g_pMemPool->available()==0)
@@ -158,21 +213,7 @@ BOOL	InitMemPool()
 }
 
 
-static unsigned WINAPI RecvMDThread(LPVOID lp)
-{
-	__try {
-		RecvMDThreadFn();
-	}
-	__except (ReportException(GetExceptionCode(), "RecvMDThread", g_zMsg))
-	{
-		g_log.log(LOGTP_FATAL, g_zMsg);
-		exit(0);
-	}
-
-	return 0;
-}
-
-void RecvMDThreadFn()
+static unsigned WINAPI Thread_RecvApiData(LPVOID lp)
 {
 	ST_PACK2CHART_EX* pSise;
 	char zSymbol[128];
@@ -183,7 +224,7 @@ void RecvMDThreadFn()
 		if (g_pApiRecv->HappenedRecvError())
 		{
 			g_log.log(LOGTP_ERR, "TCP RECV ERROR:%s", g_pApiRecv->GetMsg());
-			printf("TCP RECV ERROR:%s\n", g_pApiRecv->GetMsg()); 
+			printf("TCP RECV ERROR:%s\n", g_pApiRecv->GetMsg());
 			continue;
 		}
 		char* pBuf = g_pMemPool->get();
@@ -203,14 +244,14 @@ void RecvMDThreadFn()
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
 
-			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
+			std::map<std::string, CSignalMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
 			{
 				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 			}
 			else
 			{
-				CChartMaker* p = (*it).second;
+				CSignalMaker* p = (*it).second;
 				PostThreadMessage(p->GetMyThreadID(), WM_CHART_DATA, 0, (LPARAM)pBuf);
 				//printf("[RECV](%s)\n", pBuf);
 				//g_log.log(LOGTP_SUCC, "[RECV-2](%.80s)", pBuf);
@@ -218,14 +259,15 @@ void RecvMDThreadFn()
 		}
 	}
 
-	return ;
+	return 0;
 }
 
 
-static unsigned WINAPI ChartSaveThread(LPVOID lp)
+static unsigned WINAPI Thread_SaveSignal(LPVOID lp)
 {
 	char zQ[1024];
-	char zGroupKey[LEN_GROUP_KEY + 1];
+	//char temp[1024];
+	CDBHandlerAdo db(g_pDBPool->Get());
 
 	while (g_bContinue)
 	{
@@ -233,59 +275,96 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 		MSG msg;
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if (msg.message == WM_SAVE_CHART)
+			if (msg.message == WM_SEND_STRATEGY)
 			{
-				ST_SHM_CHART_UNIT* p = (ST_SHM_CHART_UNIT*)msg.lParam;
-				sprintf(zGroupKey, "%.*s", LEN_GROUP_KEY, p->Reserved);
-				CDBHandlerAdo db(g_ado->Get());
-				
-				sprintf(zQ, "EXEC CHART_SAVE "
-					"'%.*s', "	//@I_GROUP_KEY	VARCHAR(5)--// CLN71
-					"'%.*s', "	//, @I_CHART_NM	VARCHAR(20)
-					"'%.*s', "	//, @I_PREV_NM		VARCHAR(20)
-					"'%.*s', "	//@I_CHART_GB	CHAR(1)--// +,-, 0
-					"'%.*s', "	//@I_OPEN_PRC	VARCHAR(20)
-					"'%.*s', "	//@I_HIGH_PRC	VARCHAR(20)
-					"'%.*s', "	//@I_LOW_PRC		VARCHAR(20)
-					"'%.*s', "	//@I_CLOSE_PRC	VARCHAR(20)
-					"'%.*s', "	//@I_CNTR_QTY	VARCHAR(20)
-					"'%.*s', "	//@I_DOT_CNT		VARCHAR(20)
-					"'%.*s', "	//@I_SMA_SHORT	VARCHAR(20)
-					"'%.*s' "	//@I_SMA_LONG	VARCHAR(20)
-					//"'%.*s' "
-					,
-					LEN_GROUP_KEY, zGroupKey,
-					sizeof(p->Nm), p->Nm,
-					sizeof(p->prevNm), p->prevNm,
-					sizeof(p->gb), p->gb,
-					sizeof(p->open), p->open,
-					sizeof(p->high), p->high,
-					sizeof(p->low), p->low,
-					sizeof(p->close), p->close,
-					sizeof(p->cntr_qty), p->cntr_qty,
-					sizeof(p->dotcnt), p->dotcnt,
-					sizeof(p->sma_short), p->sma_short,
-					sizeof(p->sma_long), p->sma_long
-					//sizeof(p->seq), p->seq
-				);
+				char* pData = (char*)msg.lParam;
+				int nLen = (int)msg.wParam;
+
+
+				//TODO
+				// save data
+				//PACK_HEADER_S2C* pHd = (PACK_HEADER_S2C*)pData;
+				//int nRemainLen = nLen - sizeof(PACK_HEADER_S2C);
+				//
+				//char zStratID[32]; pack_header_fields(pData, "STRAT_ID", zStratID);
+				//char zChartTp[32]; pack_header_fields(pData, "CHART_TP", zChartTp);
+				//char zChartNm[32]; pack_header_fields(pData, "CHART_NM", zChartNm);
+				//char zStratPrc[32]; pack_header_fields(pData, "STRAT_PRC", zStratPrc);
+
+				//sprintf(zQ, "EXEC STRAT_SAVE "
+				//	"'%.*s', "	//@I_COMP_ID	VARCHAR(10)
+				//	"'%s', "	//@I_STRAT_ID	VARCHAR(10)
+				//	"'%.*s', "	//@I_START_TP	CHAR(1)
+				//	"'%.*s', "	//@I_SYMBOL		VARCHAR(10)
+				//	"'%d', "	//@I_CHART_TP	INT
+				//	"'%s', "	//@I_CHART_NM	CHAR(12)
+				//	"'%s', "	//@I_PRICE		VARCHAR(15)
+				//	"'%.*s' "	//@I_DATA		VARCHAR(200)
+				//	,
+				//	sizeof(pHd->StratCompID), pHd->StratCompID
+				//	, zStratID
+				//	, sizeof(pHd->StratTp), pHd->StratTp
+				//	, sizeof(pHd->Symbol), pHd->Symbol
+				//	, atoi(zChartTp)
+				//	, zChartNm
+				//	, zStratPrc
+				//	, nRemainLen, &pData[sizeof(PACK_HEADER_S2C)]
+				//);
+
 				if (FALSE == db->ExecQuery(zQ))
 				{
-					g_log.log(LOGTP_ERR, "CHART DATA Save 에러(%s)(%s)", db->GetError(), zQ);
-					printf("CHART DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
+					g_log.log(LOGTP_ERR, "Save Strategy Failed (%s)(%s)", db->GetError(), zQ);
+					printf("Save Strategy Failed(%s)(%s)\n", db->GetError(), zQ);
 				}
-				else
-				{
-					//g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
+				else {
+					//TODO g_log.log(LOGTP_SUCC, "[SIG SAVE](%s)", zQ);
 				}
-					
-				delete p;
-				db->Close();
-			} //if (msg.message == WM_SAVE_CHART)
+
+				g_pMemPool->release(pData);
+			} //if (msg.message == WM_SEND_STRATEGY)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
 
+	return 0;
+}
 
-	
+static unsigned WINAPI Thread_SendSignal(LPVOID lp)
+{
+	int nErrCode;
+	int nSentLen;
+	while (g_bContinue)
+	{
+		Sleep(1);
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_SEND_STRATEGY)
+			{
+				char* pData = (char*)msg.lParam;
+				int nLen = (int)msg.wParam;
+				// send data
+				nSentLen = g_pSendSig2Clnt->SendData(pData, nLen, &nErrCode);
+				if (nSentLen< 0){
+					g_log.log(LOGTP_FATAL, "Send Strategy to Client Failed(%s)", g_pSendSig2Clnt->GetMsg());
+				}
+				else if (nSentLen > 0) {
+					g_log.log(LOGTP_SUCC, "[Send Client:%d,](%.*s)", nLen, nLen, pData);
+				}
+
+
+				// IRUMStrat_FB 에게 전달
+				//nSentLen = g_pSendSig2Ord->SendData(pData, nLen);
+				//if (nErrCode < 0) {
+				//	g_log.log(LOGTP_FATAL, "Send Strategy to Ord Failed(%s)", g_pSendSig2Clnt->GetMsg());
+				//}
+				//else if (nSentLen > 0) {
+				//	//g_log.log(LOGTP_SUCC, "Send Strategy to Ord OK");
+				//}
+
+				g_pMemPool->release(pData);
+			} //if (msg.message == WM_SEND_STRATEGY)
+		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	} // while (TRUE)
 
 	return 0;
 }
@@ -301,29 +380,31 @@ BOOL DBOpen()
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-	g_ado = new CDBPoolAdo(ip, id, pwd, name);
-	if (!g_ado->Init(atoi(cnt)))
+	g_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+	if (!g_pDBPool->Init(atoi(cnt)))
 	{
-		g_log.log(LOGTP_ERR, "DB OPEN FAIL(MSG:%s)", g_ado->GetMsg());
+		g_log.log(LOGTP_ERR, "DB OPEN FAIL(MSG:%s)", g_pDBPool->GetMsg());
 		g_log.log(LOGTP_ERR, "(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
-		SAFE_DELETE(g_ado);
+		SAFE_DELETE(g_pDBPool);
 		return FALSE;
 	}
-	g_log.log(LOGTP_SUCC, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
+	g_log.log(LOGTP_ERR, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
 	return TRUE;
 }
 
-
+/*
+	Load Symbol info
+*/
 BOOL LoadSymbol()
 {
 
-	CDBHandlerAdo db(g_ado->Get());
+	CDBHandlerAdo db(g_pDBPool->Get());
 	char zQ[1024];
 	sprintf(zQ, "EXEC CHART_GET_SYMBOL");
 
 	if (!db->ExecQuery(zQ))
 	{
-		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zQ, db->GetError());
+		g_log.log(LOGTP_ERR, "종목정보 오류(%s)(%s)", zQ, db->GetError());
 		return FALSE;
 	}
 
@@ -336,56 +417,88 @@ BOOL LoadSymbol()
 	while (db->IsNextRow())
 	{
 		db->GetStr("ARTC_CODE", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zArtc);
+		ir_cvtcode_6e_uro(zTemp, zArtc);
 
 
 		db->GetStr("SYMBOL", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zSymbol);
+		ir_cvtcode_6e_uro(zTemp, zSymbol);
 
 		//TODO
-		//if (strncmp(zSymbol, "ESH8", 4) != 0
+		//if (strncmp(zSymbol, "6EH8", 4) != 0 
 		//	) {
 		//	db->Next();
 		//	continue;
 		//}
 		
 		// KR 은 CLQ7, 다른곳은 CLQ17 
-		ir_cvtcode_HD_KR(zSymbol, zTemp);
+		ir_cvtcode_6e_uro(zSymbol, zTemp);
 		std::string symbol = zSymbol;
 
 
-		CChartMaker* p = new CChartMaker(zSymbol, zArtc, /*g_pMemPool,*/ g_unSaveThread);
+		CSignalMaker* p = new CSignalMaker(zSymbol, zArtc, g_pMemPool,/*g_pQueueShm,*/ g_unSaveThread, g_unSendThread);
 
 		g_mapSymbol[symbol] = p;
 		g_log.log(LOGTP_SUCC, "[%s][%s] 차트구성종목", zArtc, zSymbol);
 		printf("[%s][%s] 차트구성종목\n", zArtc, zSymbol);
 
-		//TODO
-		//break;
 		db->Next();
+		
 	}
 	db->Close();
 
 	return TRUE;
 }
 
+////MCAST 
+//BOOL	InitMarketDataRecv()
+//{
+//	// ChartApiKR 로 부터 시세 수신 (receive market data from ChartApiKR.exe)
+//	char ip[32], port[32];
+//	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", ip);
+//	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
+//
+//	g_pRecvMD = new CNanoPubSub(TP_SUB);
+//	if (!g_pRecvMD->BeginTcp(ip, port))
+//	{
+//		g_log.log(LOGTP_FATAL, "%s", g_pRecvMD->GetMsg());
+//		return FALSE;
+//	}
+//
+//
+//	g_log.log(LOGTP_SUCC, "API시세 SUBSCRIBE 초기화성공(%s)", g_pRecvMD->GetMsg());
+//	printf("%s\n",g_pRecvMD->GetMsg());
+//
+//	//// 수신 스레드 (thread for receiving)
+//	g_hApiRecvThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_RecvMD, NULL, 0, &g_unApiRecvThread);
+//
+//
+//	return TRUE;
+//}
+//
+//
 
-BOOL	InitApiClient()
+BOOL	InitSigSend()
 {
-	// API 로 부터 시세 수신
-	char zIP[32], port[32];
-	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", zIP);
-	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
-	printf("API IP(%s)PORT(%s)", zIP, port);
-	g_pApiRecv = new CTcpClient();
-	if (!g_pApiRecv->Begin(zIP, atoi(port), 10))
+	// SEND 2 CLIENT
+	g_pSendSig2Clnt = new CTcpClient;
+
+	char ip[32], port[32];
+	CUtil::GetConfig(g_zConfig, "STRATEGY_RELAY_SOCKET_INFO", "IP", ip);
+	CUtil::GetConfig(g_zConfig, "STRATEGY_RELAY_SOCKET_INFO", "PORT", port);
+	if (!g_pSendSig2Clnt->Begin(ip, atoi(port), SEND_TIMEOUT_MILI))
 	{
-		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());
+		g_log.log(LOGTP_FATAL, "[InitSigSend-ToClient] error(%s)(%s)(%s)", ip, port, g_pSendSig2Clnt->GetMsg());
+		printf("[InitSigSend-ToClient] error(%s)(%s)(%s)\n", ip, port, g_pSendSig2Clnt->GetMsg());
+		//return FALSE;
 	}
 	else
-		g_log.log(LOGTP_SUCC, "TCP CLIENT 초기화 및 connect 성공(IP:%s)(PORT:%s)", zIP,  port);
-	
-	g_pApiRecv->StartRecvData();
+	{
+		//Nagle Off
+		g_pSendSig2Clnt->SetNagle(FALSE);
+
+		g_log.log(LOGTP_SUCC, "CLIENT 전송용 connect ok(%s)",g_pSendSig2Clnt->GetMsg());
+		printf("%s\n", g_pSendSig2Clnt->GetMsg());
+	}
 
 	return TRUE;
 }

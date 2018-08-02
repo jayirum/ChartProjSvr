@@ -1,0 +1,443 @@
+
+#include "SignalMaker.h"
+#include "../../IRUM_UTIL/LogMsg.h"
+#include "../../IRUM_UTIL/util.h"
+#include "../../IRUM_INC/IRUM_Common.h"
+#include "Main.h"
+
+extern CLogMsg g_log;
+extern char	g_zConfig[_MAX_PATH];
+extern CMemPool	*g_pMemPool;
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+CSignalMaker::CSignalMaker(char* pzSymbol, char* pzArtcCode, CMemPool* pMemPool, /*CQueueShm* pShm,*/ unsigned dwSaveThread, unsigned dwSendThread):CBaseThread("CSignalMaker")
+{
+	m_dwSaveThread = dwSaveThread;
+	m_dwSendThread = dwSendThread;
+	m_pMemPool = pMemPool;
+	
+	strcpy(m_zSymbol, pzSymbol);
+	strcpy(m_zArtc, pzArtcCode);
+	GET_SHM_NM(pzArtcCode, m_zShmNm);
+	GET_SHM_LOCK_NM(pzArtcCode, m_zMutexNm);
+	m_nChartTp = TP_5MIN;	//TODO
+	GET_GROUP_KEY(m_zSymbol, m_nChartTp, m_zGroupKey);
+	
+
+	m_pShmQ = NULL;	
+	m_pDBPool = NULL;
+	
+	m_bIsFirstRunning = TRUE;
+	m_pSignalResult = new char[LEN_BUFF_SIZE];
+	m_pClientBuff = new char[LEN_BUFF_SIZE];
+	ResumeThread();
+
+	// worker thread 생성
+	m_hWorkDie = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hStratThread = (HANDLE)_beginthreadex(NULL, 0, &StratThread, this, 0, &m_dwStratThreadID);
+}
+
+
+CSignalMaker::~CSignalMaker()
+{
+	SetEvent(m_hWorkDie);
+	if (WaitForSingleObject(m_hStratThread, 3000) != WAIT_OBJECT_0) {
+		DWORD dwExitCode = 0;
+		TerminateThread(m_hStratThread, dwExitCode);
+	}
+	SAFE_CLOSEHANDLE(m_hWorkDie);
+	SAFE_CLOSEHANDLE(m_hStratThread);
+
+
+	//EndSubScribe();
+	EndShm();
+	EndDB();
+	delete[] m_pSignalResult;
+	delete[] m_pClientBuff;
+}
+
+BOOL CSignalMaker::BeginShm()
+{
+	char szDir[_MAX_PATH], szModule[_MAX_PATH], szConfig[_MAX_PATH];
+	CUtil::GetMyModuleAndDir(szDir, szModule, szConfig);
+
+	//	OPEN SHM
+	m_pShmQ = new CQueueShm();
+	if (!m_pShmQ->Open((LPCTSTR)m_zShmNm, (LPCTSTR)m_zMutexNm))
+	{
+		g_log.log(LOGTP_FATAL, ">>>>>>>CHART SHM OPEN 에러(%s)(symbol:%s)(%s)", m_zShmNm, m_zSymbol, m_pShmQ->GetErr());
+		return FALSE;
+	}
+	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_zMutexNm);
+
+
+	return TRUE;
+}
+
+//
+
+BOOL CSignalMaker::BeginDB()
+{
+	char ip[32], id[32], pwd[32], cnt[32], name[32];
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
+
+	m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+	if (!m_pDBPool->Init(1))
+	{
+		g_log.log(LOGTP_ERR, "DB OPEN FAIL(MSG:%s)", m_pDBPool->GetMsg());
+		g_log.log(LOGTP_ERR, "(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
+		return FALSE;
+	}
+	g_log.log(LOGTP_ERR, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
+	return TRUE;
+}
+
+VOID CSignalMaker::EndDB()
+{
+	SAFE_DELETE(m_pDBPool);
+}
+
+void CSignalMaker::EndShm()
+{
+	m_pShmQ->Close();
+
+	//TODO 
+	SAFE_DELETE(m_pShmQ);
+}
+
+
+
+VOID CSignalMaker::ThreadFunc()
+{
+	__try {
+		MainFunc();
+	}
+	__except (ReportException(GetExceptionCode(), "CSignalMaker::ThreadFunc", m_szMsg))
+	{
+		g_log.log(LOGTP_FATAL, m_szMsg);
+		exit(0);
+	}
+
+}
+
+VOID CSignalMaker::MainFunc()
+{
+	g_log.log(LOGTP_SUCC, "[THREAD ID:%d](%s)Start...\n", GetMyThreadID(), m_zSymbol);
+	printf("[CSignalMaker THREAD ID:%d](%s)Start...", GetMyThreadID(), m_zSymbol);
+	
+	if (!BeginDB())
+		return;
+
+	if (!BeginShm())
+		return ;
+
+	if (!LoadSymbolSpec())
+	{
+		return;
+	}
+
+	char zMarketDataBuff[1024] = { 0, };
+	char zMsg[1024] = { 0, };
+	char zRecvSymbol[128] = { 0, };
+	int nSymbolLen = strlen(m_zSymbol);
+
+	while (TRUE)
+	{
+		DWORD dwRet = MsgWaitForMultipleObjects(1, (HANDLE*)&m_hDie, FALSE, 1, QS_ALLPOSTMESSAGE);
+		if (dwRet == WAIT_OBJECT_0)
+		{
+			break;
+		}
+		else if (dwRet == WAIT_ABANDONED_0) 
+		{
+			g_log.log(LOGTP_ERR, "[THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
+			Sleep(1000);
+			continue;
+		}
+
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			switch (msg.message)
+			{
+			case WM_MANAGER_NOTIFY_SOCK:
+			{
+				ST_MANAGER_SOCKNOTIFY* p = (ST_MANAGER_SOCKNOTIFY*)msg.lParam;
+				delete p;
+				break;
+			}
+			case WM_CHART_ALL_KILL:
+			{
+				g_log.log(LOGTP_SUCC, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
+				break;
+			}
+			case WM_CHART_DATA:
+			{
+				ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)msg.lParam;		// MEM POOL
+				//if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0) {
+				//	g_pMemPool->release((char*)msg.lParam); // main 에서 넘어온 메모리
+				//	continue;
+				//}
+				char* pData = m_pMemPool->get();
+				strcpy(pData, (char*)msg.lParam);
+				int nLen = strlen(pData);
+
+				PostThreadMessage(m_dwStratThreadID, WM_RECV_API_MD, (WPARAM)nLen, (LPARAM)pData);
+
+				// main 에서 넘어온 메모리
+				g_pMemPool->release((char*)msg.lParam);
+				break;
+			}
+			}
+		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+
+
+		
+	} // while (TRUE)
+	
+}
+
+
+unsigned WINAPI CSignalMaker::StratThread(LPVOID lp)
+{
+	CSignalMaker* p = (CSignalMaker*)lp;
+	while (WaitForSingleObject(p->m_hWorkDie, 1) != WAIT_OBJECT_0)
+	{
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_RECV_API_MD)
+			{
+				char* pData = (char*)msg.lParam;
+				//printf("work recv(%.40s)\n", pData);
+				int nLen = (int)msg.wParam;
+				p->SignalProc(pData);
+				p->m_pMemPool->release(pData);
+			}
+		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	} // while (TRUE)
+
+	return 0;
+}
+
+
+VOID CSignalMaker::SignalProc(char* pMarketData)
+{
+	char zNowPackTime[32] = { 0, };
+	char zPackDT[32] = { 0, };
+	char zGroupKey[32] = { 0, };
+	char zNowChartNm[32] = { 0, };
+	char zCurrPrc[LEN_PRC + 1] = { 0, };
+
+	ST_PACK2CHART_EX	*pPack = (ST_PACK2CHART_EX*)pMarketData;
+
+	sprintf(zCurrPrc, "%.*s", sizeof(pPack->Close), pPack->Close);
+
+	// Current Time
+	sprintf(zNowPackTime, "%.8s", pPack->Time);
+	sprintf(zPackDT, "%.*s", sizeof(pPack->Date), pPack->Date);
+	
+	GET_CHART_NM_EX(zPackDT, zNowPackTime, m_nChartTp, zNowChartNm);
+	//g_log.log(LOGTP_SUCC, "현재시간(%s),차트이름(%s)", zNowPackTime, zNowChartNm);
+
+
+	// If this is the first time, don't proceed
+	if (m_bIsFirstRunning == TRUE)
+	{
+		m_bIsFirstRunning = FALSE;
+		return;
+	}
+
+	// Buffer to read chart shm
+	ST_SHM_CHART_UNIT	nowChart, prevChart;
+
+	// Get Last ChartShm and previous ChartShm	
+	INT nRet = GetCurrChartShm(zGroupKey, zNowChartNm, prevChart, nowChart);
+	if (nRet<0) {
+		if (nRet == -1) {
+			g_log.log(LOGTP_ERR, "[SignalProc]Get Shm Info error(Packet Time:%s,Symbol:%.5s) (GroupKey:%s, ChartNM:%s)",
+				zNowPackTime, pPack->ShortCode, zGroupKey, zNowChartNm);
+		}
+		return;
+	}
+
+	char zStratID[32] = { 0, };
+	
+	m_stratHist.WhichStratShouldbeChecked(zNowChartNm, zStratID);
+
+	if( strcmp(zStratID,STRAT_OPEN)==0 )
+	{
+		StratOpen(zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc);
+	}
+
+	if (strcmp(zStratID, STRATID_SELL_CLOSE) == 0 || 
+		strcmp(zStratID, STRATID_BUY_CLOSE) == 0 )
+	{
+		StratClose(zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc);
+	}
+
+}
+
+
+VOID CSignalMaker::StratOpen(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc)
+{
+
+}
+
+
+VOID CSignalMaker::StratClose(
+	char* pzGroupKey, char* pzChartNm, 
+	_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow,
+	char* pzCurrPrc)
+{
+	char zOpenPrc[32] = { 0, };
+	sprintf(zOpenPrc, "%.*s", sizeof(shmNow.open), shmNow.open);
+
+	int nComp = CUtil::CompPrc(zOpenPrc, strlen(zOpenPrc), pzCurrPrc, strlen(pzCurrPrc), m_SymbolInfo.nDotCnt, LEN_PRC);
+
+	// open prc > curr prc ==> sell close
+	if (nComp > 0)
+	{
+		//TODO. check buy open
+		if (m_stratHist.IsSrategyExist(pzChartNm, STRATID_BUY_OPEN))
+		{
+			//TODO. SAVE ON DB, SAVE IN StratHistManager
+		}
+	}
+}
+
+
+/*
+	Post message to main thread to send data to client
+*/
+VOID CSignalMaker::SendSaveSignal(_In_ const char* pSignalPacket)
+{	
+	char* pData = m_pMemPool->get();
+	strcpy(pData, pSignalPacket);
+	int nLen = strlen(pData);
+
+	PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nLen, (LPARAM)pData);
+
+	char *pData2 = m_pMemPool->get();
+	strcpy(pData2, pSignalPacket);
+	PostThreadMessage(m_dwSendThread, WM_SEND_STRATEGY, (WPARAM)nLen, (LPARAM)pData2);
+}
+
+
+// Get the current chart & previous chart
+INT CSignalMaker::GetCurrChartShm(
+	char* pzGroupKey, char* pzChartNm, _Out_ ST_SHM_CHART_UNIT& shmPrev, _Out_ ST_SHM_CHART_UNIT& shmNow)
+{
+	char szChart[LEN_CHART_NM + 1];
+	int nLoop = 0;
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Get the current chart
+	BOOL bExist = m_pShmQ->DataGet(pzGroupKey, pzChartNm, (char*)&shmNow);
+
+	// retry 2 times
+	while(FALSE == bExist)
+	{
+		Sleep(1000);
+		if (++nLoop > 2) {
+			// There is no chart of the current time. Something is wrong.
+			g_log.log(LOGTP_ERR, "[%s][%s] No Chart even if receive curr price.", pzGroupKey, pzChartNm);
+			return -1;
+		}
+		bExist = m_pShmQ->DataGet(pzGroupKey, pzChartNm, (char*)&shmNow);
+
+	} // if(!bExist)
+
+	 
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Get the prev chart
+	sprintf(szChart, "%.*s", LEN_CHART_NM, shmNow.prevNm);
+
+	// NONE means the current chart is the 1st chart
+	if (strcmp(szChart, "NONE") == 0)
+		return -3;
+
+	if (FALSE == m_pShmQ->DataGet(pzGroupKey, szChart, (char*)&shmPrev))
+	{
+		g_log.log(LOGTP_ERR, "(%s)(%.*s) There is no prev chart in SHM 에 없다", pzGroupKey, LEN_CHART_NM, szChart);
+		return -2;
+	}
+	//g_log.log(LOGTP_SUCC, "직전차트(%.4s)", chart[0].Nm);
+
+
+	return 1;
+}
+
+
+
+
+
+BOOL	CSignalMaker::LoadSymbolSpec()
+{
+	//char sApplyYN[2];
+	CDBHandlerAdo db(m_pDBPool->Get());
+
+	char sQ[1024];
+	sprintf(sQ, "SELECT TICK_SIZE, DOT_CNT FROM TRADE_SECURITY_ARTC WHERE ARTC_CODE='%s'", m_zArtc );
+	if (FALSE == db->ExecQuery(sQ))
+	{
+		g_log.log(LOGTP_ERR, "Load Symbol Info failed(%s)(%s)", sQ, db->GetError());
+		return FALSE;
+	}
+
+	if (db->IsNextRow())
+	{
+		m_SymbolInfo.nDotCnt = db->GetLong("DOT_CNT");
+		sprintf(m_SymbolInfo.zTickSize, "%.*f", m_SymbolInfo.nDotCnt, db->GetDouble("TICK_SIZE"));
+		
+	} // if (db->NextRow())
+	else
+	{
+		g_log.log(LOGTP_ERR, "There is no symbol info (%s)", sQ);
+		//m_bDoStrategy = FALSE;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+//BOOL CSignalMaker::BeginSubscribe()
+//{
+//	//MCAST
+//	//SAFE_DELETE(m_pMDSub);
+//
+//	//m_pMDSub = new CNanoPubSub(TP_SUB);
+//	//return (m_pMDSub->Begin(INNER_CHANNEL_PUBSUB));
+//
+//	m_pMcastRecv = new CMCastRecv;
+//
+//	char zLocalIP[32], zMcastIP[32], port[32];
+//	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", zLocalIP);
+//	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP_MCAST", zMcastIP);
+//	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
+//
+//	BOOL bRet = m_pMcastRecv->Begin(zLocalIP, zMcastIP, atoi(port));
+//	if (bRet)
+//		g_log.log(LOGTP_SUCC, "[%s]시세수신 Init 성공(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
+//	else
+//		g_log.log(LOGTP_ERR, "[%s]시세수신 Init 실패(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
+//	return bRet;
+//}
+
+
+//
+//VOID CSignalMaker::EndSubScribe()
+//{
+//	//MCAST
+//	//m_pMDSub->End();
+//	//SAFE_DELETE(m_pMDSub);
+//	SAFE_DELETE(m_pMcastRecv);
+//}

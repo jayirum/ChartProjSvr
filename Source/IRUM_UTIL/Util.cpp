@@ -9,6 +9,23 @@
 #pragma warning(disable : 4530)
 
 
+//3F2504E0-4F89-11D3-9A0C0305E82C3301
+char* MakeGUID(char *pzGUID)
+{
+	_GUID TestGUID;
+
+	// CoCreateGuid 생성하기
+	CoCreateGuid(&TestGUID);
+
+	// 생성한 GUID를 829C1584-C57B-4dac-BCE7-6F33455F747A 와 같은 포멧으로 변환.
+	sprintf(pzGUID, "%.8X-%.4X-%.4X-%.2X%.2X-%.2X%.2X%.2X%.2X%.2X%.2X",
+		TestGUID.Data1, TestGUID.Data2, TestGUID.Data3, TestGUID.Data4[0],
+		TestGUID.Data4[1], TestGUID.Data4[2], TestGUID.Data4[3], TestGUID.Data4[4],
+		TestGUID.Data4[5], TestGUID.Data4[6], TestGUID.Data4[7]
+	);
+
+	return pzGUID;
+}
 
 DWORD	ReportException(DWORD dExitCode, const char* psPos, _Out_ char* pzMsgBuff) // 20120510
 {

@@ -426,8 +426,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	FORMAT_PRC(dLow, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
 	memcpy(existUnit.low, temp, min(sizeof(existUnit.low), strlen(temp)));
 
-	if (dNow > dOpen)	existUnit.gb[0] = DEF_CANDLE_PLUS;	// ¾çºÀ
-	if (dNow < dOpen)	existUnit.gb[0] = DEF_CANDLE_MINUS;	// À½ºÀ
+	if (dNow > dOpen)	existUnit.gb[0] = CD_PLUS_CANDLE;	// ¾çºÀ
+	if (dNow < dOpen)	existUnit.gb[0] = CD_MINUS_CANDLE;	// À½ºÀ
 	if (dNow == dOpen)	existUnit.gb[0] = '0';
 
 	memcpy(existUnit.close, recvUnit.close, sizeof(recvUnit.close));

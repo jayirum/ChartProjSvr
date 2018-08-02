@@ -52,7 +52,7 @@ private:
 	std::string		m_sLastChartNm[MAX_CHARTTP_CNT], m_sPrevChartNm[MAX_CHARTTP_CNT];
 
 	// worker thread
-	HANDLE		m_hWorkThread;
-	HANDLE		m_hWorkDie;
-	unsigned int		m_dwWorkThreadID;
+	HANDLE			m_hWorkThread;
+	HANDLE			m_hWorkDie;
+	unsigned int	m_dwWorkThreadID;
 };
