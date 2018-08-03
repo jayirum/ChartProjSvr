@@ -286,10 +286,60 @@ VOID CSignalMaker::SignalProc(char* pMarketData)
 
 }
 
+/*
+	STRATID_BUY_OPEN	Tick is 0.1% higher then Open price 
+	STRATID_SELL_OPEN	Tick is 0.1% lower then Open price
 
-VOID CSignalMaker::StratOpen(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc)
+
+*/
+VOID CSignalMaker::StratOpen(
+	char* pzGroupKey, char* pzChartNm, 
+	_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, 
+	char* pzCurrPrc)
 {
+	char zOpenPrc[LEN_PRC + 1];
+	sprintf(zOpenPrc, "%.*s", sizeof(shmNow.open), shmNow.open);
+	double dCurrPrc = atof(pzCurrPrc);
+	int nComp = CUtil::CompPrc(pzCurrPrc, strlen(pzCurrPrc), zOpenPrc, strlen(zOpenPrc), m_SymbolInfo.nDotCnt, LEN_PRC);
 
+	if (nComp == 0)
+		return;
+
+	// check buy
+	if (nComp > 0)
+	{
+		double dBasePrc = atof(zOpenPrc) * (1 + 0.001);
+		nComp = CUtil::CompPrc(dCurrPrc, dBasePrc, m_SymbolInfo.nDotCnt, LEN_PRC);
+		if (nComp > 0)
+		{
+			ST_STRAT_SAVE stSave;
+			strcpy(stSave.zGroupKey, pzGroupKey);
+			strcpy(stSave.zChartNm, pzChartNm);
+			strcpy(stSave.zStratID, STRATID_BUY_OPEN);
+			strcpy(stSave.zStratPrc, pzCurrPrc);
+			sprintf(stSave.zNote, "OpenPrc:%.*s, 0.1%Prc:%*f", LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc);
+
+			SaveSignalToDB((char*)&stSave, sizeof(stSave));
+		}
+	}
+
+	// check sell
+	if (nComp < 0)
+	{
+		double dBasePrc = atof(zOpenPrc) * (1 - 0.001);
+		nComp = CUtil::CompPrc(dCurrPrc, dBasePrc, m_SymbolInfo.nDotCnt, LEN_PRC);
+		if (nComp < 0)
+		{
+			ST_STRAT_SAVE stSave;
+			strcpy(stSave.zGroupKey, pzGroupKey);
+			strcpy(stSave.zChartNm, pzChartNm);
+			strcpy(stSave.zStratID, STRATID_SELL_OPEN);
+			strcpy(stSave.zStratPrc, pzCurrPrc);
+			sprintf(stSave.zNote, "OpenPrc:%.*s, 0.1%Prc:%*f", LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc);
+
+			SaveSignalToDB((char*)&stSave, sizeof(stSave));
+		}
+	}
 }
 
 
@@ -318,17 +368,13 @@ VOID CSignalMaker::StratClose(
 /*
 	Post message to main thread to send data to client
 */
-VOID CSignalMaker::SendSaveSignal(_In_ const char* pSignalPacket)
-{	
+VOID CSignalMaker::SaveSignalToDB(_In_ const char* pSignalPacket, int nDataLen)
+{
 	char* pData = m_pMemPool->get();
-	strcpy(pData, pSignalPacket);
-	int nLen = strlen(pData);
+	memcpy(pData, pSignalPacket, nDataLen);
 
-	PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nLen, (LPARAM)pData);
 
-	char *pData2 = m_pMemPool->get();
-	strcpy(pData2, pSignalPacket);
-	PostThreadMessage(m_dwSendThread, WM_SEND_STRATEGY, (WPARAM)nLen, (LPARAM)pData2);
+	PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData);
 }
 
 

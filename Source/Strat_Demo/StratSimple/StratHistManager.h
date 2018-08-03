@@ -16,21 +16,21 @@
 #include <string>
 #include <list>
 
-typedef struct _STRAT_INFO
-{	
-	char	zTradeDT[8];
-	char	zSysDT[8];
-	char	zStratPrc[LEN_PRC];
-	char	zStraTM[12];
-}STRAT_INFO;
+//typedef struct _STRAT_INFO
+//{	
+//	//char	zTradeDT[8];
+//	char	zSysDT[8];
+//	char	zStratPrc[LEN_PRC];
+//	char	zStraTM[12];
+//}STRAT_INFO;
 
 typedef std::map<std::string, unsigned char>	MAP_STATUS;		// CHART_NM, BIT FLAG
 
-typedef std::map<std::string, std::list<STRAT_INFO*>* >	MAP_STRAT_ID;	//	STRAT_ID
+typedef std::map<std::string, std::list<ST_STRAT_SAVE*> >	MAP_STRAT_ID;	//	STRAT_ID
 typedef std::map<std::string, MAP_STRAT_ID>				MAP_STRAT_HIST;	//	CHART_NM
 
 typedef std::map<std::string, unsigned char>::iterator	itMAP_STATUS;
-typedef std::map<std::string, std::list<STRAT_INFO*>* >::iterator	itMAP_STRAT_ID;	//	STRAT_ID
+typedef std::map<std::string, std::list<ST_STRAT_SAVE*> >::iterator	itMAP_STRAT_ID;	//	STRAT_ID
 typedef std::map<std::string, MAP_STRAT_ID>::iterator			itMAP_STRAT_HIST;	//	CHART_NM
 
 class CStratHistManager
@@ -39,8 +39,8 @@ public:
 	CStratHistManager();
 	~CStratHistManager();
 
-	void	SaveHist(char* pzChartNm, char* pzStratID, char* pzTradeDT, char* pzStratPrc);
-	int		StratExistCntSameCandle(char* pzChartNm, char* pzStratID);
+	void	SaveHist(ST_STRAT_SAVE* p);
+	//int		StratExistCntSameCandle(char* pzChartNm, char* pzStratID);
 	void	Lock(CRITICAL_SECTION* cs) { EnterCriticalSection(cs); }
 	void	Unlock(CRITICAL_SECTION* cs) { LeaveCriticalSection(cs); }
 

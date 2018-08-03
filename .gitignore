@@ -42,3 +42,6 @@ Source/Strat_Demo/StratSimple/Debug/StratSimple.log
 Source/Strat_Demo/Tester/Debug/Tester.log
 Source/Strat_Demo/Tester/Tester.vcxproj.filters
 Source/Strategy_FB/IRUMSig_FB_TCP/IRUMSig_FB.vcxproj.filters
+Source/_Log/ChartMaker.exe_20180803.log
+Source/_Log/ChartShmQueue.exe_20180803.log
+Source/_Log/StratSimple.exe_20180803.log

@@ -190,7 +190,7 @@ void RecvMDThreadFn()
 		int nLen = g_pApiRecv->GetOneRecvedPacket(pBuf);
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)", g_pApiRecv->GetMsg());
+			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
 			printf("PAKCET 이상(%s)\n", g_pApiRecv->GetMsg());
 			g_pMemPool->release(pBuf);
 			continue;
@@ -198,6 +198,9 @@ void RecvMDThreadFn()
 		if (nLen > 0)
 		{
 			pSise = (ST_PACK2CHART_EX*)pBuf;
+			char tm[9];
+			sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
+			memcpy(pSise->Time, tm, sizeof(pSise->Time));
 			//printf("[RECV](%s)\n", pBuf);
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
@@ -343,11 +346,11 @@ BOOL LoadSymbol()
 		ir_cvtcode_uro_6e(zTemp, zSymbol);
 
 		//TODO
-		//if (strncmp(zSymbol, "ESH8", 4) != 0
-		//	) {
-		//	db->Next();
-		//	continue;
-		//}
+		if (strncmp(zSymbol, "CLU18", 4) != 0
+			) {
+			db->Next();
+			continue;
+		}
 		
 		// KR 은 CLQ7, 다른곳은 CLQ17 
 		ir_cvtcode_HD_KR(zSymbol, zTemp);

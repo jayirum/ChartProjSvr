@@ -42,9 +42,7 @@ private:
 	VOID	StratClose(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc);
 	VOID	StratOpen(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc);
 
-	VOID	SendSaveSignal(_In_ const char* pSignalPacket);
-	///VOID	SaveSignalToDB(_In_ const char* pSignalPacket);
-
+	VOID	SaveSignalToDB(_In_ const char* pSignalPacket, int nDataLen);
 
 	// work thread
 	static unsigned WINAPI StratThread(LPVOID lp);

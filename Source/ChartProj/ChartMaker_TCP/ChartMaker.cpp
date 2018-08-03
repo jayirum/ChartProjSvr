@@ -282,9 +282,9 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 				for (i = (int)TP_1MIN; i < (int)TP_DAY; i++)	//일,주,월은 배치로
 				{
 					//TODO 
-					//i = (int)TP_1MIN;
+					i = (int)TP_5MIN;
 					p->ChartProc((void*)msg.lParam, (int)i);
-					//break;
+					break;
 				}
 				p->m_pMemPool->release(pData);
 			} //if (msg.message == WM_SEND_STRATEGY)
@@ -311,7 +311,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	// STRUCT KEY (chart name) 0000, 0005, 0010
 	char szChartNm[LEN_SHM_STRUCT_KEY + 1];
 	GET_CHART_NM_EX(p->Date, p->Time, tp, szChartNm);
-
+	//fnGET_CHART_NM_EX(p->Date, p->Time, tp, szChartNm);
 	// SEQNO 자리에 패킷시간을 적는다.
 	//memcpy(recvUnit.seq, p->org.Time, sizeof(p->org.Time));
 

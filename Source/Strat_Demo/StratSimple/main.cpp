@@ -239,7 +239,10 @@ static unsigned WINAPI Thread_RecvApiData(LPVOID lp)
 		if (nLen > 0)
 		{
 			pSise = (ST_PACK2CHART_EX*)pBuf;
-			//printf("[RECV](%s)\n", pBuf);
+			char tm[9];
+			sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
+			memcpy(pSise->Time, tm, sizeof(pSise->Time));
+
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
@@ -280,36 +283,24 @@ static unsigned WINAPI Thread_SaveSignal(LPVOID lp)
 				char* pData = (char*)msg.lParam;
 				int nLen = (int)msg.wParam;
 
-
-				//TODO
 				// save data
-				//PACK_HEADER_S2C* pHd = (PACK_HEADER_S2C*)pData;
-				//int nRemainLen = nLen - sizeof(PACK_HEADER_S2C);
-				//
-				//char zStratID[32]; pack_header_fields(pData, "STRAT_ID", zStratID);
-				//char zChartTp[32]; pack_header_fields(pData, "CHART_TP", zChartTp);
-				//char zChartNm[32]; pack_header_fields(pData, "CHART_NM", zChartNm);
-				//char zStratPrc[32]; pack_header_fields(pData, "STRAT_PRC", zStratPrc);
+				ST_STRAT_SAVE* p = (ST_STRAT_SAVE*)pData;
 
-				//sprintf(zQ, "EXEC STRAT_SAVE "
-				//	"'%.*s', "	//@I_COMP_ID	VARCHAR(10)
-				//	"'%s', "	//@I_STRAT_ID	VARCHAR(10)
-				//	"'%.*s', "	//@I_START_TP	CHAR(1)
-				//	"'%.*s', "	//@I_SYMBOL		VARCHAR(10)
-				//	"'%d', "	//@I_CHART_TP	INT
-				//	"'%s', "	//@I_CHART_NM	CHAR(12)
-				//	"'%s', "	//@I_PRICE		VARCHAR(15)
-				//	"'%.*s' "	//@I_DATA		VARCHAR(200)
-				//	,
-				//	sizeof(pHd->StratCompID), pHd->StratCompID
-				//	, zStratID
-				//	, sizeof(pHd->StratTp), pHd->StratTp
-				//	, sizeof(pHd->Symbol), pHd->Symbol
-				//	, atoi(zChartTp)
-				//	, zChartNm
-				//	, zStratPrc
-				//	, nRemainLen, &pData[sizeof(PACK_HEADER_S2C)]
-				//);
+				sprintf(zQ, "EXEC STRAT_SAVE "
+					"'%.*s', "	//@I_SYMBOL		VARCHAR(10)
+					"'%.*s', "	//@I_GROUP_KEY	VARCHAR(10)
+					"'%.*s', "	//@I_CHART_NM
+					"'%.*s', "	//@I_STRAT_ID
+					"'%.*s', "	//@I_STRAT_PRC
+					"'%.*s' "	//@I_NOTE
+					,
+					sizeof(p->zSymbol),p->zSymbol
+					,sizeof(p->zGroupKey), p->zGroupKey
+					, sizeof(p->zChartNm), p->zChartNm
+					, sizeof(p->zStratID), p->zStratID
+					, sizeof(p->zStratPrc), p->zStratPrc
+					, sizeof(p->zNote), p->zNote
+				);
 
 				if (FALSE == db->ExecQuery(zQ))
 				{
@@ -424,11 +415,11 @@ BOOL LoadSymbol()
 		ir_cvtcode_6e_uro(zTemp, zSymbol);
 
 		//TODO
-		//if (strncmp(zSymbol, "6EH8", 4) != 0 
-		//	) {
-		//	db->Next();
-		//	continue;
-		//}
+		if (strncmp(zSymbol, "CLU18", 4) != 0 
+			) {
+			db->Next();
+			continue;
+		}
 		
 		// KR 은 CLQ7, 다른곳은 CLQ17 
 		ir_cvtcode_6e_uro(zSymbol, zTemp);

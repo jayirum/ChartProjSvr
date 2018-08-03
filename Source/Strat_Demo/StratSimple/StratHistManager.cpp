@@ -11,6 +11,28 @@ CStratHistManager::CStratHistManager()
 
 CStratHistManager::~CStratHistManager()
 {
+	itMAP_STRAT_HIST itChart;
+	Lock(&m_csHist);
+	for (itChart = m_mapStratHist.begin(); itChart != m_mapStratHist.end();++itChart)
+	{
+		MAP_STRAT_ID mapStrat = (*itChart).second;
+		itMAP_STRAT_ID itStrat;
+		for (itStrat = mapStrat.begin(); itStrat != mapStrat.end();++itStrat)
+		{
+			std::list<ST_STRAT_SAVE*> lst = (*itStrat).second;
+			std::list<ST_STRAT_SAVE*>::iterator itList;
+			for (itList = lst.begin(); itList != lst.end();++itList)
+			{
+				ST_STRAT_SAVE* p = *itList;
+				delete p;
+			}
+			lst.clear();
+		}
+		mapStrat.clear();
+	}
+	m_mapStratHist.clear();
+	Unlock(&m_csHist);
+
 	DeleteCriticalSection(&m_csHist);
 	DeleteCriticalSection(&m_csStatus);
 }
@@ -19,22 +41,13 @@ CStratHistManager::~CStratHistManager()
 typedef std::map<std::string, std::list<STRAT_INFO> >	MAP_STRAT_ID;	//	STRAT_ID
 typedef std::map<std::string, MAP_STRAT_ID>				MAP_STRAT_HIST;	//	CHART_NM
 */
-void CStratHistManager::SaveHist(char* pzChartNm, char* pzStratID, char* pzTradeDT, char* pzStratPrc)
+void CStratHistManager::SaveHist(ST_STRAT_SAVE* p)
 {
-	STRAT_INFO*	st = new STRAT_INFO;;
-	memcpy(st->zTradeDT, pzTradeDT, sizeof(st->zTradeDT));
-	memcpy(st->zStratPrc, pzStratPrc, sizeof(st->zStratPrc));
+	ST_STRAT_SAVE*	st = new ST_STRAT_SAVE;
+	CopyMemory(st, p, sizeof(ST_STRAT_SAVE));
 
-	char zSysDT[32] = { 0, };
-	CUtil::GetToday(zSysDT);
-	memcpy(st->zSysDT, zSysDT, sizeof(st->zSysDT));
-
-	char zTM[32] = { 0, };
-	strcpy(zTM, CUtil::Get_NowTime(FALSE));
-	memcpy(st->zStraTM, zTM, sizeof(st->zStraTM));
-
-	std::string sStratID = pzStratID;
-	std::string sChartNm = pzChartNm;
+	std::string sStratID = st->zStratID;
+	std::string sChartNm = st->zChartNm;
 
 
 	Lock(&m_csHist);
@@ -42,7 +55,7 @@ void CStratHistManager::SaveHist(char* pzChartNm, char* pzStratID, char* pzTrade
 	// find Chart Name
 	itMAP_STRAT_HIST itChart = m_mapStratHist.find(sChartNm);
 
-	std::list<STRAT_INFO*>* pListInfo;
+	std::list<ST_STRAT_SAVE*> ListInfo;
 
 	if (itChart != m_mapStratHist.end())
 	{
@@ -53,18 +66,15 @@ void CStratHistManager::SaveHist(char* pzChartNm, char* pzStratID, char* pzTrade
 		
 		if (itID != mapID.end())
 		{
-			pListInfo = (*itID).second;
+			ListInfo = (*itID).second;
 		}
-		else
-		{
-			pListInfo = new std::list<STRAT_INFO*>;
-		}
+		
 
 		// PUSH to List
-		pListInfo->push_back(st);
+		ListInfo.push_back(st);
 
 		// add to MAP_STRATID
-		mapID[sStratID] = pListInfo;
+		mapID[sStratID] = ListInfo;
 
 		// add to MAP_CHART_NM
 		m_mapStratHist[sChartNm] = mapID;
@@ -72,12 +82,11 @@ void CStratHistManager::SaveHist(char* pzChartNm, char* pzStratID, char* pzTrade
 	else
 	{
 		// PUSH to List
-		pListInfo = new std::list<STRAT_INFO*>;
-		pListInfo->push_back(st);
+		ListInfo.push_back(st);
 
 		// add to MAP_STRATID
-		std::map<std::string, std::list<STRAT_INFO*>* > mapID;
-		mapID[sStratID] = pListInfo;
+		MAP_STRAT_ID mapID;
+		mapID[sStratID] = ListInfo;
 
 		// add to MAP_CHART_NM
 		m_mapStratHist[sChartNm] = mapID;
@@ -85,37 +94,11 @@ void CStratHistManager::SaveHist(char* pzChartNm, char* pzStratID, char* pzTrade
 
 	Unlock(&m_csHist);
 
+
+	//bitwise operation
 	SetStrategyExist(sChartNm, sStratID);
 }
 
-
-int CStratHistManager::StratExistCntSameCandle(char* pzChartNm, char* pzStratID)
-{
-	int nCnt = 0;
-	std::string sStratID = pzStratID;
-	std::string sChartNm = pzChartNm;
-
-	Lock(&m_csHist);
-
-	// find Chart Name
-	itMAP_STRAT_HIST itChart = m_mapStratHist.find(sChartNm);
-	if (itChart != m_mapStratHist.end())
-	{
-		MAP_STRAT_ID mapID = (*itChart).second;
-
-		// find STRAT_ID
-		itMAP_STRAT_ID itID = mapID.find(sStratID);
-
-		if (itID != mapID.end())
-		{
-			std::list<STRAT_INFO*>* pListInfo = (*itID).second;
-			nCnt = pListInfo->size();
-		}
-	}
-	Unlock(&m_csHist);
-
-	return nCnt;
-}
 
 
 /*
@@ -234,10 +217,20 @@ BOOL CStratHistManager::IsOpenSrategyExist(std::string sChartNm)
 }
 
 
-
+/*
+	if close strategy happens, off the corresponding open strategy
+*/
 void CStratHistManager::SetStrategyExist(std::string sChartNm, std::string sStratID)
 {
 	unsigned char flag;
+
+	Lock(&m_csStatus);
+
+	itMAP_STATUS it = m_mapStatus.find(sChartNm);
+	if (it != m_mapStatus.end())
+		flag = (*it).second;
+	else
+		flag = 0;
 
 	if (sStratID.compare(STRATID_BUY_OPEN) == 0)
 	{
@@ -250,13 +243,18 @@ void CStratHistManager::SetStrategyExist(std::string sChartNm, std::string sStra
 	if (sStratID.compare(STRATID_SELL_CLOSE) == 0)
 	{
 		flag ^= 4;
+
+		// off STRATID_BUY_OPEN
+		flag &= ~1;
 	}
 	if (sStratID.compare(STRATID_BUY_CLOSE) == 0)
 	{
 		flag ^= 8;
+
+		// off STRATID_BUY_OPEN
+		flag &= ~2;
 	}
 
-	Lock(&m_csStatus);
 	m_mapStatus[sChartNm] = flag;
 	Unlock(&m_csStatus);
 }
@@ -265,3 +263,32 @@ void CStratHistManager::SetStrategyNonExist(std::string sChartNm, std::string sS
 {
 
 }
+
+
+//int CStratHistManager::StratExistCntSameCandle(char* pzChartNm, char* pzStratID)
+//{
+//	int nCnt = 0;
+//	std::string sStratID = pzStratID;
+//	std::string sChartNm = pzChartNm;
+//
+//	Lock(&m_csHist);
+//
+//	// find Chart Name
+//	itMAP_STRAT_HIST itChart = m_mapStratHist.find(sChartNm);
+//	if (itChart != m_mapStratHist.end())
+//	{
+//		MAP_STRAT_ID mapID = (*itChart).second;
+//
+//		// find STRAT_ID
+//		itMAP_STRAT_ID itID = mapID.find(sStratID);
+//
+//		if (itID != mapID.end())
+//		{
+//			std::list<STRAT_INFO*>* pListInfo = (*itID).second;
+//			nCnt = pListInfo->size();
+//		}
+//	}
+//	Unlock(&m_csHist);
+//
+//	return nCnt;
+//}
