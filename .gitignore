@@ -54,3 +54,8 @@ Source/_Log/StratSimple.exe_20180807.log
 Source/_Log/StratSimple.exe_20180808.log
 Source/_Log/StratSimple.exe_20180809.log
 Source/Strat_Demo/StratSimple/Debug/StratSimple.Build.CppClean.log
+Source/_Bin/MDProtoType.exe
+Source/_Bin/MDProtoType.exe_20180809.log
+*.ipch
+Source/MudFish/MDProtoType/Debug/MDProtoType.log
+Source/MudFish/MDProtoType/Debug/MDProtoType.res

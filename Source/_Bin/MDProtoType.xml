@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <DIR>
+      <log>D:\ChartProjSvr\Source\_Log</log>
+    </DIR>
+    <DBINFO>
+	<DB_IP>110.4.89.207,10606</DB_IP>
+	<DB_ID>chartsa</DB_ID>
+	<DB_PWD>chartsairum!@#</DB_PWD>
+	<DB_NAME>IRUM</DB_NAME>
+	<DB_POOL_CNT>5</DB_POOL_CNT>
+    </DBINFO>
+    <CHART_SOCKET_INFO>
+	<IP>110.4.89.207</IP>
+	<PORT>7999</PORT>
+    </CHART_SOCKET_INFO>
+
+<!--
+// YEAR_LENGTH=1 => CLQ7, YEAR_LENGTH=2 => CLQ17
+// EURO_DOLLAR=URO, EURO_DOLLAR=6E 
+-->
+    <SYMBOL_TYPE>
+      <EURO_DOLLAR>6E</EURO_DOLLAR>
+    </SYMBOL_TYPE>
+</config>

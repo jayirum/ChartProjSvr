@@ -218,6 +218,7 @@ public:
 	
 	static void		GetMyModuleAndDir(char *o_psDir, char* o_psModule, char* o_psConfig);
 	static	char*	GetCnfgFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue );
+	static	char*	GetCnfgXMLFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue);
 	static	char*	GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue );
 	static  BOOL	GetNextConfigData(char* pzCnfgFileNm, char* pzSectionNm, char* pzPrevKeyNm, char* o_pzNextKeyNm, char* o_pzNextValue);
 	static int		GetTickGap(double dFirstPrc, double dSndPrc, int nDotCnt, double dTickSize);

@@ -1048,6 +1048,35 @@ char* CUtil::GetCnfgFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue)
 }
 
 
+/*
+config file ¿Ã∏ß
+*/
+char* CUtil::GetCnfgXMLFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue)
+{
+	char szDir[MAX_PATH], szFileNm[MAX_PATH];
+	strcpy(szDir, i_psDir);
+	if (i_psDir[strlen(i_psDir) - 1] != '\\')
+		strcat(szDir, "\\");
+
+
+	char temp[1024];
+	strcpy(temp, i_psFileNm);
+	_strupr(temp);
+	char* pos = strstr(temp, ".EXE");
+	if (pos == 0)
+	{
+		sprintf(szFileNm, "%s%s.xml", szDir, i_psFileNm);
+	}
+	else
+	{
+		int nLen = strlen(i_psFileNm) - strlen(pos);
+		sprintf(szFileNm, "%s%.*s.xml", szDir, nLen, i_psFileNm);
+	}
+
+	strcpy(o_psValue, szFileNm);
+	return o_psValue;
+}
+
 
 char* CUtil::GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue)
 {

@@ -185,7 +185,7 @@ BOOL CTcpSrv::OnAccept()
 	m_pArr[m_nEventCnt]->Overlapped.hEvent = m_hWsaEvents[m_nEventCnt] = WSACreateEvent();
 
 
-	// Post a WSARecv request to to begin receiving data on the socket
+	// Post a WSARecv request to begin receiving data on the socket
 	DWORD RecvBytes=0, Flags=0;
 	if (WSARecv(m_pArr[m_nEventCnt]->Socket, &(m_pArr[m_nEventCnt]->wsaBuf),
 		1, &RecvBytes, &Flags, &(m_pArr[m_nEventCnt]->Overlapped), NULL) == SOCKET_ERROR)
