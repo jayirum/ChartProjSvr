@@ -179,15 +179,25 @@ void RecvMDThreadFn()
 
 	while (g_bContinue)
 	{
-		Sleep(1);
+		Sleep(100);
 		if (g_pApiRecv->HappenedRecvError())
 		{
 			g_log.log(LOGTP_ERR, "TCP RECV ERROR:%s", g_pApiRecv->GetMsg());
 			printf("TCP RECV ERROR:%s\n", g_pApiRecv->GetMsg()); 
 			continue;
 		}
-		char* pBuf = g_pMemPool->get();
+		char* pBuf = NULL;;
+		if (!g_pMemPool->get(&pBuf))
+		{
+			g_log.log(LOGTP_ERR, "memory pool get error");
+			printf("memory pool get error\n");
+			continue;
+		}
 		int nLen = g_pApiRecv->GetOneRecvedPacket(pBuf);
+		if (nLen == 0){
+			g_pMemPool->release(pBuf);
+			continue;
+		}
 		if (nLen < 0)
 		{
 			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
@@ -195,6 +205,7 @@ void RecvMDThreadFn()
 			g_pMemPool->release(pBuf);
 			continue;
 		}
+
 		if (nLen > 0)
 		{
 			pSise = (ST_PACK2CHART_EX*)pBuf;
@@ -209,12 +220,13 @@ void RecvMDThreadFn()
 			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
 			{
+				g_pMemPool->release(pBuf);
 				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 			}
 			else
 			{
 				CChartMaker* p = (*it).second;
-				PostThreadMessage(p->GetMyThreadID(), WM_CHART_DATA, 0, (LPARAM)pBuf);
+				PostThreadMessage(p->GetChartThreadId(), WM_RECV_API_MD, 0, (LPARAM)pBuf);
 				//printf("[RECV](%s)\n", pBuf);
 				//g_log.log(LOGTP_SUCC, "[RECV-2](%.80s)", pBuf);
 			}

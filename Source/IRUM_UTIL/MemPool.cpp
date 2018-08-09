@@ -59,39 +59,53 @@ void CMemPool::clear()
 	UNLOCK();
 }
 
-char*	CMemPool::get()
+bool	CMemPool::get(_Out_ char** pBuf)
 {
-	char* p;
+	
 	LOCK();
 	try
 	{
-		if (m_listPool.empty())
+		if (m_listPool.size()==0)
 		{
-			p = new char[m_nBlockSize];
+			*pBuf = new char[m_nBlockSize];
+			//printf("new.....%x\n", *pBuf);
 		}
 		else
 		{
 			
-			p = *m_listPool.begin();
+			char* p = *m_listPool.begin();
 			m_listPool.pop_front();
+
+			//printf("\tmem pop:%d.%x\n", m_listPool.size(), p);
+			if (!p)
+				*pBuf = new char[m_nBlockSize];
+			else
+				*pBuf = p;
+
 		}
-		ZeroMemory(p, m_nBlockSize);
+			
+		ZeroMemory(*pBuf, m_nBlockSize);
 	}
 	catch(...)
 	{
 		UNLOCK();
-		return NULL;
+		return (*pBuf!=NULL);
 	}
 	UNLOCK();
-	return p;
+	return (*pBuf!=NULL);
 }
 
 void	CMemPool::release(char* ptr)
 {
+//	printf("\t\t-----------release(%x)\n", ptr);
+	if (!ptr)
+		return;
 	LOCK();
 	__try {
-		if (m_listPool.size() < m_nMaxAlloc)
+		if (m_listPool.size() < m_nMaxAlloc) {
 			m_listPool.push_back(ptr);
+			//printf("mem push:%d.%x\n", m_listPool.size(),ptr);
+		}			
 		else
 			delete[] ptr;
 	}

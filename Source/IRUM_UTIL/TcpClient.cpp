@@ -232,6 +232,8 @@ VOID CTcpClient::SetNagle(BOOL bOn)
 
 int	 CTcpClient::GetOneRecvedPacket(char* pOutBuf)
 {
+	if (!pOutBuf)
+		return -1;
 	return m_pktHandler.GetOnePkt(pOutBuf);
 }
 

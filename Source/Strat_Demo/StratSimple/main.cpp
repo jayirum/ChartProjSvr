@@ -122,7 +122,7 @@ int  _Start()
 		return 0;
 	
 
-	//if (!InitSigSend())
+	//TODO if (!InitSigSend())
 	//	return 0;
 
 	//if (!InitChartShm())
@@ -137,7 +137,7 @@ int  _Start()
 	g_hSaveThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveSignal, NULL, 0, &g_unSaveThread);
 
 	// Thread for sending signal data to client
-	//g_hSendThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_SendSignal, NULL, 0, &g_unSendThread);
+	g_hSendThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_SendSignal, NULL, 0, &g_unSendThread);
 
 
 	if (!LoadSymbol())
@@ -227,8 +227,16 @@ static unsigned WINAPI Thread_RecvApiData(LPVOID lp)
 			printf("TCP RECV ERROR:%s\n", g_pApiRecv->GetMsg());
 			continue;
 		}
-		char* pBuf = g_pMemPool->get();
+		char* pBuf = NULL;		
+		if (!g_pMemPool->get(&pBuf)) {
+			g_log.log(LOGTP_ERR, "Memory Pool error");
+			continue;
+		}
 		int nLen = g_pApiRecv->GetOneRecvedPacket(pBuf);
+		if (nLen == 0) {
+			g_pMemPool->release(pBuf);
+			continue;
+		}
 		if (nLen < 0)
 		{
 			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)", g_pApiRecv->GetMsg());
@@ -250,12 +258,13 @@ static unsigned WINAPI Thread_RecvApiData(LPVOID lp)
 			std::map<std::string, CSignalMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
 			{
+				g_pMemPool->release(pBuf);
 				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 			}
 			else
 			{
 				CSignalMaker* p = (*it).second;
-				PostThreadMessage(p->GetMyThreadID(), WM_CHART_DATA, 0, (LPARAM)pBuf);
+				PostThreadMessage(p->GetWorkerThreadId(), WM_RECV_API_MD, (WPARAM)sizeof(ST_PACK2CHART_EX), (LPARAM)pBuf);
 				//printf("[RECV](%s)\n", pBuf);
 				//g_log.log(LOGTP_SUCC, "[RECV-2](%.80s)", pBuf);
 			}
@@ -284,7 +293,7 @@ static unsigned WINAPI Thread_SaveSignal(LPVOID lp)
 				int nLen = (int)msg.wParam;
 
 				// save data
-				ST_STRAT_SAVE* p = (ST_STRAT_SAVE*)pData;
+				ST_STRAT_REAL_CLIENT* p = (ST_STRAT_REAL_CLIENT*)pData;
 
 				sprintf(zQ, "EXEC STRAT_SAVE "
 					"'%.*s', "	//@I_SYMBOL		VARCHAR(10)
@@ -292,14 +301,18 @@ static unsigned WINAPI Thread_SaveSignal(LPVOID lp)
 					"'%.*s', "	//@I_CHART_NM
 					"'%.*s', "	//@I_STRAT_ID
 					"'%.*s', "	//@I_STRAT_PRC
+					"'%.*s', "	//@I_API_DT
+					"'%.*s', "	//@I_API_TM
 					"'%.*s' "	//@I_NOTE
 					,
-					sizeof(p->zSymbol),p->zSymbol
-					,sizeof(p->zGroupKey), p->zGroupKey
-					, sizeof(p->zChartNm), p->zChartNm
-					, sizeof(p->zStratID), p->zStratID
-					, sizeof(p->zStratPrc), p->zStratPrc
-					, sizeof(p->zNote), p->zNote
+					sizeof(p->Symbol),p->Symbol
+					,sizeof(p->GroupKey), p->GroupKey
+					, sizeof(p->ChartNm), p->ChartNm
+					, sizeof(p->StratID), p->StratID
+					, sizeof(p->StratPrc), p->StratPrc
+					, sizeof(p->ApiDT), p->ApiDT
+					, sizeof(p->ApiTM), p->ApiTM
+					, sizeof(p->Note), p->Note
 				);
 
 				if (FALSE == db->ExecQuery(zQ))
@@ -341,17 +354,6 @@ static unsigned WINAPI Thread_SendSignal(LPVOID lp)
 				else if (nSentLen > 0) {
 					g_log.log(LOGTP_SUCC, "[Send Client:%d,](%.*s)", nLen, nLen, pData);
 				}
-
-
-				// IRUMStrat_FB 에게 전달
-				//nSentLen = g_pSendSig2Ord->SendData(pData, nLen);
-				//if (nErrCode < 0) {
-				//	g_log.log(LOGTP_FATAL, "Send Strategy to Ord Failed(%s)", g_pSendSig2Clnt->GetMsg());
-				//}
-				//else if (nSentLen > 0) {
-				//	//g_log.log(LOGTP_SUCC, "Send Strategy to Ord OK");
-				//}
-
 				g_pMemPool->release(pData);
 			} //if (msg.message == WM_SEND_STRATEGY)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))

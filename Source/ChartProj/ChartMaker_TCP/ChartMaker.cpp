@@ -239,23 +239,18 @@ VOID CChartMaker::ThreadFunc()
 			case WM_CHART_ALL_KILL:
 				g_log.log(LOGTP_SUCC, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
 				break;
-			case WM_CHART_DATA:
-			{
-				ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)msg.lParam;		// MEM POOL
-				if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0) {
-					g_pMemPool->release((char*)msg.lParam); // main 에서 넘어온 메모리
-					continue;
-				}
-				char* pData = m_pMemPool->get();
-				strcpy(pData, (char*)msg.lParam);
-				int nLen = strlen(pData);
+			//case WM_CHART_DATA:
+			//{
+			//	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)msg.lParam;		// MEM POOL
+			//	if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0) {
+			//		g_pMemPool->release((char*)msg.lParam); // main 에서 넘어온 메모리
+			//		continue;
+			//	}
 
-				PostThreadMessage(m_dwWorkThreadID, WM_RECV_API_MD, (WPARAM)nLen, (LPARAM)pData);
+			//	PostThreadMessage(m_dwWorkThreadID, WM_RECV_API_MD, msg.wParam, msg.lParam);
 
-				// main 에서 넘어온 메모리
-				g_pMemPool->release((char*)msg.lParam);
-				break;
-			}
+			//	break;
+			//}
 			} // switch (msg.message)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
@@ -283,6 +278,8 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 				{
 					//TODO 
 					i = (int)TP_5MIN;
+					p->ChartProc((void*)msg.lParam, (int)i); 
+					i = (int)TP_10MIN;
 					p->ChartProc((void*)msg.lParam, (int)i);
 					break;
 				}

@@ -19,11 +19,11 @@ CStratHistManager::~CStratHistManager()
 		itMAP_STRAT_ID itStrat;
 		for (itStrat = mapStrat.begin(); itStrat != mapStrat.end();++itStrat)
 		{
-			std::list<ST_STRAT_SAVE*> lst = (*itStrat).second;
-			std::list<ST_STRAT_SAVE*>::iterator itList;
+			std::list<ST_STRAT_REAL_CLIENT*> lst = (*itStrat).second;
+			std::list<ST_STRAT_REAL_CLIENT*>::iterator itList;
 			for (itList = lst.begin(); itList != lst.end();++itList)
 			{
-				ST_STRAT_SAVE* p = *itList;
+				ST_STRAT_REAL_CLIENT* p = *itList;
 				delete p;
 			}
 			lst.clear();
@@ -41,13 +41,13 @@ CStratHistManager::~CStratHistManager()
 typedef std::map<std::string, std::list<STRAT_INFO> >	MAP_STRAT_ID;	//	STRAT_ID
 typedef std::map<std::string, MAP_STRAT_ID>				MAP_STRAT_HIST;	//	CHART_NM
 */
-void CStratHistManager::SaveHist(ST_STRAT_SAVE* p)
+void CStratHistManager::SaveHist(ST_STRAT_REAL_CLIENT* p)
 {
-	ST_STRAT_SAVE*	st = new ST_STRAT_SAVE;
-	CopyMemory(st, p, sizeof(ST_STRAT_SAVE));
+	ST_STRAT_REAL_CLIENT*	st = new ST_STRAT_REAL_CLIENT;
+	CopyMemory(st, p, sizeof(ST_STRAT_REAL_CLIENT));
 
-	std::string sStratID = st->zStratID;
-	std::string sChartNm = st->zChartNm;
+	std::string sStratID = st->StratID;
+	std::string sChartNm = st->ChartNm;
 
 
 	Lock(&m_csHist);
@@ -55,7 +55,7 @@ void CStratHistManager::SaveHist(ST_STRAT_SAVE* p)
 	// find Chart Name
 	itMAP_STRAT_HIST itChart = m_mapStratHist.find(sChartNm);
 
-	std::list<ST_STRAT_SAVE*> ListInfo;
+	std::list<ST_STRAT_REAL_CLIENT*> ListInfo;
 
 	if (itChart != m_mapStratHist.end())
 	{

@@ -15,7 +15,7 @@ public:
 	CMemPool(int nPreAlloc, int nMaxAlloc, int nBlockSize);
 	virtual ~CMemPool();
 
-	char*	get();
+	bool	get(_Out_ char** pBuf);
 	void	release(char* ptr);
 	int		available() { return m_listPool.size(); }
 private:

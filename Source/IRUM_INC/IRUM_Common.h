@@ -335,6 +335,21 @@ typedef struct _ST_PACK2CHART_EX
 
 
    
+// real-time strategy packet from SERVER to CLIENT
+typedef struct _ST_STRAT_REAL_CLIENT
+{
+	char	Len[SIZE_PACKET_LEN];	// 전체 길이
+	char	Symbol[LEN_SYMBOL];
+	char	GroupKey[LEN_GROUP_KEY];
+	char	ChartNm[LEN_CHART_NM];
+	char	StratID[32];
+	char	StratPrc[LEN_PRC];
+	char	ApiDT[8];
+	char	ApiTM[8];	//hh:mm:ss
+	char	Note[100];
+	char	EOL[1];
+	
+}ST_STRAT_REAL_CLIENT;
 
 
 // 관리자 작업통보 소켓 버퍼

@@ -19,7 +19,7 @@ class CSignalMaker : public CBaseThread
 public:
 	CSignalMaker(char* pzSymbol, char* pzArtcCode, CMemPool* pMemPool, /*CQueueShm* pShm,*/ unsigned dwSaveThread, unsigned dwSendThread);
 	~CSignalMaker();
-
+	unsigned int GetWorkerThreadId() { return m_dwStratThreadID; }
 private:
 	BOOL	LoadSymbolSpec();		// 전략을 위한 공통정보
 
@@ -39,10 +39,15 @@ private:
 	
 	INT		GetCurrChartShm(char* pzGroupKey, char* pzChartNm, _Out_ ST_SHM_CHART_UNIT& shmPrev, _Out_ ST_SHM_CHART_UNIT& shmNow);
 
-	VOID	StratClose(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc);
-	VOID	StratOpen(char* pzGroupKey, char* pzChartNm, _In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc);
+	VOID	StratClose(char* pzGroupKey, char* pzChartNm, 
+		_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc,
+		char* pzApiDT, char* pzApiTm);
+	VOID	StratOpen(char* pzGroupKey, char* pzChartNm, 
+		_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, char* pzCurrPrc,
+		char* pzApiDT, char* pzApiTm);
 
-	VOID	SaveSignalToDB(_In_ const char* pSignalPacket, int nDataLen);
+	VOID	SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen);
+	
 
 	// work thread
 	static unsigned WINAPI StratThread(LPVOID lp);

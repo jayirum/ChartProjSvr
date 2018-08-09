@@ -24,7 +24,7 @@ CSignalMaker::CSignalMaker(char* pzSymbol, char* pzArtcCode, CMemPool* pMemPool,
 	strcpy(m_zArtc, pzArtcCode);
 	GET_SHM_NM(pzArtcCode, m_zShmNm);
 	GET_SHM_LOCK_NM(pzArtcCode, m_zMutexNm);
-	m_nChartTp = TP_5MIN;	//TODO
+	m_nChartTp = TP_10MIN;	// TP_5MIN;	//TODO
 	GET_GROUP_KEY(m_zSymbol, m_nChartTp, m_zGroupKey);
 	
 
@@ -179,23 +179,11 @@ VOID CSignalMaker::MainFunc()
 				g_log.log(LOGTP_SUCC, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
 				break;
 			}
-			case WM_CHART_DATA:
-			{
-				ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)msg.lParam;		// MEM POOL
-				//if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0) {
-				//	g_pMemPool->release((char*)msg.lParam); // main 에서 넘어온 메모리
-				//	continue;
-				//}
-				char* pData = m_pMemPool->get();
-				strcpy(pData, (char*)msg.lParam);
-				int nLen = strlen(pData);
-
-				PostThreadMessage(m_dwStratThreadID, WM_RECV_API_MD, (WPARAM)nLen, (LPARAM)pData);
-
-				// main 에서 넘어온 메모리
-				g_pMemPool->release((char*)msg.lParam);
-				break;
-			}
+			//case WM_CHART_DATA:
+			//{
+			//	PostThreadMessage(m_dwStratThreadID, WM_RECV_API_MD, msg.wParam, msg.lParam);
+			//	break;
+			//}
 			}
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 
@@ -233,7 +221,6 @@ VOID CSignalMaker::SignalProc(char* pMarketData)
 {
 	char zNowPackTime[32] = { 0, };
 	char zPackDT[32] = { 0, };
-	char zGroupKey[32] = { 0, };
 	char zNowChartNm[32] = { 0, };
 	char zCurrPrc[LEN_PRC + 1] = { 0, };
 
@@ -260,11 +247,11 @@ VOID CSignalMaker::SignalProc(char* pMarketData)
 	ST_SHM_CHART_UNIT	nowChart, prevChart;
 
 	// Get Last ChartShm and previous ChartShm	
-	INT nRet = GetCurrChartShm(zGroupKey, zNowChartNm, prevChart, nowChart);
+	INT nRet = GetCurrChartShm(m_zGroupKey, zNowChartNm, prevChart, nowChart);
 	if (nRet<0) {
 		if (nRet == -1) {
 			g_log.log(LOGTP_ERR, "[SignalProc]Get Shm Info error(Packet Time:%s,Symbol:%.5s) (GroupKey:%s, ChartNM:%s)",
-				zNowPackTime, pPack->ShortCode, zGroupKey, zNowChartNm);
+				zNowPackTime, pPack->ShortCode, m_zGroupKey, zNowChartNm);
 		}
 		return;
 	}
@@ -275,13 +262,13 @@ VOID CSignalMaker::SignalProc(char* pMarketData)
 
 	if( strcmp(zStratID,STRAT_OPEN)==0 )
 	{
-		StratOpen(zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc);
+		StratOpen(m_zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc, zPackDT, zNowPackTime);
 	}
 
 	if (strcmp(zStratID, STRATID_SELL_CLOSE) == 0 || 
 		strcmp(zStratID, STRATID_BUY_CLOSE) == 0 )
 	{
-		StratClose(zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc);
+		StratClose(m_zGroupKey, zNowChartNm, prevChart, nowChart, zCurrPrc, zPackDT, zNowPackTime);
 	}
 
 }
@@ -295,7 +282,7 @@ VOID CSignalMaker::SignalProc(char* pMarketData)
 VOID CSignalMaker::StratOpen(
 	char* pzGroupKey, char* pzChartNm, 
 	_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow, 
-	char* pzCurrPrc)
+	char* pzCurrPrc,	char* pzApiDT, char* pzApiTM)
 {
 	char zOpenPrc[LEN_PRC + 1];
 	sprintf(zOpenPrc, "%.*s", sizeof(shmNow.open), shmNow.open);
@@ -305,39 +292,66 @@ VOID CSignalMaker::StratOpen(
 	if (nComp == 0)
 		return;
 
+	char tmp[128];
+
 	// check buy
 	if (nComp > 0)
 	{
-		double dBasePrc = atof(zOpenPrc) * (1 + 0.001);
+		//TODO double dBasePrc = atof(zOpenPrc) * (1 + 0.001);
+		double dBasePrc = atof(zOpenPrc) + 0.02;
 		nComp = CUtil::CompPrc(dCurrPrc, dBasePrc, m_SymbolInfo.nDotCnt, LEN_PRC);
 		if (nComp > 0)
 		{
-			ST_STRAT_SAVE stSave;
-			strcpy(stSave.zGroupKey, pzGroupKey);
-			strcpy(stSave.zChartNm, pzChartNm);
-			strcpy(stSave.zStratID, STRATID_BUY_OPEN);
-			strcpy(stSave.zStratPrc, pzCurrPrc);
-			sprintf(stSave.zNote, "OpenPrc:%.*s, 0.1%Prc:%*f", LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc);
+			ST_STRAT_REAL_CLIENT stSave;
+			memset(&stSave, 0x20, sizeof(stSave));
+			
+			memcpy(stSave.Symbol, m_zSymbol,strlen(m_zSymbol));
+			memcpy(stSave.GroupKey, pzGroupKey, strlen(pzGroupKey));
+			memcpy(stSave.ChartNm, pzChartNm, strlen(pzChartNm));
+			memcpy(stSave.StratID, STRATID_BUY_OPEN, strlen(STRATID_BUY_OPEN));
+			memcpy(stSave.StratPrc, pzCurrPrc, strlen(pzCurrPrc));
+			memcpy(stSave.ApiDT, pzApiDT, strlen(pzApiDT));
+			memcpy(stSave.ApiTM, pzApiTM, strlen(pzApiTM));
+			sprintf(tmp, "OpenPrc:%.*s, BasePrc:%*f, CurrPrc:%.*s"
+				, LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc, LEN_PRC, pzCurrPrc);
+			memcpy(stSave.Note, tmp, strlen(tmp));
+			stSave.EOL[0] = DEF_EOL;
 
-			SaveSignalToDB((char*)&stSave, sizeof(stSave));
+			m_stratHist.SetStrategyExist(pzChartNm, STRATID_BUY_OPEN);
+			SendSaveSignal((char*)&stSave, sizeof(stSave));
+			g_log.log(LOGTP_SUCC, "STRATID_BUY_OPEN(%.100s)", stSave.Note);
+			printf("STRATID_BUY_OPEN(%.80s)\n", stSave.Note);
 		}
 	}
 
 	// check sell
 	if (nComp < 0)
 	{
-		double dBasePrc = atof(zOpenPrc) * (1 - 0.001);
+		//TODO double dBasePrc = atof(zOpenPrc) * (1 - 0.001);
+		double dBasePrc = atof(zOpenPrc)  - 0.02;
 		nComp = CUtil::CompPrc(dCurrPrc, dBasePrc, m_SymbolInfo.nDotCnt, LEN_PRC);
 		if (nComp < 0)
 		{
-			ST_STRAT_SAVE stSave;
-			strcpy(stSave.zGroupKey, pzGroupKey);
-			strcpy(stSave.zChartNm, pzChartNm);
-			strcpy(stSave.zStratID, STRATID_SELL_OPEN);
-			strcpy(stSave.zStratPrc, pzCurrPrc);
-			sprintf(stSave.zNote, "OpenPrc:%.*s, 0.1%Prc:%*f", LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc);
+			ST_STRAT_REAL_CLIENT stSave;
+			memset(&stSave, 0x20, sizeof(stSave));
 
-			SaveSignalToDB((char*)&stSave, sizeof(stSave));
+			memcpy(stSave.Symbol, m_zSymbol, strlen(m_zSymbol));
+			memcpy(stSave.GroupKey, pzGroupKey, strlen(pzGroupKey));
+			memcpy(stSave.ChartNm, pzChartNm, strlen(pzChartNm));
+			memcpy(stSave.StratID, STRATID_SELL_OPEN, strlen(STRATID_SELL_OPEN));
+			memcpy(stSave.StratPrc, pzCurrPrc, strlen(pzCurrPrc));
+			memcpy(stSave.ApiDT, pzApiDT, strlen(pzApiDT));
+			memcpy(stSave.ApiTM, pzApiTM, strlen(pzApiTM));
+			sprintf(tmp, "OpenPrc:%.*s, BasePrc:%*f, CurrPrc:%.*s"
+				, LEN_PRC, zOpenPrc, LEN_PRC, dBasePrc, LEN_PRC, pzCurrPrc);
+			memcpy(stSave.Note, tmp, strlen(tmp));
+			stSave.EOL[0] = DEF_EOL;
+
+			m_stratHist.SetStrategyExist(pzChartNm, STRATID_SELL_OPEN);
+			SendSaveSignal((char*)&stSave, sizeof(stSave));
+			g_log.log(LOGTP_SUCC, "STRATID_SELL_OPEN(%.100s)", stSave.Note);
+			printf("STRATID_SELL_OPEN(%.80s)\n", stSave.Note);
+
 		}
 	}
 }
@@ -346,8 +360,9 @@ VOID CSignalMaker::StratOpen(
 VOID CSignalMaker::StratClose(
 	char* pzGroupKey, char* pzChartNm, 
 	_In_ ST_SHM_CHART_UNIT& shmPrev, _In_ ST_SHM_CHART_UNIT& shmNow,
-	char* pzCurrPrc)
+	char* pzCurrPrc, char* pzApiDT, char* pzApiTM)
 {
+	char tmp[128];
 	char zOpenPrc[32] = { 0, };
 	sprintf(zOpenPrc, "%.*s", sizeof(shmNow.open), shmNow.open);
 
@@ -356,10 +371,59 @@ VOID CSignalMaker::StratClose(
 	// open prc > curr prc ==> sell close
 	if (nComp > 0)
 	{
-		//TODO. check buy open
+		// check buy open
 		if (m_stratHist.IsSrategyExist(pzChartNm, STRATID_BUY_OPEN))
 		{
-			//TODO. SAVE ON DB, SAVE IN StratHistManager
+			ST_STRAT_REAL_CLIENT stSave;
+			memset(&stSave, 0x20, sizeof(stSave));
+
+			memcpy(stSave.Symbol, m_zSymbol, strlen(m_zSymbol));
+			memcpy(stSave.GroupKey, pzGroupKey, strlen(pzGroupKey));
+			memcpy(stSave.ChartNm, pzChartNm, strlen(pzChartNm));
+			memcpy(stSave.StratID, STRATID_SELL_CLOSE, strlen(STRATID_SELL_CLOSE));
+			memcpy(stSave.StratPrc, pzCurrPrc, strlen(pzCurrPrc));
+			memcpy(stSave.ApiDT, pzApiDT, strlen(pzApiDT));
+			memcpy(stSave.ApiTM, pzApiTM, strlen(pzApiTM));
+			sprintf(tmp, "OpenPrc:%.*s > CurrPrc:%.*s", LEN_PRC, zOpenPrc, LEN_PRC, pzCurrPrc);
+			memcpy(stSave.Note, tmp, strlen(tmp));
+			stSave.EOL[0] = DEF_EOL;
+
+			m_stratHist.SetStrategyExist(pzChartNm, STRATID_SELL_CLOSE);
+	
+			//	SAVE ON DB, SAVE IN StratHistManager
+			SendSaveSignal((char*)&stSave, sizeof(stSave));
+			g_log.log(LOGTP_SUCC, "STRATID_SELL_CLOSE(%.100s)", stSave.Note);
+			printf("STRATID_SELL_CLOSE(%.80s)\n", stSave.Note);
+
+		}
+	}
+	// open prc < curr prc ==> buy close
+	else if (nComp < 0)
+	{
+		// check buy open
+		if (m_stratHist.IsSrategyExist(pzChartNm, STRATID_SELL_OPEN))
+		{
+			ST_STRAT_REAL_CLIENT stSave;
+			memset(&stSave, 0x20, sizeof(stSave));
+
+			memcpy(stSave.Symbol, m_zSymbol, strlen(m_zSymbol));
+			memcpy(stSave.GroupKey, pzGroupKey, strlen(pzGroupKey));
+			memcpy(stSave.ChartNm, pzChartNm, strlen(pzChartNm));
+			memcpy(stSave.StratID, STRATID_BUY_CLOSE, strlen(STRATID_BUY_CLOSE));
+			memcpy(stSave.StratPrc, pzCurrPrc, strlen(pzCurrPrc));
+			memcpy(stSave.ApiDT, pzApiDT, strlen(pzApiDT));
+			memcpy(stSave.ApiTM, pzApiTM, strlen(pzApiTM));
+			sprintf(tmp, "OpenPrc:%.*s < CurrPrc:%.*s", LEN_PRC, zOpenPrc, LEN_PRC, pzCurrPrc);
+			memcpy(stSave.Note, tmp, strlen(tmp));
+			stSave.EOL[0] = DEF_EOL;
+
+			m_stratHist.SetStrategyExist(pzChartNm, STRATID_BUY_CLOSE);
+
+			//	SAVE ON DB, SAVE IN StratHistManager
+			SendSaveSignal((char*)&stSave, sizeof(stSave));
+			g_log.log(LOGTP_SUCC, "STRATID_BUY_CLOSE(%.100s)", stSave.Note);
+			printf("STRATID_BUY_CLOSE(%.80s)\n", stSave.Note);
+
 		}
 	}
 }
@@ -368,13 +432,18 @@ VOID CSignalMaker::StratClose(
 /*
 	Post message to main thread to send data to client
 */
-VOID CSignalMaker::SaveSignalToDB(_In_ const char* pSignalPacket, int nDataLen)
+VOID CSignalMaker::SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen)
 {
-	char* pData = m_pMemPool->get();
+	char* pData = NULL;
+	if (m_pMemPool->get(&pData))
+	{
+		memcpy(pData, pSignalPacket, nDataLen);
+		PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData);
+	}
+	//TODO
+	/*char *pData2 = m_pMemPool->get();
 	memcpy(pData, pSignalPacket, nDataLen);
-
-
-	PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData);
+	PostThreadMessage(m_dwSendThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData2);*/
 }
 
 

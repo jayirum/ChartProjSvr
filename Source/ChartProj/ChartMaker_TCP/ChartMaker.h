@@ -32,7 +32,7 @@ public:
 
 	BOOL	InitMemPool();
 	VOID	CloseMemPool();
-
+	unsigned int GetChartThreadId() {return m_dwWorkThreadID;}
 private:
 	BOOL	IsMySymbol(char* pSise);
 	VOID	ThreadFunc();

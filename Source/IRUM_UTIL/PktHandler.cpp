@@ -42,6 +42,8 @@ BOOL CPktHandler::AddPkt(char* pBuf, int nSize)
 
 int	CPktHandler::GetOnePkt(char* pOutBuf)
 {
+	if (!pOutBuf) return -1;
+
 	Lock();
 	int nRet = GetOnePktFn(pOutBuf);
 	Unlock();
@@ -60,6 +62,7 @@ int	CPktHandler::GetOnePkt(char* pOutBuf)
 */
 int	CPktHandler::GetOnePktFn(char* pOutBuf)
 {
+	if (!pOutBuf) return -1;
 
 	if (m_strBuf.empty()) {
 		return 0;
