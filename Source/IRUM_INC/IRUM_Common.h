@@ -43,6 +43,7 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define	LEN_SHM_STRUCT_KEY	LEN_CHART_NM	// // STRUCT KEY (차트이름) 0000, 0005, 0010
 #define LEN_INDICHART_NM	12	//yyyymmddhhmm
 #define LEN_QTY				10
+#define LEN_PL				10
 #define LEN_ACNT_NO	11
 #define LEN_ORD_NO	5
 //#define LEN_ORD_QTY	10
@@ -59,6 +60,10 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 //DEF-BUY, DEF-SELL
 #define CD_BUY	'B'
 #define CD_SELL	'S'
+
+//DEF-OPEN, DEF-CLOSE
+#define CD_OPEN		'O'
+#define CD_CLOSE	'C'
 
 
 //DEF-ORD_TP
@@ -194,6 +199,7 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define WM_SEND_STRATEGY	WM_USER + 808	// Send signal to client
 #define WM_RECV_CLIENT		WM_USER + 809	// recv data from client - TR, real
 #define WM_RECV_API_MD		WM_USER + 810	// recv data from client - TR, real
+#define WM_SENDORD_API		WM_USER + 811
 #define WM_DIE				WM_USER + 999
 
 
@@ -350,6 +356,42 @@ typedef struct _ST_STRAT_REAL_CLIENT
 	char	EOL[1];
 	
 }ST_STRAT_REAL_CLIENT;
+
+
+/*
+// MUBFISH 전략발동. 주문패킷
+
+//DEF-BUY, DEF-SELL
+#define CD_BUY	'B'
+#define CD_SELL	'S'
+
+
+//DEF-ORD_TP
+#define CD_ORD_TP_LIMIT		'1' // 지정가
+#define CD_ORD_TP_MARKET	'2' // 시장가
+#define CD_ORD_TP_SL		'3' // 손절
+#define CD_ORD_TP_PT		'4' // 익절
+#define CD_ORD_TP_SLPT		'5'	// 손절+익절
+#define CD_ORD_TP_MIT		'6'
+*/
+typedef struct _ST_MF_STRAT_ORD
+{
+	char	Symbol[LEN_SYMBOL];
+	char	StratID[32];
+	char	ClrTp[1];				// CD_OPEN,CD_CLOSE
+	char	Side[1];				// CD_BUY, CD_SELL
+	char	OpenPrc[LEN_PRC];
+	char	BasePrc[LEN_PRC];
+	char	CurrPrc[LEN_PRC];
+	char	BestPrc[LEN_PRC];		// 진입 후 최고좋은 가격
+	char	BestPL[LEN_PL];			// 최고가격의 이익
+	char	CurrPL[LEN_PL];			// 현재가격의 이익
+	char	OrdProtTp[1];			// CD_ORD_TP_MARKET, CD_ORD_TP_LIMIT
+	char	OrdTM[12];				// hh:mm:ss.mmm
+	char	ApiDT[8];
+	char	ApiTM[8];	//hh:mm:ss
+	char	Note[100];
+}ST_MF_STRAT_ORD;
 
 
 // 관리자 작업통보 소켓 버퍼

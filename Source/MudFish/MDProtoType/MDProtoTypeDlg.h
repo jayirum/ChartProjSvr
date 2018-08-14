@@ -6,9 +6,12 @@
 #pragma warning(disable:4996)
 
 #include "../../IRUM_UTIL/BlockDup.h"
+#include "../../IRUM_UTIL/MemPool.h"
+#include "../../IRUM_UTIL/TcpClient.h"
+#include "StratMaker.h"
 #include "TrayIconMng.h"
 #include "afxwin.h"
-
+#include <map>
 
 // CMDProtoTypeDlg 대화 상자
 class CMDProtoTypeDlg : public CDialogEx
@@ -36,8 +39,29 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 
+protected:
+	static unsigned WINAPI Thread_TickDataRecv(LPVOID lp);
+	static unsigned WINAPI Thread_SendOrd(LPVOID lp);
+
+	BOOL	Begin();
+	VOID	End();
+
 private:
-	CBlockDup				m_Dup;
+	CBlockDup		m_Dup;
+	CMemPool		*m_pMemPool;
+	CTcpClient		*m_pApiRecv;
+
+	std::string		m_sApiIP;
+	int				m_nApiPort;
+
+	HANDLE			m_hRecvThread, m_hOrdSendThread;
+	unsigned int	m_unRecvThread, m_unOrdSendThread;
+
+	std::map<std::string, CStratMaker*>		m_mapStrat;
+	CStratMaker* m_pStrat;
+	CString m_sSymbol;
+	CString m_sOpenPrc;
+	CString m_sCloseTime;
 
 	//TRAYICON
 public:
@@ -58,4 +82,7 @@ public:
 	void OnDialogShow(void);
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	CListBox m_lstMsg;
+	afx_msg void OnBnClickedButtonStart();
+	afx_msg void OnBnClickedButtonStop();
+	CEdit m_edCurrPrc;
 };

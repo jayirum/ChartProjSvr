@@ -179,7 +179,7 @@ void RecvMDThreadFn()
 
 	while (g_bContinue)
 	{
-		Sleep(100);
+		Sleep(1);
 		if (g_pApiRecv->HappenedRecvError())
 		{
 			g_log.log(LOGTP_ERR, "TCP RECV ERROR:%s", g_pApiRecv->GetMsg());

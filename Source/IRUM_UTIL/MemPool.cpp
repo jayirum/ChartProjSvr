@@ -34,10 +34,18 @@ CMemPool::CMemPool(int nPreAlloc, int nMaxAlloc, int nBlockSize)
 
 }
 
-CMemPool::~CMemPool()
+//bool CMemPool::Begin()
+//{}
+
+void CMemPool::End()
 {
 	clear();
 	DeleteCriticalSection(&g_cs);
+}
+
+CMemPool::~CMemPool()
+{
+	End();
 }
 
 void CMemPool::clear()

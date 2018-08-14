@@ -63,6 +63,21 @@
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="StratHistManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="StratMaker.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="StratID.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MDProtoType.cpp">
@@ -96,6 +111,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_INC\IRUM_Common.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="StratHistManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="StratMaker.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp">
       <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
