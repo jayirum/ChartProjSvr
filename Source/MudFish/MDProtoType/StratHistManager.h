@@ -12,18 +12,24 @@
 #include "StratID.h"
 #include <windows.h>
 #include <string>
+
+
 class CStratHistManager
 {
 public:
-	CStratHistManager();
+	CStratHistManager(char* pzMaxSLCnt);
 	~CStratHistManager();
 
-	void	SetStrategyExist( std::string sStratID);
+	void	SetStrategyExist( std::string sStratID, char* pzCurrPrc);
 	char	IsOpenSrategyExist();
-
+	BOOL	IsAlreadySLMaxCnt() { return (m_nTotSLCnt >= m_nMaxSLCnt); }
+	BOOL	IsPTCondition(double dCurrPrc, _Out_ char* pMsg );
+	void	SetMaxPLPrc(char* pzCurrPrc);
 private:
 	unsigned char	m_nStatus;
-	int				m_nTotSLCnt;
-	
+	int				m_nTotSLCnt;	//당일 누적 sl 횟수
+	int				m_nMaxSLCnt;	//당일 누적 sl 제한횟수
+	double			m_dMaxPLPrc;	//진입 후 최고 수익가격
+	double			m_dEntryPrc;	//진입가격
 };
 

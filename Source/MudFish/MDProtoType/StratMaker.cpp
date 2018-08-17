@@ -12,7 +12,9 @@ extern CLogMsg g_log;
 //
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-CStratMaker::CStratMaker(char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, unsigned dwSaveThread, unsigned dwSendThread):CBaseThread("SratMaker")
+CStratMaker::CStratMaker(
+	char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, unsigned dwSaveThread, unsigned dwSendThread
+	, char* pzCloseTM, char* pzMaxSLCnt):CBaseThread("SratMaker")
 {
 	m_dwSaveThread = dwSaveThread;
 	m_dwSendThread = dwSendThread;
@@ -20,6 +22,12 @@ CStratMaker::CStratMaker(char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, un
 	
 	strcpy(m_zSymbol, pzSymbol);
 	strcpy(m_zOpenPrc, pzOpenPrc);
+	strcpy(m_zCloseTM, pzCloseTM);
+	strcpy(m_zMaxSLCnt, pzMaxSLCnt);
+
+	m_nMarketStatus = MARKET_ON;
+
+	m_stratHist = new CStratHistManager(pzMaxSLCnt);
 
 	//m_pSignalResult = new char[LEN_BUFF_SIZE];
 	//m_pClientBuff = new char[LEN_BUFF_SIZE];
@@ -205,6 +213,21 @@ unsigned WINAPI CStratMaker::StratThread(LPVOID lp)
 	return 0;
 }
 
+BOOL CStratMaker::GetMarketStatus()
+{
+	if (m_nMarketStatus== MARKET_CLOSING || m_nMarketStatus==MARKET_CLOSED)
+		return m_nMarketStatus;
+
+	char zNow[32]; SYSTEMTIME st; GetLocalTime(&st);
+	sprintf(zNow, "%02d:%02d", st.wHour, st.wMinute);
+
+	if (strncmp(zNow, m_zCloseTM, 5) < 0)
+		return m_nMarketStatus;
+
+	g_log.log(LOGTP_SUCC, "[%s 장마감] (장마감시간:%s) (현재시간:%s)", m_zSymbol, m_zCloseTM, zNow);
+	m_nMarketStatus = MARKET_CLOSING;
+	return m_nMarketStatus;
+}
 
 VOID CStratMaker::StratProc(char* pMarketData)
 {
@@ -220,20 +243,25 @@ VOID CStratMaker::StratProc(char* pMarketData)
 	sprintf(zNowPackTime, "%.8s", pPack->Time);
 	sprintf(zPackDT, "%.*s", sizeof(pPack->Date), pPack->Date);
 	
-	
-	// If this is the first time, don't proceed
-	//if (m_bIsFirstRunning == TRUE)
-	//{
-	//	m_bIsFirstRunning = FALSE;
-	//	return;
-	//}
+	GetMarketStatus();
 
-	char cCurrOpenSide = m_stratHist.IsOpenSrategyExist();
+	if (m_nMarketStatus == MARKET_CLOSED)
+		return;
+	else if (m_nMarketStatus == MARKET_CLOSING)
+	{
+		//TODO. 장마감 청산 수행
+		return;
+	}
+
+	m_stratHist->SetMaxPLPrc(zCurrPrc);
+
+	char cCurrOpenSide = m_stratHist->IsOpenSrategyExist();
 
 	switch (cCurrOpenSide)
 	{
 	case CD_BUY:
 	case CD_SELL:
+
 		StratClose(cCurrOpenSide, zCurrPrc, zPackDT, zNowPackTime);
 		break;
 	default:
@@ -327,7 +355,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	int nLen = strlen(zMsg1);
 	memcpy(stOrd.Note, zMsg1, strlen(zMsg1));
 
-	m_stratHist.SetStrategyExist(zStratID);
+	m_stratHist->SetStrategyExist(zStratID, pzCurrPrc);
 
 
 	//PostThreadMessage
@@ -361,14 +389,24 @@ char* CStratMaker::GetCloseOrdType(char cCurrOpenSide, char* pzCurrPrc,
 		// SL SELL : CurrPrc <= Open Prc
 		*pBasePrc = dOpenPrc;
 		int nComp = CUtil::CompPrc(dCurrPrc, dOpenPrc, 2/*TODO*/, LEN_PRC);
-		if (nComp <= 0)
-			strcpy(pzStratID, STRATID_SELL_SL);
+		if (nComp <= 0) {
+			if(m_stratHist->IsAlreadySLMaxCnt() )
+				strcpy(pzStratID, STRATID_NONE);
+			else
+				strcpy(pzStratID, STRATID_SELL_SL);
+		}
 
 		// PT SELL : CurrPrc >= OpenPrc + (OpenPrc * 0.005)
 		*pBasePrc = dOpenPrc + (dOpenPrc*0.005);
 		nComp = CUtil::CompPrc(dCurrPrc, *pBasePrc, 2/*TODO*/, LEN_PRC);
-		if (nComp >= 0)
-			strcpy(pzStratID, STRATID_SELL_PT);
+		if (nComp >= 0) 
+		{
+			char zMsg[512] = { 0, };
+			if (m_stratHist->IsPTCondition(dCurrPrc, zMsg)) {
+				g_log.log(LOGTP_SUCC, zMsg);
+				strcpy(pzStratID, STRATID_SELL_PT);
+			}
+		}
 	}
 
 	// SELL OPEN
@@ -377,14 +415,23 @@ char* CStratMaker::GetCloseOrdType(char cCurrOpenSide, char* pzCurrPrc,
 		// SL BUY : CurrPrc >= Open Prc
 		*pBasePrc = dOpenPrc;
 		int nComp = CUtil::CompPrc(dCurrPrc, dOpenPrc, 2/*TODO*/, LEN_PRC);
-		if (nComp >= 0)
-			strcpy(pzStratID, STRATID_BUY_SL);
-
+		if (nComp >= 0) {
+			if (m_stratHist->IsAlreadySLMaxCnt())
+				strcpy(pzStratID, STRATID_NONE);
+			else
+				strcpy(pzStratID, STRATID_BUY_SL);
+		}
 		// PT BUY : CurrPrc <= OpenPrc + (OpenPrc * 0.005)
 		*pBasePrc = dOpenPrc - (dOpenPrc*0.005);
 		nComp = CUtil::CompPrc(dCurrPrc, *pBasePrc, 2/*TODO*/, LEN_PRC);
 		if (nComp <= 0)
-			strcpy(pzStratID, STRATID_BUY_PT);
+		{
+			char zMsg[512] = { 0, };
+			if (m_stratHist->IsPTCondition(dCurrPrc, zMsg)) {
+				g_log.log(LOGTP_SUCC, zMsg);
+				strcpy(pzStratID, STRATID_BUY_PT);
+			}
+		}
 	}
 	return pzStratID;
 }
@@ -455,7 +502,7 @@ VOID CStratMaker::StratClose(char cCurrOpenSide, char* pzCurrPrc, char* pzApiDT,
 
 	memcpy(stOrd.Note, zMsg1, strlen(zMsg1));
 
-	m_stratHist.SetStrategyExist(zStratID);
+	m_stratHist->SetStrategyExist(zStratID, pzCurrPrc);
 
 
 	//PostThreadMessage

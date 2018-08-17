@@ -15,11 +15,13 @@ typedef struct _SYMBOL_INFO
 }SYMBOL_INFO;
 
 enum { SLPT_NONE=0, SL_BUY, SL_SELL, PT_BUY, PT_SELL};
+enum { MARKET_ON=0, MARKET_CLOSING, MARKET_CLOSED};
 
 class CStratMaker : public CBaseThread
 { 
 public:
-	CStratMaker(char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, unsigned dwSaveThread, unsigned dwSendThread);
+	CStratMaker(char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, 
+		unsigned dwSaveThread, unsigned dwSendThread, char* pzCloseTM, char* pzMaxSLCnt);
 	~CStratMaker();
 	//unsigned int GetWorkerThreadId() { return m_dwStratThreadID; }
 	unsigned int GetStratThreadId() { return m_dwStratThreadID; }
@@ -42,7 +44,7 @@ private:
 	VOID	StratClose(char cCurrOpenSide, char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
 	char*	GetCloseOrdType(char cCurrOpenSide, char* pzCurrPrc, _Out_ double* pBasePrc, _Out_ char* pzStratID);
 	VOID	StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
-
+	int		GetMarketStatus();
 	VOID	SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen);
 	
 
@@ -53,7 +55,7 @@ private:
 	CMemPool		*m_pMemPool;
 	//CQueueShm		*m_pShmQ;
 	//CDBPoolAdo		*m_pDBPool;
-	CStratHistManager	m_stratHist;
+	CStratHistManager	*m_stratHist;
 
 	//char			*m_pSignalResult;
 	//char			*m_pClientBuff;
@@ -61,13 +63,14 @@ private:
 	//char			m_zGroupKey[128];
 	char			m_zSymbol[128];
 	char			m_zOpenPrc[32];
-	//char			m_zShmNm[128], m_zMutexNm[128];
+	char			m_zCloseTM[32];
+	char			m_zMaxSLCnt[32];
 	char			m_szMsg[1024];
 	
 	unsigned		m_dwSaveThread, m_dwSendThread;
 	SYMBOL_INFO		m_SymbolInfo;
 
-	//BOOL			m_bIsFirstRunning;
+	int				m_nMarketStatus;
 
 	//int				m_nChartTp;
 

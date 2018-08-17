@@ -160,6 +160,10 @@ BOOL CMDProtoTypeDlg::OnInitDialog()
 
 	m_pStrat = NULL;
 
+	// DEFAULT VALUE
+	((CEdit *)GetDlgItem(IDC_EDIT_SYMBOL))->SetWindowText("CLU18");
+	((CEdit *)GetDlgItem(IDC_EDIT_CLOSETM))->SetWindowText("05:00");
+	((CEdit *)GetDlgItem(IDC_EDIT_MAXSLCNT))->SetWindowText("2");
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -190,6 +194,7 @@ BOOL CMDProtoTypeDlg::Begin()
 	((CEdit *)GetDlgItem(IDC_EDIT_SYMBOL))->GetWindowText(m_sSymbol);
 	((CEdit *)GetDlgItem(IDC_EDIT_OPENPRC))->GetWindowText(m_sOpenPrc);
 	((CEdit *)GetDlgItem(IDC_EDIT_CLOSETM))->GetWindowText(m_sCloseTime);
+	((CEdit *)GetDlgItem(IDC_EDIT_MAXSLCNT))->GetWindowText(m_sMaxSLCnt);
 
 	// create recv thread
 	m_hRecvThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_TickDataRecv, this, 0, &m_unRecvThread);
@@ -330,8 +335,15 @@ unsigned WINAPI CMDProtoTypeDlg::Thread_TickDataRecv(LPVOID lp)
 				if (!p->m_pStrat)
 				{
 					//char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, unsigned dwSaveThread, unsigned dwSendThread);
-					p->m_pStrat = new CStratMaker(zSymbol, (LPSTR)(LPCSTR)p->m_sOpenPrc, p->m_pMemPool,
-						0, p->m_unOrdSendThread);
+					p->m_pStrat = new CStratMaker(
+						zSymbol, 
+						(LPSTR)(LPCSTR)p->m_sOpenPrc, 
+						p->m_pMemPool,
+						0, 
+						p->m_unOrdSendThread, 
+						(LPSTR)(LPCSTR)p->m_sCloseTime,
+						(LPSTR)(LPCSTR)p->m_sMaxSLCnt
+					);
 				}
 				p->m_edCurrPrc.SetWindowText(zCurrPrc);
 				//CStratMaker* p = (*it).second;

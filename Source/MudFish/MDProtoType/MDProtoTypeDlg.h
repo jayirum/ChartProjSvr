@@ -62,7 +62,7 @@ private:
 	CString m_sSymbol;
 	CString m_sOpenPrc;
 	CString m_sCloseTime;
-
+	CString m_sMaxSLCnt;
 	//TRAYICON
 public:
 
