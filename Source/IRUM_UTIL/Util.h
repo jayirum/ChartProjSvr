@@ -215,6 +215,7 @@ public:
 	static char* LogMsgEx( CLog *log, BOOL bSucc, char* pOut, char* pMsg, ...) ;
 	static void LogEmergency( CLog *log, BOOL bSucc, char* pMsg, ...) ;
 	static void LogPrint( CLog *log, BOOL bSucc, char* pMsg, ...) ;
+	static void logOutput(char* pMsg, ...);
 	
 	static void		GetMyModuleAndDir(char *o_psDir, char* o_psModule, char* o_psConfig);
 	static	char*	GetCnfgFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue );

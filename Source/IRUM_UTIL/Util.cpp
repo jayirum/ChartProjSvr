@@ -415,16 +415,19 @@ double CUtil::Round(double src, int nOffSet)
 /*
 	반올림.
 
-	56.349  => 소수세자리에서 반올림 : 56.34
+	56.349  => 소수세자리에서 자르기 : 56.34
 
 	roundoff(56.349, 2)
 */
 double CUtil::roundoff(double src, int offset)
 {
-	double dMultiple = pow((double)10, (double)offset);	//	100
+	//double dMultiple = pow((double)10, (double)offset);	//	100
 
-	int nRet = (int)((src * dMultiple)+0.5);	//	nRet = 56.349*100 + 0.5 = 5634.9 + 0.5 = 5635.4 => 5635
-	double dRet = (double)(nRet / dMultiple);	//	dRet = 5635 / 100 = 56.35
+	//int nRet = (int)((src * dMultiple)+0.5);	//	nRet = 56.349*100 + 0.5 = 5634.9 + 0.5 = 5635.4 => 5635
+	//double dRet = (double)(nRet / dMultiple);	//	dRet = 5635 / 100 = 56.35
+
+	double dMultiple = pow((double)10, (double)offset);
+	double dRet = floor(src * dMultiple + 0.5) / dMultiple;
 	return dRet;
 }
 
@@ -799,6 +802,26 @@ void CUtil::LogMsg( CLog *log, BOOL bSucc, char* pMsg, ...)
 		sprintf(buff2, "[F][%02d:%02d:%02d.%03d]%s", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buff1);
 
 	log->LogEx(buff2);
+}
+
+
+
+void CUtil::logOutput(char* pMsg, ...)
+{
+	char buff1[512], buff2[512];
+	va_list argptr;
+	SYSTEMTIME	st;
+
+
+	va_start(argptr, pMsg);
+	vsprintf_s(buff1, pMsg, argptr);
+	va_end(argptr);
+
+
+	GetLocalTime(&st);
+	sprintf(buff2, "[%02d:%02d:%02d.%03d]%s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buff1);
+
+	OutputDebugString(buff2);
 }
 
 

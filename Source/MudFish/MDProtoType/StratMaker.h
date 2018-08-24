@@ -42,9 +42,11 @@ private:
 
 	VOID	StratProc(char* pMarketData);
 	VOID	StratClose(char cCurrOpenSide, char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
-	char*	GetCloseOrdType(char cCurrOpenSide, char* pzCurrPrc, _Out_ double* pBasePrc, _Out_ char* pzStratID);
+	VOID	MarketCloseClr();
+	char*	GetCloseOrdType(char cCurrOpenSide, char* pzCurrPrc, 
+					_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg);
 	VOID	StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
-	int		GetMarketStatus();
+	VOID	CheckMarketClosing();
 	VOID	SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen);
 	
 
@@ -65,6 +67,7 @@ private:
 	char			m_zOpenPrc[32];
 	char			m_zCloseTM[32];
 	char			m_zMaxSLCnt[32];
+	char			m_zLastCurrPrc[32];
 	char			m_szMsg[1024];
 	
 	unsigned		m_dwSaveThread, m_dwSendThread;

@@ -200,6 +200,7 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define WM_RECV_CLIENT		WM_USER + 809	// recv data from client - TR, real
 #define WM_RECV_API_MD		WM_USER + 810	// recv data from client - TR, real
 #define WM_SENDORD_API		WM_USER + 811
+#define WM_MARKET_CLOSE		WM_USER + 812
 #define WM_DIE				WM_USER + 999
 
 
@@ -383,14 +384,16 @@ typedef struct _ST_MF_STRAT_ORD
 	char	OpenPrc[LEN_PRC];
 	char	BasePrc[LEN_PRC];
 	char	CurrPrc[LEN_PRC];
-	char	BestPrc[LEN_PRC];		// 진입 후 최고좋은 가격
-	char	BestPL[LEN_PL];			// 최고가격의 이익
-	char	CurrPL[LEN_PL];			// 현재가격의 이익
+	char	MaxPLPrc[LEN_PRC];		// 진입 후 최고좋은 가격
+	char	OrdPrc[LEN_PRC];
+	char	EntryPrc[LEN_PRC];
+	//char	MaxPL[LEN_PL];			// 최고가격의 이익
+	//char	CurrPL[LEN_PL];			// 현재가격의 이익
 	char	OrdProtTp[1];			// CD_ORD_TP_MARKET, CD_ORD_TP_LIMIT
 	char	OrdTM[12];				// hh:mm:ss.mmm
 	char	ApiDT[8];
 	char	ApiTM[8];	//hh:mm:ss
-	char	Note[100];
+	char	Note[256];
 }ST_MF_STRAT_ORD;
 
 

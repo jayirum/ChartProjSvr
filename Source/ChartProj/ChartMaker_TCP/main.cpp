@@ -358,7 +358,7 @@ BOOL LoadSymbol()
 		ir_cvtcode_uro_6e(zTemp, zSymbol);
 
 		//TODO
-		if (strncmp(zSymbol, "CLU18", 4) != 0
+		if (strncmp(zSymbol, "CL", 2) != 0
 			) {
 			db->Next();
 			continue;

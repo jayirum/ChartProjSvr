@@ -2,13 +2,16 @@
 #include "../../IRUM_UTIL/Util.h"
 
 
-CStratHistManager::CStratHistManager(char* pzMaxSLCnt)
+CStratHistManager::CStratHistManager(char* pzMaxSLCnt, int nDotLen)
 {
+	m_nDotLen = nDotLen;
 	m_nStatus = 0;
 	m_nTotSLCnt = 0;
-	m_dMaxPLPrc = 0.;
-	m_dEntryPrc = 0.;
+	ZeroMemory(m_zMaxPLPrc, sizeof(m_zMaxPLPrc));
+	ZeroMemory(m_zEntryPrc, sizeof(m_zEntryPrc));
 	m_nMaxSLCnt = atoi(pzMaxSLCnt);
+	m_bHitPTPrc = FALSE;
+	m_bProfitRealized = FALSE;
 }
 
 
@@ -49,32 +52,41 @@ ex)
 		현재가 95  ==> gap : 5  -> 익절한다.
 		현재가 101   ==> gap : -1 -> 익절한다.
 */
-BOOL CStratHistManager::IsPTCondition(double dCurrPrc, _Out_ char* pMsg)
+BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc,_Out_ char* pMsg)
 {
 	BOOL bResult = FALSE;
-	double dGapMax, dGapCurr = 0;
+	char zGapMax[32], zGapCurr[32];
 
+	int nComp = CUtil::CompPrc(m_zMaxPLPrc, LEN_PRC, m_zEntryPrc, LEN_PRC, 2, LEN_PRC);
+	if (nComp == 0)
+		return FALSE;
+	
 	// 현재 LONG
 	if (m_nStatus & 1)
 	{
-		dGapMax		= m_dMaxPLPrc - m_dEntryPrc;
-		dGapCurr = dCurrPrc - m_dEntryPrc;
-		if (dGapCurr < dGapMax*0.5) {
+		sprintf(zGapMax, "%.2f", (atof(m_zMaxPLPrc) - atof(m_zEntryPrc))*0.5);
+		sprintf(zGapCurr, "%.2f", atof(pzCurrPrc) - atof(m_zEntryPrc));
+		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, 2, LEN_PRC);
+		if (nComp<0)
+		{
 			bResult = TRUE;
-			sprintf(pMsg, " LONG익절조건.(진입가:%f) (최고가:%f) (현재가:%f)",
-				m_dEntryPrc, m_dMaxPLPrc, dCurrPrc);
+			sprintf(pMsg, "LONG익절조건.(진입가:%s, 최고가:%s, 현재가:%s) (최고가GAP/2:%s, 현재가Gap:%s)",
+				m_zEntryPrc, m_zMaxPLPrc, pzCurrPrc, zGapMax, zGapCurr);
 		}
 	}
 
 	// 현재 Short
 	if (m_nStatus & 2)
 	{
-		dGapMax = m_dEntryPrc - m_dMaxPLPrc;
-		dGapCurr = m_dEntryPrc - dCurrPrc;
-		if (dGapCurr < dGapMax*0.5) {
+
+		sprintf(zGapMax, "%.2f", (atof(m_zEntryPrc) - atof(m_zMaxPLPrc))*0.5);
+		sprintf(zGapCurr, "%.2f", atof(m_zEntryPrc) - atof(pzCurrPrc));
+		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, 2, LEN_PRC);
+		if (nComp<0)
+		{
 			bResult = TRUE;
-			sprintf(pMsg, "SHORT익절조건.(진입가:%f) (최고가:%f) (현재가:%f)",
-				m_dEntryPrc, m_dMaxPLPrc, dCurrPrc);
+			sprintf(pMsg, "SHORT익절조건.(진입가:%s, 최고가:%s, 현재가:%s) (최고가GAP/2:%s, 현재가Gap:%s)",
+				m_zEntryPrc, m_zMaxPLPrc, pzCurrPrc, zGapMax, zGapCurr);
 		}
 	}
 
@@ -85,25 +97,45 @@ BOOL CStratHistManager::IsPTCondition(double dCurrPrc, _Out_ char* pMsg)
 // 진입 후 최고 수익가격을 저장하기 위해
 void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 {
-	if (m_nStatus & 1) {
-		if (m_dMaxPLPrc == 0)
-			m_dMaxPLPrc = atof(pzCurrPrc);
+	int nComp = 0;
+	if (m_nStatus & 1) 
+	{
+		if (m_zMaxPLPrc[0] == 0x00)
+		{
+			strcpy(m_zMaxPLPrc, pzCurrPrc);
+		}
 		else
 		{
 			// BUY POS. MAXPL -> HIGHER
-			if (m_dMaxPLPrc > atof(pzCurrPrc))
-				m_dMaxPLPrc = atof(pzCurrPrc);
+			nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, m_zMaxPLPrc, LEN_PRC, m_nDotLen, LEN_PRC);
+			if (nComp > 0)
+			{
+				strcpy(m_zMaxPLPrc, pzCurrPrc);
+
+				int nComp = CUtil::CompPrc(atof(pzCurrPrc), atof(m_zOpenPrc)*(1.0 + DEF_CLR_SPREAD)
+										, m_nDotLen, LEN_PRC);
+				if (nComp >= 0)
+					m_bHitPTPrc = TRUE;
+			}
 		}
 	}
 	else if (m_nStatus & 2)
 	{
-		if (m_dMaxPLPrc == 0)
-			m_dMaxPLPrc = atof(pzCurrPrc);
+		if (m_zMaxPLPrc[0] == 0x00)
+			strcpy(m_zMaxPLPrc, pzCurrPrc);
 		else
 		{
 			// SELL POS. MAXPL -> LOWER
-			if (m_dMaxPLPrc < atof(pzCurrPrc))
-				m_dMaxPLPrc = atof(pzCurrPrc);
+			nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, m_zMaxPLPrc, LEN_PRC, m_nDotLen, LEN_PRC);
+			if (nComp < 0)
+			{
+				strcpy(m_zMaxPLPrc, pzCurrPrc);
+
+				int nComp = CUtil::CompPrc(atof(pzCurrPrc), atof(m_zOpenPrc)*(1 - DEF_CLR_SPREAD)
+					, m_nDotLen, LEN_PRC);
+				if (nComp <= 0)
+					m_bHitPTPrc = TRUE;
+			}
 		}
 	}
 	//else {
@@ -115,47 +147,63 @@ void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 /*
 	if close strategy happens, off the corresponding open strategy
 */
-void CStratHistManager::SetStrategyExist(std::string sStratID, char* pzCurrPrc)
+void CStratHistManager::SetStrategyExist(std::string sStratID, char* pzCurrPrc, char* pzOpenPrc)
 {
-
+	bool bClr = false;
 	if (sStratID.compare(STRATID_BUY_OPEN) == 0)
 	{
 		m_nStatus ^= 1;
-		m_dEntryPrc = atof(pzCurrPrc);
 	}
 	if (sStratID.compare(STRATID_SELL_OPEN) == 0)
 	{
 		m_nStatus ^= 2;
-		m_dEntryPrc = atof(pzCurrPrc);
 	}
 	if (sStratID.compare(STRATID_SELL_SL) == 0)
 	{
 		// off STRATID_BUY_OPEN
 		m_nStatus &= ~1;
 		m_nTotSLCnt++;
-		m_dEntryPrc = 0;
-		m_dMaxPLPrc = 0;
+		bClr = true;
 	}
 	if (sStratID.compare(STRATID_SELL_PT) == 0)
 	{
 		// off STRATID_BUY_OPEN
 		m_nStatus &= ~1;
-		m_dEntryPrc = 0;
-		m_dMaxPLPrc = 0;
+		bClr = true;
+		m_bProfitRealized = TRUE;
 	}
 	if (sStratID.compare(STRATID_BUY_SL) == 0)
 	{
 		// off STRATID_BUY_OPEN
 		m_nStatus &= ~2;
 		m_nTotSLCnt++;
-		m_dEntryPrc = 0;
-		m_dMaxPLPrc = 0;
+		bClr = true;
 	}
 	if (sStratID.compare(STRATID_BUY_PT) == 0)
 	{
 		// off STRATID_BUY_OPEN
 		m_nStatus &= ~2;
-		m_dEntryPrc = 0;
-		m_dMaxPLPrc = 0;
+		bClr = true;
+		m_bProfitRealized = TRUE;
+	}
+	if (sStratID.compare(STRATID_MARKET_CLR) == 0)
+	{
+		// off STRATID_BUY_OPEN
+		m_nStatus &= ~1;
+		m_nStatus &= ~2;
+		bClr = true;
+	}
+
+	if (bClr)
+	{
+		ZeroMemory(m_zEntryPrc, sizeof(m_zEntryPrc));
+		ZeroMemory(m_zMaxPLPrc, sizeof(m_zMaxPLPrc));
+		m_bHitPTPrc = FALSE;
+	}
+	else
+	{
+		strcpy(m_zEntryPrc, pzCurrPrc);
+		strcpy(m_zMaxPLPrc, pzCurrPrc);
+		strcpy(m_zOpenPrc, pzOpenPrc);
 	}
 }

@@ -53,6 +53,7 @@ private:
 
 	std::string		m_sApiIP;
 	int				m_nApiPort;
+	std::string		m_cfgFile;
 
 	HANDLE			m_hRecvThread, m_hOrdSendThread;
 	unsigned int	m_unRecvThread, m_unOrdSendThread;
@@ -85,4 +86,7 @@ public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnBnClickedButtonStop();
 	CEdit m_edCurrPrc;
+	afx_msg void OnBnClickedCancel();
+	afx_msg void OnBnClickedButtonCurr();
+	afx_msg void OnBnClickedButtonClosetm();
 };

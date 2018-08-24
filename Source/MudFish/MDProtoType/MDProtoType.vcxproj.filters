@@ -78,6 +78,9 @@
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MDProtoType.cpp">
@@ -123,6 +126,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
       <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>

@@ -3,6 +3,7 @@
 //
 
 #include "stdafx.h"
+#include "../../IRUM_UTIL/ADOFunc.h"
 #include "MDProtoType.h"
 #include "MDProtoTypeDlg.h"
 #include "afxdialogex.h"
@@ -20,12 +21,12 @@
 
 #define EXENAME		"MDProtoType.exe"
 
-#define MEM_BLOCK_SIZE	256
+#define MEM_BLOCK_SIZE	512
 #define MEM_PRE_ALLOC	100
 #define MEM_MAX_ALLOC	1000
 
 CLogMsg				g_log;
-
+CDBPoolAdo			*g_ado = NULL;
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
 
@@ -83,6 +84,9 @@ BEGIN_MESSAGE_MAP(CMDProtoTypeDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_START, &CMDProtoTypeDlg::OnBnClickedButtonStart)
 	ON_BN_CLICKED(IDC_BUTTON_STOP, &CMDProtoTypeDlg::OnBnClickedButtonStop)
+	ON_BN_CLICKED(IDCANCEL, &CMDProtoTypeDlg::OnBnClickedCancel)
+	ON_BN_CLICKED(IDC_BUTTON_CURR, &CMDProtoTypeDlg::OnBnClickedButtonCurr)
+	ON_BN_CLICKED(IDC_BUTTON_CLOSETM, &CMDProtoTypeDlg::OnBnClickedButtonClosetm)
 END_MESSAGE_MAP()
 
 
@@ -135,11 +139,11 @@ BOOL CMDProtoTypeDlg::OnInitDialog()
 	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
 
 	CUtil::GetCnfgXMLFileNm(szDir, EXENAME, szXmlCnfg);
-	std::string cfgFile = szXmlCnfg; 
+	m_cfgFile = szXmlCnfg;
 
 	try
 	{
-		Poco::Util::AbstractConfiguration *cfg = new Poco::Util::XMLConfiguration(cfgFile);
+		Poco::Util::AbstractConfiguration *cfg = new Poco::Util::XMLConfiguration(m_cfgFile);
 
 		m_sApiIP = cfg->getString("CHART_SOCKET_INFO.IP").c_str();
 		m_nApiPort = atoi(cfg->getString("CHART_SOCKET_INFO.PORT").c_str());
@@ -161,7 +165,7 @@ BOOL CMDProtoTypeDlg::OnInitDialog()
 	m_pStrat = NULL;
 
 	// DEFAULT VALUE
-	((CEdit *)GetDlgItem(IDC_EDIT_SYMBOL))->SetWindowText("CLU18");
+	((CEdit *)GetDlgItem(IDC_EDIT_SYMBOL))->SetWindowText("CLV18");
 	((CEdit *)GetDlgItem(IDC_EDIT_CLOSETM))->SetWindowText("05:00");
 	((CEdit *)GetDlgItem(IDC_EDIT_MAXSLCNT))->SetWindowText("2");
 
@@ -195,6 +199,28 @@ BOOL CMDProtoTypeDlg::Begin()
 	((CEdit *)GetDlgItem(IDC_EDIT_OPENPRC))->GetWindowText(m_sOpenPrc);
 	((CEdit *)GetDlgItem(IDC_EDIT_CLOSETM))->GetWindowText(m_sCloseTime);
 	((CEdit *)GetDlgItem(IDC_EDIT_MAXSLCNT))->GetWindowText(m_sMaxSLCnt);
+
+	// DB CONNECT
+	std::string sIP, sID, sPwd, sName, sPoolCnt;
+	Poco::Util::AbstractConfiguration *cfg = new Poco::Util::XMLConfiguration(m_cfgFile);
+
+	sIP = cfg->getString("DBINFO.DB_IP").c_str();
+	sID = cfg->getString("DBINFO.DB_ID").c_str();
+	sPwd = cfg->getString("DBINFO.DB_PWD").c_str();
+	sName = cfg->getString("DBINFO.DB_NAME").c_str();
+	sPoolCnt = cfg->getString("DBINFO.DB_POOL_CNT").c_str();
+
+	cfg->release();
+
+	g_ado = new CDBPoolAdo((char*)sIP.c_str(),(char*)sID.c_str(), (char*)sPwd.c_str(), (char*)sName.c_str());
+	if (!g_ado->Init(atoi(sPoolCnt.c_str())))
+	{
+		g_log.log(LOGTP_ERR, "DB OPEN FAIL(MSG:%s)", g_ado->GetMsg());
+		SAFE_DELETE(g_ado);
+		return FALSE;
+	}
+	g_log.log(LOGTP_SUCC, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", 
+		sIP.c_str(), sID.c_str(), sPwd.c_str(), sName.c_str());
 
 	// create recv thread
 	m_hRecvThread = (HANDLE)_beginthreadex(NULL, 0, &Thread_TickDataRecv, this, 0, &m_unRecvThread);
@@ -234,8 +260,9 @@ VOID	CMDProtoTypeDlg::End()
 
 unsigned WINAPI CMDProtoTypeDlg::Thread_SendOrd(LPVOID lp)
 {
-	CMDProtoTypeDlg* p = (CMDProtoTypeDlg*)lp;
+	CMDProtoTypeDlg* pThis = (CMDProtoTypeDlg*)lp;
 	char zMsg[1024];
+	char zQ[1024];
 	while (TRUE)
 	{
 		Sleep(1);
@@ -249,14 +276,62 @@ unsigned WINAPI CMDProtoTypeDlg::Thread_SendOrd(LPVOID lp)
 
 			if (msg.message == WM_SENDORD_API)
 			{
+				ST_MF_STRAT_ORD* p = (ST_MF_STRAT_ORD*)msg.lParam;
+
 				//TODO SEND ORDER TO API
 
+				// SAVE INTO DATABASE
+				CDBHandlerAdo db(g_ado->Get());
+
+				sprintf(zQ, "EXEC TEST_MUDFISH_SAVE "
+					"'%.*s', "	//@I_SYMBOL	VARCHAR(10)
+					"'%.*s', "	//@I_STRAT_ID	VARCHAR(20)
+					"'%.*s', "	//@I_TICK_DT	CHAR(8)
+					"'%.*s', "	//@I_TICK_TM CHAR(8)
+					"'%.*s', "	//@I_OPEN_CLOSE_TP CHAR(1)
+					"'%.*s', "	//@I_BS_TP CHAR(1)
+					"'%.*s', "	//@I_OPEN_PRC VARCHAR(10)
+					"'%.*s', "	//@I_CURR_PRC VARCHAR(10)
+					"'%.*s', "	//@I_ORD_PRC VARCHAR(10)
+					"'%.*s', "	//@I_BEST_PRC VARCHAR(10)
+					"'%.*s', "	//@I_BASE_PRC VARCHAR(10)
+					"'%.*s', "	//@I_ENTRY_PRC VARCHAR(10)
+					"'%.*s' "	//@I_NOTE VARCHAR(100)
+					,
+					
+					sizeof(p->Symbol), p->Symbol,
+					sizeof(p->StratID), p->StratID,
+					sizeof(p->ApiDT), p->ApiDT,
+					sizeof(p->ApiTM), p->ApiTM,
+					sizeof(p->ClrTp), p->ClrTp,
+					sizeof(p->Side), p->Side,
+					sizeof(p->OpenPrc), p->OpenPrc,
+					sizeof(p->CurrPrc), p->CurrPrc,
+					sizeof(p->OrdPrc), p->OrdPrc,
+					sizeof(p->MaxPLPrc), p->MaxPLPrc,
+					sizeof(p->BasePrc), p->BasePrc,
+					sizeof(p->EntryPrc), p->EntryPrc,
+					sizeof(p->Note), p->Note
+				);
+				if (FALSE == db->ExecQuery(zQ))
+				{
+					g_log.log(LOGTP_ERR, "MUDFISH DATA Save 에러(%s)(%s)", db->GetError(), zQ);
+					sprintf(zMsg, "MUDFISH DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
+					pThis->m_lstMsg.InsertString(0, zMsg);
+				}
+				else
+				{
+					g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
+				}
+
+				db->Close();
+
 				// LOGGING
-				ST_MF_STRAT_ORD* pPack = (ST_MF_STRAT_ORD*)msg.lParam;
-				sprintf(zMsg, "%.*s", sizeof(pPack->Note), pPack->Note);
+				
+				sprintf(zMsg, "%.*s", sizeof(p->Note), p->Note);
 				g_log.log(LOGTP_SUCC, zMsg);
-				p->m_lstMsg.InsertString(0, zMsg);
-				p->m_pMemPool->release((char*)msg.lParam);
+				pThis->m_lstMsg.InsertString(0, zMsg);
+				pThis->m_pMemPool->release((char*)msg.lParam);
 			}
 		}
 	}
@@ -265,9 +340,91 @@ unsigned WINAPI CMDProtoTypeDlg::Thread_SendOrd(LPVOID lp)
 }
 
 
+
+void CMDProtoTypeDlg::OnBnClickedButtonClosetm()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString sCurrPrc;
+	((CEdit *)GetDlgItem(IDC_EDIT_CLOSETM))->GetWindowText(sCurrPrc);
+	char* pBuf = NULL;;
+	if (!m_pMemPool->get(&pBuf))
+	{
+		g_log.log(LOGTP_ERR, "memory pool get error");
+		//printf("memory pool get error\n");
+		return;
+	}
+	memcpy(pBuf, (LPCSTR)sCurrPrc, sCurrPrc.GetLength());
+
+	PostThreadMessage(m_pStrat->GetStratThreadId(), WM_MARKET_CLOSE, 0, (LPARAM)pBuf);
+}
+
+
+
+/*
+typedef struct _ST_PACK2CHART_EX
+{
+char	STX[1];
+char	Len[SIZE_PACKET_LEN];	// 전체 길이
+char	Date[8];
+char	Time[8];
+char	ShortCode[LEN_SYMBOL];
+char	Close[LEN_PRC];
+char	CntrQty[LEN_QTY];
+char	DecLen[5];				// 소숫점 자릿수
+char	ETX[1];
+}ST_PACK2CHART_EX;
+*/
+void CMDProtoTypeDlg::OnBnClickedButtonCurr()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString sCurrPrc;
+	((CEdit *)GetDlgItem(IDC_EDIT_CURRPRC2))->GetWindowText(sCurrPrc);
+
+	ST_PACK2CHART_EX st;
+	memset(&st, 0x20, sizeof(st));
+
+	char dt[32], tm[32];
+	CUtil::GetToday(dt);
+	sprintf(tm, "%.8s", CUtil::Get_NowTime(FALSE));
+
+	memcpy(st.Date, dt, sizeof(st.Date));
+	memcpy(st.Time, tm, sizeof(st.Time));
+	memcpy(st.ShortCode, (LPCSTR)m_sSymbol, m_sSymbol.GetLength());
+	memcpy(st.Close, (LPCSTR)sCurrPrc, sCurrPrc.GetLength());
+
+	char* pBuf = NULL;;
+	if (!m_pMemPool->get(&pBuf))
+	{
+		g_log.log(LOGTP_ERR, "memory pool get error");
+		//printf("memory pool get error\n");
+		return;
+	}
+	memcpy(pBuf, &st, sizeof(st));
+	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pBuf;
+	if (!m_pStrat)
+	{
+		//char* pzSymbol, char* pzOpenPrc, CMemPool* pMemPool, unsigned dwSaveThread, unsigned dwSendThread);
+		m_pStrat = new CStratMaker(
+			(LPSTR)(LPCSTR)m_sSymbol,
+			(LPSTR)(LPCSTR)m_sOpenPrc,
+			m_pMemPool,
+			0,
+			m_unOrdSendThread,
+			(LPSTR)(LPCSTR)m_sCloseTime,
+			(LPSTR)(LPCSTR)m_sMaxSLCnt
+		);
+		Sleep(1000);
+	}
+	//m_edCurrPrc.SetWindowText(zCurrPrc);
+	//CStratMaker* p = (*it).second;
+	PostThreadMessage(m_pStrat->GetStratThreadId(), WM_RECV_API_MD, 0, (LPARAM)pBuf);
+	//CUtil::logOutput("[1]ThreadID(%d)(%s)", m_pStrat->GetStratThreadId(), pBuf);
+}
+
 unsigned WINAPI CMDProtoTypeDlg::Thread_TickDataRecv(LPVOID lp)
 {
 	CMDProtoTypeDlg* p = (CMDProtoTypeDlg*)lp;
+
 	ST_PACK2CHART_EX* pSise;
 	char zSymbol[128];
 	char tm[9];
@@ -344,6 +501,7 @@ unsigned WINAPI CMDProtoTypeDlg::Thread_TickDataRecv(LPVOID lp)
 						(LPSTR)(LPCSTR)p->m_sCloseTime,
 						(LPSTR)(LPCSTR)p->m_sMaxSLCnt
 					);
+					Sleep(3000);
 				}
 				p->m_edCurrPrc.SetWindowText(zCurrPrc);
 				//CStratMaker* p = (*it).second;
@@ -442,3 +600,16 @@ void CMDProtoTypeDlg::OnBnClickedButtonStop()
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	End();
 }
+
+
+void CMDProtoTypeDlg::OnBnClickedCancel()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	PostThreadMessage(m_unOrdSendThread, WM_DIE, 0, 0);
+	PostThreadMessage(m_unRecvThread, WM_DIE, 0, 0);
+	delete m_pStrat;
+	Sleep(500);
+	CDialogEx::OnCancel();
+}
+
+
