@@ -1,0 +1,116 @@
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe.config
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.pdb
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.xml
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.pdb
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csprojResolveAssemblyReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.ResolveComReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Form1.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmallCode.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmCodeSave.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmCondition.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmInfo.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Properties.Resources.resources
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.GenerateResource.Cache
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe.config
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.ResolveComReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.xml
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csprojResolveAssemblyReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Form1.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmallCode.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmCodeSave.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmCondition.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.frmInfo.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Properties.Resources.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.1 (completed)\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.GenerateResource.Cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe.config
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.ResolveComReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.xml
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csprojResolveAssemblyReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Properties.Resources.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.GenerateResource.Cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.Form1.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmallCode.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmCodeSave.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmCondition.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmGurewon.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\PRJ Ver 1.2\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmInfo.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe.config
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\hwinformchart4.xml
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\lichpoprjt.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\bin\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csprojResolveAssemblyReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.ResolveComReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.Form1.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmallCode.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmCodeSave.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmCondition.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmGurewon.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\TTN.frmInfo.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Properties.Resources.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.GenerateResource.Cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\StockChart_Kiwoom\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe.config
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.ResolveComReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.exe
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\StockChart_Kiwoom.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\hwinformchart4.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\hwinformchart4.xml
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\lichpoprjt.pdb
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\Interop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\bin\Debug\AxInterop.KHOpenAPILib.dll
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csprojResolveAssemblyReference.cache
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.Form1.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.frmallCode.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.frmCodeSave.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.frmCondition.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.frmGurewon.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\TTN.frmInfo.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.Properties.Resources.resources
+C:\Users\HaYoungdae\Dropbox\projects\_KiwoomProject\KiwoomTotalSolution\KH 1.2\StockChart_Kiwoom\obj\Debug\StockChart_Kiwoom.csproj.GenerateResource.Cache

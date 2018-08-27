@@ -246,8 +246,8 @@ VOID CStratMaker::StratProc(char* pMarketData)
 		return;
 
 	// 당일 2회손절
-	if (m_stratHist->IsAlreadySLMaxCnt())
-		return;
+	//TODO if (m_stratHist->IsAlreadySLMaxCnt())
+	//	return;
 
 	//TODO. 이미 이익실현 했으면
 	//if (m_stratHist->IsProfitRealized())
