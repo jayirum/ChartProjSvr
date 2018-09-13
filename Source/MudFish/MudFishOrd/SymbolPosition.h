@@ -1,4 +1,6 @@
 #pragma once
+#include <Windows.h>
+
 
 class CSymbolPosition
 {
@@ -19,7 +21,11 @@ public:
 	double m_dQty;
 	char m_zEndTM[32];
 
-	
+public:
+	void Lock() { EnterCriticalSection(&m_cs); }
+	void Unlock() { LeaveCriticalSection(&m_cs); }
+
+	CNTR_FLAG CntrProc(_In_ char* pOrdPack);
 
 private:
 	char m_OpenPrc[32];
@@ -27,5 +33,6 @@ private:
 	char m_zClrPrc[32];
 	char m_zPL[32];
 
+	CRITICAL_SECTION	m_cs;
 };
 

@@ -45,7 +45,7 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define LEN_QTY				10
 #define LEN_PL				10
 #define LEN_ACNT_NO	11
-#define LEN_ORD_NO	5
+#define LEN_ORD_NO	10
 //#define LEN_ORD_QTY	10
 #define LEN_INDICHART_NM	12	//yyyymmddhhmm
 #define	LEN_STRAT_COMP_ID	10
@@ -54,7 +54,7 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define LEN_USERID			16
 #define LEN_PACKET_CODE		6
 #define SIZE_PACKET_LEN		4
-
+#define LEN_MONEY			12
 
 
 //DEF-BUY, DEF-SELL
@@ -116,7 +116,7 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 
 
 
-//DEF-PACKET CODES
+//DEF-PACKET CODES. LEGACY
 #define CD_SIG_OPENPRC		"SS0001"
 #define CD_SIG_ASSIST		"SS0002"
 #define CD_SIG_MACROSS		"SS0003"
@@ -127,6 +127,13 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define CD_C_ORDER			"SO0001"
 #define CD_C_NCLR			"ST0001"
 #define CD_C_REMAIN_ORD		"ST0002"
+
+//DEF-PACKET CODES. API<->내부
+#define CDAPI_ORD_RQST		"100101"
+#define	CDAPI_ORD_ACPT	"100201"
+#define CDAPI_ORD_REAL	"100301"
+#define CDAPI_CNTR_REAL	"100302"
+#define CDAPI_ERROR		"999999"
 
 #define DEF_EOL				0x0a	// delphi ipworks 와 통신하기 위해
 
@@ -201,6 +208,9 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define WM_RECV_API_MD		WM_USER + 810	// recv data from client - TR, real
 #define WM_SENDORD_API		WM_USER + 811
 #define WM_MARKET_CLOSE		WM_USER + 812
+#define WM_RECV_API_ORD		WM_USER + 813
+#define WM_RECV_API_CNTR	WM_USER + 814
+#define WM_SAVE_API_ORD		WM_USER + 815
 #define WM_DIE				WM_USER + 999
 
 
@@ -396,6 +406,99 @@ typedef struct _ST_MF_STRAT_ORD
 	char	Note[256];
 }ST_MF_STRAT_ORD;
 
+
+//API 에게 전송할 주문 패킷
+typedef struct _ST_API_ORD_RQST
+{
+	char	Code[LEN_PACKET_CODE];	//CD_ORD_RQST
+	char	Symbol[LEN_SYMBOL];		//space trailing
+	char	OrdPrcTp[1];			// 신규,정정,취소
+	char	Side[1];				//CD_BUY / CD_SELL
+	char	OrdTp[1];				//CD_ORD_TP_LIMIT, ...
+	char	OrdPrc[LEN_PRC];		//시장가인 경우 "0      " 
+	char	OrdQty[LEN_QTY];
+	char	OrgOrdNo[LEN_ORD_NO];
+	char	OrgPrc[LEN_PRC];
+	char	UUID[3];				//내부주문번호
+	char	Date[8];
+	char	TM[9];	//hhmmssmmm
+}ST_API_ORD_RQST;
+
+
+//API 의 에러 (API->)
+typedef struct _ST_API_ERROR
+{
+	char	STX[1];
+	char	Len[SIZE_PACKET_LEN];
+	char	Code[LEN_PACKET_CODE];	//999999
+	char	ApiMsgCd[10];
+	char	ApiMsg[128];
+	char	Date[8];
+	char	UUID[36];
+	char	TM[9];	//hhmmssmmm};
+	char	ETX[1];
+}ST_API_ERROR;
+
+//API 에서 수신 - 주문접수
+typedef struct _ST_API_ORD_ACPT
+{
+	char	STX[1];
+	char	Len[SIZE_PACKET_LEN];
+	char	Code[LEN_PACKET_CODE];	//100101
+	char	Symbol[LEN_SYMBOL];
+	char	OrdNo[LEN_ORD_NO];
+	char	OrdPrc[LEN_PRC];
+	char	OrdQty[LEN_QTY];
+	char	OrdProcTp[1];
+	char	RjctTp[1];		//0:정상 1:거부
+	char	UUID[36];
+	char	ApiDT[8];
+	char	ApiTM[9];		// HH:MM:SS
+	char	ETX[1];		//	
+}ST_API_ORD_RESPONSE;
+
+//API 에서 수신 - 주문REAL
+typedef struct _ST_API_ORD_REAL
+{
+	char	STX[1];
+	char	Len[SIZE_PACKET_LEN];
+	char	Code[LEN_PACKET_CODE];
+	char	Symbol[LEN_SYMBOL];
+	char	OrdNo[LEN_ORD_NO];
+	char	Side[1];
+	char	OrdPrc[LEN_PRC];
+	char	OrdQty[LEN_QTY];
+	char	RemnQty[LEN_QTY];
+	char	OrgOrdNo[LEN_ORD_NO];
+	char	ApiDT[8];
+	char	ApiTM[9];		// HH:MM:SS
+	char	ETX[1];		//	
+
+}ST_API_ORD_REAL;
+
+
+//API 에서 수신 - 체결REAL
+typedef struct _ST_API_CNTR_REAL
+{
+	char	STX[1];
+	char	Len[SIZE_PACKET_LEN];
+	char	Code[LEN_PACKET_CODE];
+	char	Symbol[LEN_SYMBOL];
+	char	OrdNo[LEN_ORD_NO];
+	char	Side[1];
+	char	OrdPrc[LEN_PRC];
+	char	OrdQty[LEN_QTY];
+	char	CntrPrc[LEN_PRC];
+	char	CntrQty[LEN_QTY];
+	char	EngagedAmt[LEN_MONEY];	//약정금액
+	char	Cmsn[LEN_MONEY];
+	char	ApiOrdDT[8];
+	char	ApiOrdTM[9];		// HH:MM:SS
+	char	ApiCntrDT[8];
+	char	ApiCntrTM[9];		// HH:MM:SS
+	char	ETX[1];		//	
+
+}ST_API_CNTR_REAL;
 
 // 관리자 작업통보 소켓 버퍼
 typedef struct _ST_MANAGER_SOCKNOTIFY

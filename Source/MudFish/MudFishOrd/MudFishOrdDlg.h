@@ -9,11 +9,22 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/BlockDup.h"
 #include "../../IRUM_UTIL/TcpClient.h"
-#include "SymbolPosition.h"
 #include "afxwin.h"
 #include "afxcmn.h"
-
+#include "StratHistManager.h"
+#include "StratMaker.h"
+#include <map>
 #define EXENAME		"MudFishOrd.exe"
+
+enum {ORD=0, SISE};
+typedef struct _ST_STRAT
+{
+	CStratHistManager*	h;
+	CStratMaker*		m;
+}ST_STRAT;
+
+typedef std::map<std::string, ST_STRAT*>			MAP_STRAT;
+typedef std::map<std::string, ST_STRAT*>::iterator	ITMAP_STRAT;
 
 
 // CMudFishOrdDlg dialog
@@ -45,42 +56,57 @@ protected:
 
 protected:
 
-	static unsigned WINAPI Thread_TickDataRecv(LPVOID lp);
-	static unsigned WINAPI Thread_SendOrd(LPVOID lp);
+	static unsigned WINAPI Thread_ApiTick(LPVOID lp);
+	static unsigned WINAPI Thread_ApiOrd(LPVOID lp);
+	static unsigned WINAPI Thread_SaveData(LPVOID lp);
 
-	BOOL	Begin();
 	BOOL	LoadSymbolInfo(BOOL bCreateStrat);
+	void	ReSetSymbolInfo();
 	VOID	End();
+	VOID	ClearStratMap();
 	void	showMsg(BOOL bSucc, char* pMsg, ...);
 	void	InitSymbolList();
 	void	InitRealPLList();
 
+	void	DatafeedProc(char* pPacket);
+
+	void	CalcEstmPL();
+	VOID	ApiOrd_Err(char* pPacket);
+	VOID	ApiOrd_Acpt(char* pPacket);
+	VOID	ApiOrd_RealOrd(char* pPacket);
+	VOID	ApiOrd_RealCntr(char* pPacket);
+
+	BOOL	GetSymbolInfo(CString& symbol, double* pTickVal, double* pTickSize, double* pCurrPrc, int* pDotCnt);
 private:
 	CBlockDup		m_Dup;
 	CMemPool		*m_pMemPool;
-	CTcpClient		*m_pApiRecv;
+	CTcpClient		*m_pApiClient[2];
 	CDBPoolAdo		*m_pDBPool;
-	CSymbolPosition	*m_symPos;
 
-	char			m_zApiIP[32];
-	int				m_nApiPort;
+	char			m_zApiIP[32][2];
+	int				m_nApiPort[2];
 		
-	HANDLE			m_hRecvThread, m_hOrdSendThread;
-	unsigned int	m_unRecvThread, m_unOrdSendThread;
+	HANDLE			m_hApiTick, m_hApiOrd, m_hSaveData;
+	unsigned int	m_unApiTick, m_unApiOrd, m_unSaveData;
 
 	int m_nItem;
 	int m_nSubitem;
 
-	//todo std::map<std::string, CStratMaker*>		m_mapStrat;
-	//CStratMaker* m_pStrat;
+	MAP_STRAT				m_mapStrat;
 	CString m_sSymbol;
 	CString m_sOpenPrc;
 	CString m_sCloseTime;
 	CString m_sMaxSLCnt;
 public:
 	CListBox m_lstMsg;
+	
 	CListCtrl m_ctlSymbol;
+	std::map<CString, UINT>	m_mapIdxSymbol;
+	
 	CListCtrl m_ctlRealPl;
+	std::map<CString, UINT>	m_mapIdxPl;
+
+	void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonLoad();
 	afx_msg void OnBnClickedButtonSave();
 	afx_msg void OnDblclkListSymbol(NMHDR *pNMHDR, LRESULT *pResult);

@@ -63,8 +63,20 @@
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="SymbolPosition.h">
+    <ClInclude Include="StratHistManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StratMaker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StratID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\MemPool.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -98,8 +110,14 @@
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="SymbolPosition.cpp">
+    <ClCompile Include="StratHistManager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StratMaker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -111,6 +129,7 @@
     <None Include="res\MudFishOrd.rc2">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="MudFishOrd.ini" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\MudFishOrd.ico">
