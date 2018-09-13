@@ -100,6 +100,9 @@ BEGIN_MESSAGE_MAP(CMudFishOrdDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_LOAD, &CMudFishOrdDlg::OnBnClickedButtonLoad)
 	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CMudFishOrdDlg::OnBnClickedButtonSave)
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST_SYMBOL, &CMudFishOrdDlg::OnDblclkListSymbol)
+	ON_BN_CLICKED(IDC_BUTTON_STRAT_START, &CMudFishOrdDlg::OnBnClickedButtonStratStart)
+	ON_BN_CLICKED(IDC_BUTTON_STRAT_STOP, &CMudFishOrdDlg::OnBnClickedButtonStratStop)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -134,11 +137,6 @@ BOOL CMudFishOrdDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	// TODO: Add extra initialization here
-
-	
-
-
 	//	GET LOG DIR
 	char szDir[_MAX_PATH];
 	CProp prop;
@@ -149,31 +147,8 @@ BOOL CMudFishOrdDlg::OnInitDialog()
 	g_log.OpenLog(szDir, EXENAME);
 
 	GetDlgItem(IDC_EDIT_HIDDEN)->SetWindowPos(NULL, 0, 0, 0, 0, SWP_HIDEWINDOW);
-
-	// tcp init
-
-	char port[32];
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_IP", m_zApiIP[ORD]);
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_PORT", port);
-	m_nApiPort[ORD] = atoi(port); 
-	m_pApiClient[ORD] = new CTcpClient;
-	if (!m_pApiClient[ORD]->Begin(m_zApiIP[ORD], m_nApiPort[ORD], 10))
-	{
-		showMsg(FALSE, "API ORD Socket Error");
-		return FALSE;
-	}
-
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_IP", m_zApiIP[SISE]);
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_PORT", port);
-	m_nApiPort[SISE] = atoi(port);
-	m_pApiClient[SISE] = new CTcpClient;
-	if (!m_pApiClient[SISE]->Begin(m_zApiIP[SISE], m_nApiPort[SISE], 10))
-	{
-		showMsg(FALSE, "API SISE Socket Error");
-		return FALSE;
-	}
-
-
+	InitSymbolList();
+	InitRealPLList();
 
 	// mem pool init
 	m_pMemPool = new CMemPool(MEM_PRE_ALLOC, MEM_MAX_ALLOC, MEM_BLOCK_SIZE);
@@ -185,39 +160,11 @@ BOOL CMudFishOrdDlg::OnInitDialog()
 	}
 
 
-	// create recv thread
-	m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiTick, this, 0, &m_unApiTick);
-
-	// create ord thread
-	m_hApiOrd = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiOrd, this, 0, &m_unApiOrd);
-
-	// create save thread
-	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveData, this, 0, &m_unSaveData);
-
-
-	SetTimer(ID_TIME_INIT, 2000, NULL);
+	SetTimer(ID_TIME_INIT, 1000, NULL);
 
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
-
-
-
-void CMudFishOrdDlg::OnTimer(UINT_PTR nIDEvent)
-{
-	switch (nIDEvent)
-	{
-		case ID_TIME_INIT:
-		{
-			KillTimer(ID_TIME_INIT);
-			m_pApiClient[ORD]->StartRecvData();
-			m_pApiClient[SISE]->StartRecvData();
-			OnBnClickedButtonLoad();
-		}
-	}
-	CDialog::OnTimer(nIDEvent);
-}
-
 
 
 void CMudFishOrdDlg::InitSymbolList()
@@ -342,14 +289,13 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 
 		if (p->m_pApiClient[SISE]->HappenedRecvError())
 		{
-			g_log.log(LOGTP_ERR, "TICK DATA RECV ERROR:%s", p->m_pApiClient[SISE]->GetMsg());
+			p->showMsg(FALSE, "TICK DATA RECV ERROR:%s", p->m_pApiClient[SISE]->GetMsg());
 			continue;
 		}
 		char* pBuf = NULL;;
 		if (!p->m_pMemPool->get(&pBuf))
 		{
-			g_log.log(LOGTP_ERR, "memory pool get error");
-			printf("memory pool get error\n");
+			p->showMsg(FALSE, "memory pool get error");
 			continue;
 		}
 		int nLen = p->m_pApiClient[SISE]->GetOneRecvedPacket(pBuf);
@@ -359,7 +305,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 		}
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "TICK DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[SISE]->GetMsg());
+			p->showMsg(FALSE,"TICK DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[SISE]->GetMsg());
 			p->m_pMemPool->release(pBuf);
 			continue;
 		}
@@ -384,7 +330,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 			}
 
 			// 화면에 표시
-			p->DatafeedProc(pBuf);
+			//TODO. p->DatafeedProc(pBuf);
 
 			// strat class 에 전달
 			ST_STRAT* pStrat = (*it).second;
@@ -422,7 +368,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 				char* pData = (char*)msg.lParam;
 				if (!p->m_pApiClient[ORD]->SendData(pData, (int)msg.wParam, &nErrCode))
 				{
-					g_log.log(LOGTP_ERR, "ORD DATA Send ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
+					p->showMsg(FALSE,"ORD DATA Send ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
 					continue;
 				}
 			}
@@ -430,14 +376,13 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 
 		if (p->m_pApiClient[ORD]->HappenedRecvError())
 		{
-			g_log.log(LOGTP_ERR, "ORD DATA RECV ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
+			p->showMsg(FALSE,"ORD DATA RECV ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
 			continue;
 		}
 		char* pBuf = NULL;;
 		if (!p->m_pMemPool->get(&pBuf))
 		{
-			g_log.log(LOGTP_ERR, "memory pool get error");
-			printf("memory pool get error\n");
+			p->showMsg(FALSE, "memory pool get error");
 			continue;
 		}
 		int nLen = p->m_pApiClient[ORD]->GetOneRecvedPacket(pBuf);
@@ -447,7 +392,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 		}
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "ORD DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[ORD]->GetMsg());
+			p->showMsg(FALSE, "ORD DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[ORD]->GetMsg());
 			p->m_pMemPool->release(pBuf);
 			continue;
 		}
@@ -472,7 +417,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 			if (it == p->m_mapStrat.end())
 			{
 				p->m_pMemPool->release(pBuf);
-				g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
+				p->showMsg(FALSE, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 				continue;
 			}
 		}
@@ -520,7 +465,7 @@ char	ETX[1];
 VOID CMudFishOrdDlg::ApiOrd_Err(char* pPacket)
 {
 	ST_API_ERROR* p = (ST_API_ERROR*)pPacket;
-	g_log.log(LOGTP_ERR, "[주문오류](API CODE:%.*s) MSG(%.*s) UUID(%.*s)",
+	showMsg(TRUE, "[주문오류](API CODE:%.*s) MSG(%.*s) UUID(%.*s)",
 		sizeof(p->ApiMsgCd), p->ApiMsgCd, sizeof(p->ApiMsg), p->ApiMsg, sizeof(p->UUID), p->UUID);
 
 	//TODO. SAVE
@@ -586,7 +531,7 @@ char	ETX[1];		//
 VOID CMudFishOrdDlg::ApiOrd_RealOrd(char* pPacket)
 {
 	ST_API_ORD_REAL* p = (ST_API_ORD_REAL*)pPacket;
-	g_log.log(LOGTP_SUCC, "[주문REAL](%.*s) No(%.*s) Side(%c) Prc(%.*s) Qty(%.*s) Rmnq(%.*s) DT(%.8s) TM(%.9s)",
+	showMsg(TRUE, "[주문REAL](%.*s) No(%.*s) Side(%c) Prc(%.*s) Qty(%.*s) Rmnq(%.*s) DT(%.8s) TM(%.9s)",
 		sizeof(p->Symbol), p->Symbol,
 		sizeof(p->OrdNo), p->OrdNo,
 		p->Side[0],
@@ -622,7 +567,7 @@ char	ETX[1];		//
 VOID CMudFishOrdDlg::ApiOrd_RealCntr(char* pPacket)
 {
 	ST_API_CNTR_REAL* p = (ST_API_CNTR_REAL*)pPacket;
-	g_log.log(LOGTP_SUCC, "[체결REAL](%.*s) No(%.*s) Side(%c) OPrc(%.*s) CPrc(%.*s)"
+	showMsg(TRUE, "[체결REAL](%.*s) No(%.*s) Side(%c) OPrc(%.*s) CPrc(%.*s)"
 							"OQty(%.*s) CQty(%.*s) EnggAmt(%.*s) DT(%.8s) TM(%.9s)",
 		sizeof(p->Symbol), p->Symbol,
 		sizeof(p->OrdNo), p->OrdNo,
@@ -729,14 +674,13 @@ unsigned WINAPI CMudFishOrdDlg::Thread_SaveData(LPVOID lp)
 
 		if (p->m_pApiClient[ORD]->HappenedRecvError())
 		{
-			g_log.log(LOGTP_ERR, "ORD DATA RECV ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
+			p->showMsg(FALSE, "ORD DATA RECV ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
 			continue;
 		}
 		char* pBuf = NULL;;
 		if (!p->m_pMemPool->get(&pBuf))
 		{
-			g_log.log(LOGTP_ERR, "memory pool get error");
-			printf("memory pool get error\n");
+			p->showMsg(FALSE, "memory pool get error");
 			continue;
 		}
 		int nLen = p->m_pApiClient[ORD]->GetOneRecvedPacket(pBuf);
@@ -746,7 +690,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_SaveData(LPVOID lp)
 		}
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "ORD DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[ORD]->GetMsg());
+			p->showMsg(FALSE, "ORD DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[ORD]->GetMsg());
 			p->m_pMemPool->release(pBuf);
 			continue;
 		}
@@ -902,16 +846,16 @@ BOOL CMudFishOrdDlg::LoadSymbolInfo(BOOL bCreateStrat)
 			sprintf(data, "%d", nDotCnt);
 			m_ctlSymbol.SetItem(nRow, I_MAXPT, LVIF_TEXT, data, 0, 0, 0, NULL);
 
-			double dData = db->GetDouble("ENTRY_SPREAD");
-			sprintf(data, "%.f", dData);
+			dData = db->GetDouble("ENTRY_SPREAD");
+			sprintf(data, "%.5f", dData);
 			m_ctlSymbol.SetItem(nRow, I_ENTRY_SPREAD, LVIF_TEXT, data, 0, 0, 0, NULL);
 
 			dData = db->GetDouble("CLR_SPREAD");
-			sprintf(data, "%.f", dData);
+			sprintf(data, "%.5f", dData);
 			m_ctlSymbol.SetItem(nRow, I_CLR_SPREAD, LVIF_TEXT, data, 0, 0, 0, NULL);
 
 			dData = db->GetDouble("PT_POINT");
-			sprintf(data, "%.f", dData);
+			sprintf(data, "%.5f", dData);
 			m_ctlSymbol.SetItem(nRow, I_PT_POINT, LVIF_TEXT, data, 0, 0, 0, NULL);
 
 			if (bCreateStrat)
@@ -939,9 +883,6 @@ VOID CMudFishOrdDlg::End()
 	SAFE_DELETE(m_pApiClient[ORD]);
 	SAFE_DELETE(m_pApiClient[SISE]);
 	SAFE_DELETE(m_pDBPool);
-	SAFE_CLOSEHANDLE(m_hApiTick);
-	SAFE_CLOSEHANDLE(m_hApiOrd);
-	SAFE_CLOSEHANDLE(m_hSaveData);
 	ClearStratMap();
 }
 
@@ -1020,7 +961,7 @@ void CMudFishOrdDlg::OnBnClickedButtonSave()
 				"'%s', "	//sMaxPT
 				"'%s', "	//ENTRY_SPREAD
 				"'%s', "	//CLR_SPREAD
-				"'%s', "	//PT_POINT
+				"'%s' "	//PT_POINT
 				,
 				(LPCSTR)sSymbol,
 				(LPCSTR)sOpenPrc,
@@ -1096,7 +1037,7 @@ BOOL CMudFishOrdDlg::PreTranslateMessage(MSG* pMsg)
 			//printf("input code : %d\n", nChar);
 			if (nFocusCtrl == IDC_EDIT_HIDDEN)
 			{
-				if (nChar == VK_RETURN)
+				if (nChar == VK_RETURN || nChar==VK_TAB)
 				{
 					if (pMsg->hwnd == GetDlgItem(IDC_EDIT_HIDDEN)->GetSafeHwnd())
 					{
@@ -1115,3 +1056,79 @@ BOOL CMudFishOrdDlg::PreTranslateMessage(MSG* pMsg)
 
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
+
+
+void CMudFishOrdDlg::OnBnClickedButtonStratStart()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
+
+	// create recv thread
+	m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiTick, this, 0, &m_unApiTick);
+
+	// create ord thread
+	m_hApiOrd = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiOrd, this, 0, &m_unApiOrd);
+
+	// create save thread
+	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveData, this, 0, &m_unSaveData);
+
+	SAFE_CLOSEHANDLE(m_hApiTick);
+	SAFE_CLOSEHANDLE(m_hApiOrd);
+	SAFE_CLOSEHANDLE(m_hSaveData);
+
+	Sleep(2000);
+
+
+	m_pApiClient[ORD]->StartRecvData();
+	m_pApiClient[SISE]->StartRecvData();
+}
+
+
+void CMudFishOrdDlg::OnBnClickedButtonStratStop()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	PostThreadMessage(m_unApiTick, WM_DIE, 0, 0);
+	PostThreadMessage(m_unApiOrd, WM_DIE, 0, 0);
+	PostThreadMessage(m_unSaveData, WM_DIE, 0, 0);
+}
+
+
+void CMudFishOrdDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	switch (nIDEvent)
+	{
+		case ID_TIME_INIT:
+		{
+			KillTimer(ID_TIME_INIT);
+			LoadSymbolInfo(TRUE);
+			// tcp init
+
+			//TODO
+			//char port[32];
+			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_IP", m_zApiIP[ORD]);
+			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_PORT", port);
+			//m_nApiPort[ORD] = atoi(port);
+			//m_pApiClient[ORD] = new CTcpClient;
+			//if (!m_pApiClient[ORD]->Begin(m_zApiIP[ORD], m_nApiPort[ORD], 10))
+			//{
+			//	showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[ORD], m_nApiPort[ORD]);
+			//	return ;
+			//}
+			//showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[ORD], port);
+
+			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_IP", m_zApiIP[SISE]);
+			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_PORT", port);
+			//m_nApiPort[SISE] = atoi(port);
+			//m_pApiClient[SISE] = new CTcpClient;
+			//if (!m_pApiClient[SISE]->Begin(m_zApiIP[SISE], m_nApiPort[SISE], 10))
+			//{
+			//	showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[SISE], m_nApiPort[SISE]);
+			//	return ;
+			//}
+			//showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[SISE], m_nApiPort[SISE]);
+		}
+	}
+	CDialog::OnTimer(nIDEvent);
+}
+
+

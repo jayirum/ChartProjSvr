@@ -70,7 +70,7 @@ protected:
 
 	void	DatafeedProc(char* pPacket);
 
-	void	CalcEstmPL();
+	//void	CalcEstmPL();
 	VOID	ApiOrd_Err(char* pPacket);
 	VOID	ApiOrd_Acpt(char* pPacket);
 	VOID	ApiOrd_RealOrd(char* pPacket);
@@ -106,8 +106,10 @@ public:
 	CListCtrl m_ctlRealPl;
 	std::map<CString, UINT>	m_mapIdxPl;
 
-	void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonLoad();
 	afx_msg void OnBnClickedButtonSave();
 	afx_msg void OnDblclkListSymbol(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnBnClickedButtonStratStart();
+	afx_msg void OnBnClickedButtonStratStop();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
