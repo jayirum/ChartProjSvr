@@ -96,7 +96,7 @@ public:
 	void	SetMaxPLPrc(char* pzCurrPrc);
 	BOOL	IsOpenSrategyExist() { return (m_pos.Status != FLAG_NONE); }
 	VOID	SetOrderSent(double dSentQty) { m_pos.dOrdSentQty += dSentQty; }
-
+	VOID	SetOpenPrc(char *pzOpenPrc);
 
 
 	//BOOL	IsAlreadySLMaxCnt() { return (m_pos.nTotSLCnt >= m_param.nMaxCntSL); }
@@ -106,7 +106,7 @@ public:
 	char*	GtMaxPLPrc() { return m_pos.zMaxPLPrc; }
 	char*	GetEntryPrc() { return m_pos.zEntryPrc; }
 	BOOL	IsHitPTPrc() { return m_pos.bHitPTPrc; }
-
+	BOOL	IsAlreadySent() { return (m_pos.dOrdSentQty == 0); }
 	void	lock() { EnterCriticalSection(&m_cs); }
 	void	unlock() { LeaveCriticalSection(&m_cs); }
 

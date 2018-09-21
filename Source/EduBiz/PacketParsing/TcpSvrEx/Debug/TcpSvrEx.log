@@ -1,0 +1,10 @@
+﻿  TcpSvrEx.cpp
+  TcpParser.cpp
+d:\chartprojsvr\source\edubiz\packetparsing\tcpsvrex\tcpparser.cpp(132): warning C4018: '>': signed 또는 unsigned가 일치하지 않습니다.
+  stdafx.cpp
+  UtilFunc.cpp
+  LogMsg.cpp
+  코드를 생성하고 있습니다...
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvrEx\Debug\TcpSvrEx.exe) does not match the Linker's OutputFile property value (D:\ChartProjSvr\Source\EduBiz\PacketParsing\bin\TcpSvrEx.exe). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+  TcpSvrEx.vcxproj -> D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvrEx\Debug\TcpSvrEx.exe
+  TcpSvrEx.vcxproj -> D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvrEx\Debug\TcpSvrEx.pdb (Full PDB)

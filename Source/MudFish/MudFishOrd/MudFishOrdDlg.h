@@ -68,7 +68,7 @@ protected:
 	void	InitSymbolList();
 	void	InitRealPLList();
 
-	void	DatafeedProc(char* pPacket);
+	void	DatafeedProc(std::string sSymbol, char* pPacket);
 
 	//void	CalcEstmPL();
 	VOID	ApiOrd_Err(char* pPacket);

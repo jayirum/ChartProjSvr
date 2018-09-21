@@ -1,0 +1,7 @@
+﻿  TcpSvr.cpp
+  UtilFunc.cpp
+  LogMsg.cpp
+  코드를 생성하고 있습니다...
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvr\Debug\TcpSvr.exe) does not match the Linker's OutputFile property value (D:\ChartProjSvr\Source\EduBiz\PacketParsing\bin\TcpSvr.exe). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+  TcpSvr.vcxproj -> D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvr\Debug\TcpSvr.exe
+  TcpSvr.vcxproj -> D:\ChartProjSvr\Source\EduBiz\PacketParsing\TcpSvr\Debug\TcpSvr.pdb (Full PDB)

@@ -80,7 +80,7 @@ CMudFishOrdDlg::CMudFishOrdDlg(CWnd* pParent /*=NULL*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-
+	m_unApiTick = m_unApiOrd = m_unSaveData = 0;
 	m_pMemPool = NULL;
 	m_pDBPool = NULL;
 }	
@@ -330,7 +330,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 			}
 
 			// 화면에 표시
-			//TODO. p->DatafeedProc(pBuf);
+			p->DatafeedProc(sSymbol, pBuf);
 
 			// strat class 에 전달
 			ST_STRAT* pStrat = (*it).second;
@@ -340,9 +340,21 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 	return 0;
 }
 
-//TODO. 화면에 표시, 평가손익
-void CMudFishOrdDlg::DatafeedProc(char* pPacket)
-{}
+//화면에 표시, 평가손익
+void CMudFishOrdDlg::DatafeedProc(std::string sSymbol, char* pPacket)
+{
+	ST_PACK2CHART_EX	*pPack = (ST_PACK2CHART_EX*)pPacket;
+	CString symbol = sSymbol.c_str();
+	std::map<CString, UINT>::iterator it = m_mapIdxSymbol.find(symbol);
+	if (it == m_mapIdxSymbol.end())
+	{
+		return ;
+	}
+	UINT idx = (*it).second;
+	char zCurrr[32]; sprintf(zCurrr, "%.*s", sizeof(pPack->Close), pPack->Close);
+	m_ctlSymbol.SetItem(idx, I_CURRPRC, LVIF_TEXT, _T(zCurrr), 0, 0, 0, NULL);
+	//UpdateData(FALSE);
+}
 
 unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 {
@@ -366,11 +378,14 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiOrd(LPVOID lp)
 			{
 				//SEND ORDER
 				char* pData = (char*)msg.lParam;
+				p->showMsg(TRUE, "%s", pData);
 				if (!p->m_pApiClient[ORD]->SendData(pData, (int)msg.wParam, &nErrCode))
 				{
-					p->showMsg(FALSE,"ORD DATA Send ERROR:%s", p->m_pApiClient[ORD]->GetMsg());
+					p->showMsg(FALSE,"ORD DATA Send ERROR:%.*s", (int)msg.wParam, pData);
 					continue;
 				}
+				p->showMsg(TRUE, "ORD SEND(%.*s)", (int)msg.wParam, pData);
+				Sleep(5000);
 			}
 		}
 
@@ -469,7 +484,7 @@ VOID CMudFishOrdDlg::ApiOrd_Err(char* pPacket)
 		sizeof(p->ApiMsgCd), p->ApiMsgCd, sizeof(p->ApiMsg), p->ApiMsg, sizeof(p->UUID), p->UUID);
 
 	//TODO. SAVE
-	//PostThreadMessage(m_unSaveData, WM_SAVE_API_ORD, 0, (LPARAM)pPacket);
+	PostThreadMessage(m_unSaveData, WM_SAVE_API_ORD, 0, (LPARAM)pPacket);
 }
 
 
@@ -505,7 +520,7 @@ VOID CMudFishOrdDlg::ApiOrd_Acpt(char* pPacket)
 		p->UUID);
 
 	//TODO. SAVE ?
-	//PostThreadMessage(m_unSaveData, WM_SAVE_API_ORD, 0, (LPARAM)pPacket);
+	PostThreadMessage(m_unSaveData, WM_SAVE_API_ORD, 0, (LPARAM)pPacket);
 }
 
 
@@ -656,6 +671,7 @@ unsigned WINAPI CMudFishOrdDlg::Thread_SaveData(LPVOID lp)
 	char zSymbol[128];
 	char tm[9];
 	char zCurrPrc[32];
+	int nErrCode, res;
 	while (TRUE)
 	{
 		Sleep(1);
@@ -668,7 +684,17 @@ unsigned WINAPI CMudFishOrdDlg::Thread_SaveData(LPVOID lp)
 			}
 			if (msg.message == WM_SENDORD_API)
 			{
-				//TODO. SEND ORDER
+				char* pData = (char*)msg.lParam;
+				int nLen = msg.wParam;
+
+				res = p->m_pApiClient[ORD]->SendData(pData, nLen, &nErrCode);
+				p->m_pMemPool->release(pData);
+				if(res<=0)
+				{
+					p->showMsg(FALSE, "주문전송 에러(%d)(%s)", nErrCode, p->m_pApiClient[ORD]->GetMsg());
+					continue;
+				}
+				p->showMsg(TRUE, "주문전송 성공(%d)(%.*s)", res,nLen, pData);
 			}
 		}
 
@@ -715,7 +741,8 @@ unsigned WINAPI CMudFishOrdDlg::Thread_SaveData(LPVOID lp)
 			}
 
 			// 화면에 표시
-			p->DatafeedProc(pBuf);
+			//p->DatafeedProc(sSymbol, pBuf);
+			p->showMsg(TRUE, "주문수신(%d)(%.*s)", nLen, nLen, pBuf);
 
 			// strat class 에 전달
 			ST_STRAT* pStrat = (*it).second;
@@ -866,6 +893,10 @@ BOOL CMudFishOrdDlg::LoadSymbolInfo(BOOL bCreateStrat)
 				m_mapStrat[zSymbol] = st;
 				ReSetSymbolInfo();
 			}
+
+			m_mapIdxSymbol[CString(zSymbol)] = nRow;
+
+
 			nRow++;
 			db->Next();
 
@@ -916,14 +947,20 @@ void CMudFishOrdDlg::showMsg(BOOL bSucc, char* pMsg, ...)
 	sprintf(buff2, "[%02d:%02d:%02d.%03d]%s", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buff1);
 
 	m_lstMsg.InsertString(0, buff2);
-	if(bSucc)	g_log.log(LOGTP_SUCC, buff2);
-	else		g_log.log(LOGTP_ERR, buff2);
+	if(bSucc)	g_log.log(LOGTP_SUCC, buff1);
+	else		g_log.log(LOGTP_ERR, buff1);
 }
 
 void CMudFishOrdDlg::OnBnClickedButtonLoad()
 {
 	// TODO: Add your control notification handler code here
-	LoadSymbolInfo(FALSE);
+	showMsg(TRUE, "종목정보를 Loding 합니다....");
+	if (!LoadSymbolInfo(FALSE))
+	{
+		showMsg(TRUE, "종목정보 Loding 에 실패");
+	}
+	else
+		showMsg(TRUE, "종목정보 Loding 에 성공");
 }
 
 
@@ -985,6 +1022,17 @@ void CMudFishOrdDlg::OnBnClickedButtonSave()
 		} // if (m_ctlSymbol.GetCheck(i))
 
 	} //for (int i = 0; i < nCount; i++)
+
+
+	// STRAT_HIST 에 저장
+	
+	ITMAP_STRAT it = m_mapStrat.find(std::string(sSymbol.GetBuffer()));
+	if (it != m_mapStrat.end())
+	{
+		ST_STRAT* p = (*it).second;
+		p->h->SetOpenPrc(sOpenPrc.GetBuffer());
+	}
+	showMsg(TRUE, "종목정보 저장하였습니다...");
 }
 
 
@@ -1062,6 +1110,7 @@ void CMudFishOrdDlg::OnBnClickedButtonStratStart()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 
+	showMsg(TRUE, "전략을 시작합니다!!!!!");
 
 	// create recv thread
 	m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiTick, this, 0, &m_unApiTick);
@@ -1072,6 +1121,15 @@ void CMudFishOrdDlg::OnBnClickedButtonStratStart()
 	// create save thread
 	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveData, this, 0, &m_unSaveData);
 
+	ITMAP_STRAT it;
+	for (it = m_mapStrat.begin(); it != m_mapStrat.end(); ++it)
+	{
+		ST_STRAT* p = (*it).second;
+		p->m->SetInitInfo(
+			m_pMemPool,
+			m_unSaveData,
+			m_unApiOrd);
+	}
 	SAFE_CLOSEHANDLE(m_hApiTick);
 	SAFE_CLOSEHANDLE(m_hApiOrd);
 	SAFE_CLOSEHANDLE(m_hSaveData);
@@ -1086,6 +1144,7 @@ void CMudFishOrdDlg::OnBnClickedButtonStratStart()
 
 void CMudFishOrdDlg::OnBnClickedButtonStratStop()
 {
+	showMsg(TRUE, "전략을 중단합니다.");
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	PostThreadMessage(m_unApiTick, WM_DIE, 0, 0);
 	PostThreadMessage(m_unApiOrd, WM_DIE, 0, 0);
@@ -1103,29 +1162,28 @@ void CMudFishOrdDlg::OnTimer(UINT_PTR nIDEvent)
 			LoadSymbolInfo(TRUE);
 			// tcp init
 
-			//TODO
-			//char port[32];
-			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_IP", m_zApiIP[ORD]);
-			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_PORT", port);
-			//m_nApiPort[ORD] = atoi(port);
-			//m_pApiClient[ORD] = new CTcpClient;
-			//if (!m_pApiClient[ORD]->Begin(m_zApiIP[ORD], m_nApiPort[ORD], 10))
-			//{
-			//	showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[ORD], m_nApiPort[ORD]);
-			//	return ;
-			//}
-			//showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[ORD], port);
+			char port[32];
+			CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_IP", m_zApiIP[ORD]);
+			CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "ORD_PORT", port);
+			m_nApiPort[ORD] = atoi(port);
+			m_pApiClient[ORD] = new CTcpClient;
+			if (!m_pApiClient[ORD]->Begin(m_zApiIP[ORD], m_nApiPort[ORD], 10))
+			{
+				showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[ORD], m_nApiPort[ORD]);
+				return ;
+			}
+			showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[ORD], port);
 
-			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_IP", m_zApiIP[SISE]);
-			//CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_PORT", port);
-			//m_nApiPort[SISE] = atoi(port);
-			//m_pApiClient[SISE] = new CTcpClient;
-			//if (!m_pApiClient[SISE]->Begin(m_zApiIP[SISE], m_nApiPort[SISE], 10))
-			//{
-			//	showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[SISE], m_nApiPort[SISE]);
-			//	return ;
-			//}
-			//showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[SISE], m_nApiPort[SISE]);
+			CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_IP", m_zApiIP[SISE]);
+			CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_PORT", port);
+			m_nApiPort[SISE] = atoi(port);
+			m_pApiClient[SISE] = new CTcpClient;
+			if (!m_pApiClient[SISE]->Begin(m_zApiIP[SISE], m_nApiPort[SISE], 10))
+			{
+				showMsg(FALSE, "API ORD Socket Error[%s][%d]", m_zApiIP[SISE], m_nApiPort[SISE]);
+				return ;
+			}
+			showMsg(FALSE, "API ORD Socket OK(%s)(%d)", m_zApiIP[SISE], m_nApiPort[SISE]);
 		}
 	}
 	CDialog::OnTimer(nIDEvent);

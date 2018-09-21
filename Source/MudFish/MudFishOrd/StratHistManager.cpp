@@ -20,6 +20,13 @@ CStratHistManager::~CStratHistManager()
 	DeleteCriticalSection(&m_cs);
 }
 
+VOID CStratHistManager::SetOpenPrc(char *pzOpenPrc)
+{
+	strcpy(m_param.zOpenPrc, pzOpenPrc);
+}
+
+
+
 void CStratHistManager::SetInitInfo(double dTickVal, double dTickSize, int nDotCnt,
 	char* pzOpenPrc, int nOrdQty, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
 	double dEntrySpread, double dClrSpread, double dPtPoint)

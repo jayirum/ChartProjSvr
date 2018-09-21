@@ -254,6 +254,10 @@ VOID CStratMaker::StratProc(char* pMarketData)
 	if (m_h->IsFinished())
 		return;
 
+	// 아직 주문 진행중이면 패스
+	//if (m_h->IsAlreadySent())
+	//	return;
+
 	m_h->SetMaxPLPrc(m_zLastCurrPrc);
 
 	BOOL bOpen = m_h->IsOpenSrategyExist();
