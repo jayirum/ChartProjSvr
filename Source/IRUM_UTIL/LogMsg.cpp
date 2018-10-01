@@ -75,7 +75,12 @@ BOOL CLogMsg::ReOpen()
 	return	TRUE;
 }
 
-
+VOID CLogMsg::enter()
+{
+	char enter[32] = "\n";
+	_write(m_fd, enter, strlen(enter));
+	return;
+}
 
 VOID CLogMsg::log(LOGMSG_TP tp, char* pMsg, ...)
 {
@@ -86,7 +91,6 @@ VOID CLogMsg::log(LOGMSG_TP tp, char* pMsg, ...)
 		LOCK();
 		__try
 		{
-			
 			p = m_pool->Get();
 			if (p == NULL)
 				return;
@@ -117,6 +121,13 @@ VOID CLogMsg::log(LOGMSG_TP tp, char* pMsg, ...)
 
 VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 {
+	if (p->tp == DEBUG_)
+	{
+#ifndef _DEBUG
+		return;
+#endif // !_DEBUG
+
+	}
 	__try
 	{
 		__try
@@ -129,14 +140,17 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 				return;
 			}
 
-
+			
 			char buff[DEF_LOG_LEN];
 			SYSTEMTIME	st;
 
 			GetLocalTime(&st);
 			if (p->tp == LOGTP_SUCC)	strcpy(buff, "[I]");
+			if (p->tp == INFO)			strcpy(buff, "[I]");
 			if (p->tp == LOGTP_ERR)		strcpy(buff, "[E]");
+			if (p->tp == ERR)			strcpy(buff, "[E]");
 			if (p->tp == LOGTP_FATAL)	strcpy(buff, "[F]");
+			if (p->tp == DEBUG_)			strcpy(buff, "[D]");
 
 			sprintf(buff + 3, "[%02d:%02d:%02d.%03d]%.*s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, DEF_LOG_LEN - 20, p->msg);
 			_write(m_fd, buff, strlen(buff));

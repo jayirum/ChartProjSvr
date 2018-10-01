@@ -16,11 +16,12 @@
 #include <map>
 #define EXENAME		"MudFishOrd.exe"
 
-enum {ORD=0, SISE};
+enum {API_ORD=0, API_TICK};
 typedef struct _ST_STRAT
 {
 	CStratHistManager*	h;
 	CStratMaker*		m;
+	BOOL				bFirstFeed;
 }ST_STRAT;
 
 typedef std::map<std::string, ST_STRAT*>			MAP_STRAT;
@@ -67,8 +68,10 @@ protected:
 	void	showMsg(BOOL bSucc, char* pMsg, ...);
 	void	InitSymbolList();
 	void	InitRealPLList();
+	void	InitApiSocket(int Idx);
+	void	CloseApiSocket(int Idx);
 
-	void	DatafeedProc(std::string sSymbol, char* pPacket);
+	void	DatafeedProc(std::string sSymbol, char* pPacket, BOOL bFirstFeedSaved);
 
 	//void	CalcEstmPL();
 	VOID	ApiOrd_Err(char* pPacket);
@@ -83,7 +86,7 @@ private:
 	CTcpClient		*m_pApiClient[2];
 	CDBPoolAdo		*m_pDBPool;
 
-	char			m_zApiIP[32][2];
+	std::string		m_sApiIP[2];
 	int				m_nApiPort[2];
 		
 	HANDLE			m_hApiTick, m_hApiOrd, m_hSaveData;
@@ -97,6 +100,8 @@ private:
 	CString m_sOpenPrc;
 	CString m_sCloseTime;
 	CString m_sMaxSLCnt;
+
+	BOOL	m_bContinue;
 public:
 	CListBox m_lstMsg;
 	
@@ -112,4 +117,6 @@ public:
 	afx_msg void OnBnClickedButtonStratStart();
 	afx_msg void OnBnClickedButtonStratStop();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnBnClickedCancel();
+	afx_msg void OnBnClickedOk();
 };

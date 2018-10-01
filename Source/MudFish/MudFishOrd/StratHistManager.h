@@ -46,9 +46,9 @@ typedef struct _ST_STRAT_PARAM
 	int nMaxCntPT;	//당일 누적 pt 제한횟수
 	char zEndTM[6];	//HH:MM
 	int nOrdQty;
-	double dEntrySpread;	//0.1%
-	double dClrSpread;		//0.5%
-	double dPtPoint;
+	double dEntryTrigger;		//0.1%
+	double dClrCheckTrigger;	//0.5%
+	double dPtClrTrigger;		//최고대비 x% 떨어지면 익절
 }ST_STRAT_PARAM;
 
 class ST_POSITION
@@ -58,6 +58,8 @@ public:
 	~ST_POSITION() {};
 
 	void Init(BOOL bFirst);
+	void IncSLCnt();
+	void IncPTCnt();
 	
 	char zEntryPrc[32];
 	char zClrPrc[32];
@@ -66,6 +68,7 @@ public:
 	double dQty;
 
 	double dOrdSentQty;			//주문전송한 수량. 0 이 아니면 주문하지 않는다.
+
 
 	EN_STATUS_FLAG	Status;
 	int				nTotSLCnt;	//당일 누적 sl 횟수
@@ -85,19 +88,21 @@ public:
 
 	void	SetInitInfo(double dTickVal, double dTickSize, int nDotCnt, 
 		char* pzOpenPrc, int nOrdQty, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
-		double dEntrySpread, double dClrSpread, double dProfitRealiezed);
+		double dEntryTrigger, double dClrCheckTrigger, double dProfitRealiezed);
 
-	void	SetCntrInfo(LPCSTR lpBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
-private:
-	void	CalcClrCntr(LPCSTR lpBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
+	void	AcptCntrProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
+	void	AcptEntryNewProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
+	void	AcptEntryAddProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
+	void	AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
 public:
 
 	BOOL	IsFinished() { return m_pos.bFinish; }
 	void	SetMaxPLPrc(char* pzCurrPrc);
 	BOOL	IsOpenSrategyExist() { return (m_pos.Status != FLAG_NONE); }
-	VOID	SetOrderSent(double dSentQty) { m_pos.dOrdSentQty += dSentQty; }
+	VOID	SetOrderSent(double dSentQty);
 	VOID	SetOpenPrc(char *pzOpenPrc);
-
+	VOID	SetConfigInfo(LPCSTR pzOpenPRc, LPCSTR pzOrdQty, LPCSTR pzEndTM, LPCSTR sMaxSL,
+		LPCSTR sMaxPT, LPCSTR sEntrySpread, LPCSTR sClrSpread, LPCSTR sPtPoint);
 
 	//BOOL	IsAlreadySLMaxCnt() { return (m_pos.nTotSLCnt >= m_param.nMaxCntSL); }
 	//BOOL	IsProfitRealized() {return m_pos.bProfitRealized;}
@@ -106,7 +111,7 @@ public:
 	char*	GtMaxPLPrc() { return m_pos.zMaxPLPrc; }
 	char*	GetEntryPrc() { return m_pos.zEntryPrc; }
 	BOOL	IsHitPTPrc() { return m_pos.bHitPTPrc; }
-	BOOL	IsAlreadySent() { return (m_pos.dOrdSentQty == 0); }
+	BOOL	IsAlreadySent() { return (m_pos.dOrdSentQty > 0); }
 	void	lock() { EnterCriticalSection(&m_cs); }
 	void	unlock() { LeaveCriticalSection(&m_cs); }
 
@@ -117,10 +122,11 @@ public:
 	EN_STATUS_FLAG	status() { return m_pos.Status; }
 	BOOL	IsLong() { return (m_pos.Status == FLAG_OPEN_BUY); }
 	BOOL	IsShort() { return (m_pos.Status == FLAG_OPEN_SELL); }
-	double	entryspread() { return m_param.dEntrySpread; }
+	double	entryspread() { return m_param.dEntryTrigger; }
 	int		ordqty() { return m_param.nOrdQty; }
 	int		entryqty() { return (int)m_pos.dQty; }
 	int		dotcnt() { return m_symbol.nDotCnt; }
+
 private:
 
 	ST_SYMBOL_INFO	m_symbol;

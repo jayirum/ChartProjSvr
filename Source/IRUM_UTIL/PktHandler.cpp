@@ -114,8 +114,8 @@ int	CPktHandler::GetOnePktFn(char* pOutBuf)
 
 
 		// 패킷상 len 과 실제 stx~etx 까지의 길이 다르면 버린다.
+		sprintf(pOutBuf, "[길이오류]패킷상길이(%d) STX-ETX 까지 길이(%d)(%.20s)", nNominalLen, nLen, m_strBuf.c_str());
 		m_strBuf.erase(nStx, nLen);
-		sprintf(pOutBuf, "[길이오류]패킷상길이(%d) STX-ETX 까지 길이(%d)", nNominalLen, nLen);
 		return -1;
 	}
 

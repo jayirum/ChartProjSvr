@@ -19,7 +19,8 @@
 #define DEF_LOG_LEN 4096
 
 
-enum LOGMSG_TP { LOGTP_SUCC, LOGTP_ERR, LOGTP_FATAL=9};
+enum LOGMSG_TP { LOGTP_SUCC, LOGTP_ERR, INFO,ERR, DEBUG_, ENTER_, LOGTP_FATAL = 9};
+
 #define WM_LOGMSG_LOG	WM_USER + 555
 
 typedef struct _ST_LOGMSG
@@ -55,7 +56,7 @@ public:
 
 	BOOL	OpenLog(char* psPath, char* pFileName);	
 	VOID	log(LOGMSG_TP, char* pMsg, ...);
-
+	VOID	enter();
 private:
 	VOID	logMsg(ST_LOGMSG* p);
 

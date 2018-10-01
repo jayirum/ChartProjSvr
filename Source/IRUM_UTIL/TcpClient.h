@@ -16,7 +16,7 @@ class CTcpClient : public CBaseThread
 {
 public:
 	
-	CTcpClient();
+	CTcpClient(char* pzName);
 	virtual ~CTcpClient();
 
 	BOOL	Begin( char* pRemoteIP, int nPort, int nTimeOut);
@@ -28,19 +28,20 @@ public:
 	VOID	SetIP_Port(char* psIP, int nPort);
 	int		GetOneRecvedPacket(char* pOutBuf);
 	BOOL	HappenedRecvError() { return m_bRecvErr; }
+	BOOL	IsConnected();
+
+	BOOL	Connect();
 private:
 	int		RecvData(char* pOutBuf, int nBufLen, int *o_ErrCode);
 	virtual VOID	ThreadFunc();
 	VOID	RecvThread();
-	BOOL	Connect();
 	VOID	Disconnect();
 	//BOOL	Send(char* pInBuf, int nBufLen, int nTimeOut);
 	//BOOL	Recv(char* pOutBuf, int nBufLen);
 	//BOOL	SendRecv(/*in,out*/ char* pBuf, int nBufLen );	
 	VOID	DumpErr( char* pSrc, int nErr );
-	BOOL	IsConnected();
-	
 //protected:
+	char			m_zMyName[32];
 	char			m_zRemoteIP[128];
 	int				m_nRemotePort;
 	char			m_zMsg[512];

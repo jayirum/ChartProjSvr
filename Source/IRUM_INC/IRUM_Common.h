@@ -419,9 +419,10 @@ typedef struct _ST_API_ORD_RQST
 	char	OrdQty[LEN_QTY];
 	char	OrgOrdNo[LEN_ORD_NO];
 	char	OrgPrc[LEN_PRC];
-	char	UUID[3];				//내부주문번호
+	char	UUID[36];				//내부주문번호
 	char	Date[8];
 	char	TM[9];	//hhmmssmmm
+	char	EOL[1];
 }ST_API_ORD_RQST;
 
 
@@ -470,11 +471,12 @@ typedef struct _ST_API_ORD_REAL
 	char	OrdQty[LEN_QTY];
 	char	RemnQty[LEN_QTY];
 	char	OrgOrdNo[LEN_ORD_NO];
+	char	UUID[36];
 	char	ApiDT[8];
 	char	ApiTM[9];		// HH:MM:SS
 	char	ETX[1];		//	
 
-}ST_API_ORD_REAL;
+}ST_API_ORD_REAL;//123
 
 
 //API 에서 수신 - 체결REAL
@@ -498,7 +500,7 @@ typedef struct _ST_API_CNTR_REAL
 	char	ApiCntrTM[9];		// HH:MM:SS
 	char	ETX[1];		//	
 
-}ST_API_CNTR_REAL;
+}ST_API_CNTR_REAL; // 128
 
 // 관리자 작업통보 소켓 버퍼
 typedef struct _ST_MANAGER_SOCKNOTIFY

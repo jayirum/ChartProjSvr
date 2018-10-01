@@ -9,8 +9,9 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CTcpClient::CTcpClient() :CBaseThread("TCP")
+CTcpClient::CTcpClient(char* pzName) :CBaseThread("TCP")
 {
+	strcpy(m_zMyName, pzName);
 	m_sock = INVALID_SOCKET;
 	m_bConn = FALSE;
 	m_bRecvErr = FALSE;
@@ -119,8 +120,17 @@ VOID CTcpClient::RecvThread()
 		int Ret = recv(m_sock, zRecvBuff, LEN_BUFF_SIZE, 0);
 		if (Ret > 0)
 		{
+			ST_API_ORD_RESPONSE* p = (ST_API_ORD_RESPONSE*)zRecvBuff;
+			if (strncmp(p->Code, CDAPI_ORD_ACPT, 6) == 0 ||
+				strncmp(p->Code, CDAPI_ORD_REAL, 6) == 0 ||
+				strncmp(p->Code, CDAPI_CNTR_REAL, 6) == 0
+				)
+			{
+				OutputDebugString(zRecvBuff);
+				OutputDebugString("\n");
+			}
 			//printf("[RECV](%.*s)\n", Ret, zRecvBuff);
-			m_pktHandler.AddPkt(zRecvBuff, Ret);
+			m_pktHandler.AddPkt(zRecvBuff, Ret);			
 		}
 		else if (Ret == 0)
 		{
@@ -234,6 +244,12 @@ int	 CTcpClient::GetOneRecvedPacket(char* pOutBuf)
 {
 	if (!pOutBuf)
 		return -1;
+	if (strcmp(m_zMyName, "ORD") == 0)
+	{
+		int a;
+		a = 10;
+
+	}
 	return m_pktHandler.GetOnePkt(pOutBuf);
 }
 
@@ -258,6 +274,7 @@ int CTcpClient::RecvData( char* pOutBuf, int nBufLen, int *o_ErrCode)
 		Disconnect();
 		return 0;
 	}
+
 	return Ret;
 }
 

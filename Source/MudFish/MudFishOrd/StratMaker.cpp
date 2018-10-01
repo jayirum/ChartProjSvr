@@ -65,7 +65,7 @@ void CStratMaker::SetInitInfo(CMemPool* pMemPool,unsigned dwSaveThread, unsigned
 //		g_log.log(LOGTP_FATAL, ">>>>>>>CHART SHM OPEN 에러(%s)(symbol:%s)(%s)", m_zShmNm, m_zSymbol, m_pShmQ->GetErr());
 //		return FALSE;
 //	}
-//	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_zMutexNm);
+//	g_log.log(INFO, "SHM OPEN 성공(%s)", m_zMutexNm);
 //
 //
 //	return TRUE;
@@ -85,11 +85,11 @@ void CStratMaker::SetInitInfo(CMemPool* pMemPool,unsigned dwSaveThread, unsigned
 //	//m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
 //	//if (!m_pDBPool->Init(1))
 //	//{
-//	//	g_log.log(LOGTP_ERR, "DB OPEN FAIL(MSG:%s)", m_pDBPool->GetMsg());
-//	//	g_log.log(LOGTP_ERR, "(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
+//	//	g_log.log(ERR, "DB OPEN FAIL(MSG:%s)", m_pDBPool->GetMsg());
+//	//	g_log.log(ERR, "(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
 //	//	return FALSE;
 //	//}
-//	//g_log.log(LOGTP_ERR, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
+//	//g_log.log(ERR, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
 //	return TRUE;
 //}
 
@@ -123,8 +123,7 @@ VOID CStratMaker::ThreadFunc()
 
 VOID CStratMaker::MainFunc()
 {
-	g_log.log(LOGTP_SUCC, "[THREAD ID:%d](%s)Start...\n", GetMyThreadID(), m_zSymbol);
-	printf("[CStratMaker THREAD ID:%d](%s)Start...", GetMyThreadID(), m_zSymbol);
+	g_log.log(INFO, "[Strat MainThread ID:%d](%s)Start...\n", GetMyThreadID(), m_zSymbol);
 	
 	//if (!BeginDB())
 	//	return;
@@ -151,7 +150,7 @@ VOID CStratMaker::MainFunc()
 		}
 		else if (dwRet == WAIT_ABANDONED_0) 
 		{
-			g_log.log(LOGTP_ERR, "[THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
+			g_log.log(ERR, "[THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
 			Sleep(1000);
 			continue;
 		}
@@ -169,11 +168,11 @@ VOID CStratMaker::MainFunc()
 			}
 			case WM_CHART_ALL_KILL:
 			{
-				g_log.log(LOGTP_SUCC, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
+				g_log.log(INFO, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
 				break;
 			}
 			//주문처리
-			if (msg.message == WM_RECV_API_CNTR)
+			case WM_RECV_API_CNTR:
 			{
 				char* pData = (char*)msg.lParam;
 				APIOrdProc(pData);
@@ -198,7 +197,7 @@ VOID CStratMaker::APIOrdProc(char* pData)
 	sprintf(zCntrPrc, "%.*s", sizeof(p->CntrPrc), p->CntrPrc);
 	sprintf(zCntrQty, "%.*s", sizeof(p->CntrQty), p->CntrQty);
 
-	m_h->SetCntrInfo(zBsTp, zCntrPrc, zCntrQty);
+	m_h->AcptCntrProc(zBsTp, zCntrPrc, zCntrQty);
 }
 
 
@@ -255,8 +254,8 @@ VOID CStratMaker::StratProc(char* pMarketData)
 		return;
 
 	// 아직 주문 진행중이면 패스
-	//if (m_h->IsAlreadySent())
-	//	return;
+	if (m_h->IsAlreadySent())
+		return;
 
 	m_h->SetMaxPLPrc(m_zLastCurrPrc);
 
@@ -327,72 +326,65 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	if (!nCondition)
 		return;
 
+	char* pData = NULL;
+	int nStructSize = sizeof(ST_API_ORD_RQST);
+	if (!m_pMemPool->get(&pData))
+		return;
+
+	g_log.enter();
+	g_log.log(INFO, "===============================================");
+
 //	ST_MF_STRAT_ORD stOrd;
-	ST_API_ORD_RQST apiOrd;
-	memset(&apiOrd, 0x20, sizeof(apiOrd));
-	memcpy(apiOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
-	memcpy(apiOrd.Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
+	ST_API_ORD_RQST* apiOrd = (ST_API_ORD_RQST*)pData;
+	memset(apiOrd, 0x20, sizeof(ST_API_ORD_RQST));
+	memcpy(apiOrd->Symbol, m_zSymbol, strlen(m_zSymbol));
+	memcpy(apiOrd->Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
 
 	//int nStructSize = sizeof(ST_MF_STRAT_ORD);
 	//memset(&stOrd, 0x20, nStructSize);
 	//memcpy(stOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
 
-	char zMsg1[128];
+	char zMsg1[512];
 	char zStratID[32];
 	if (nCondition == 1) {
 		strcpy(zStratID, STRATID_BUY_OPEN);
 		//stOrd.Side[0] = CD_BUY;
-		apiOrd.Side[0] = CD_BUY;
+		apiOrd->Side[0] = CD_BUY;
 		strcpy(zBasePrc, zUpperPrc);
-		sprintf(zMsg1, "[매수진입][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(0.1 Percent) [API TM:%s]", 
-			pzCurrPrc, zUpperPrc, m_h->openprc(), pzApiTm);
-		g_log.log(LOGTP_SUCC, zMsg1);
+		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(0.1 Percent)[API TM:%s]"
+			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(), pzApiTm);
+		g_log.log(INFO, zMsg1);
 	}
 	else {
 		strcpy(zStratID, STRATID_SELL_OPEN);
-		//stOrd.Side[0] = CD_SELL;
+		apiOrd->Side[0] = CD_SELL;
 		strcpy(zBasePrc, zLowerPrc);
 
-		sprintf(zMsg1, "[매도진입][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(0.1 Percent) [API TM:%s]",
-			pzCurrPrc, zLowerPrc, m_h->openprc(), pzApiTm);
-		g_log.log(LOGTP_SUCC, zMsg1);
+		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(0.1 Percent)[API TM:%s]"
+			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), pzApiTm);
+		g_log.log(INFO, zMsg1);
 	}
-	//memcpy(stOrd.StratID, zStratID, strlen(zStratID));
-	//stOrd.ClrTp[0] = CD_OPEN;
-	//
-	//memcpy(stOrd.OpenPrc, m_h->openprc(), strlen(m_h->openprc()));
-	//memcpy(stOrd.BasePrc, zBasePrc, strlen(zBasePrc));
-	//memcpy(stOrd.CurrPrc, pzCurrPrc, strlen(pzCurrPrc));
-	//memcpy(stOrd.OrdPrc, pzCurrPrc, strlen(pzCurrPrc));
-	//stOrd.OrdProtTp[0] = CD_ORD_TP_MARKET;
+	
 
 	char tmp[128];
 	strcpy(tmp, CUtil::Get_NowTime());
-	//memcpy(stOrd.OrdTM, tmp, strlen(tmp));
-	//memcpy(stOrd.ApiDT, pzApiDT, strlen(pzApiDT));
-	//memcpy(stOrd.ApiTM, pzApiTm, strlen(pzApiTm));
-	//int nLen = strlen(zMsg1);
-	//memcpy(stOrd.Note, zMsg1, strlen(zMsg1));
-
+	
 	////
-	apiOrd.OrdPrcTp[0] = CD_ORD_PROC_NEW;
-	apiOrd.OrdTp[0] = CD_ORD_TP_MARKET;
-	apiOrd.OrdPrc[0] = '0';					//시장가인 경우 "0      "
-	sprintf(tmp, "%-*d", sizeof(apiOrd.OrdQty), m_h->ordqty());
-	memcpy(apiOrd.OrdQty, tmp, sizeof(apiOrd.OrdQty));
+	apiOrd->OrdPrcTp[0] = CD_ORD_PROC_NEW;
+	apiOrd->OrdTp[0] = CD_ORD_TP_MARKET;
+	apiOrd->OrdPrc[0] = '0';					//시장가인 경우 "0      "
+	sprintf(tmp, "%-*d", sizeof(apiOrd->OrdQty), m_h->ordqty());
+	memcpy(apiOrd->OrdQty, tmp, sizeof(apiOrd->OrdQty));
 	MakeGUID(tmp);
-	memcpy(apiOrd.UUID, tmp, sizeof(apiOrd.UUID)); 
-	memcpy(apiOrd.Date, pzApiDT, strlen(pzApiDT));
-	memcpy(apiOrd.TM, pzApiTm, strlen(pzApiTm));
+	memcpy(apiOrd->UUID, tmp, min(sizeof(apiOrd->UUID),strlen(tmp))); 
+	memcpy(apiOrd->Date, pzApiDT, strlen(pzApiDT));
+	memcpy(apiOrd->TM, pzApiTm, strlen(pzApiTm));
+	apiOrd->EOL[0] = DEF_EOL;
+	apiOrd->EOL[1] = 0x00;
 
-	//PostThreadMessage
-	char* pData = NULL;
-	int nStructSize = sizeof(apiOrd);
-	if (m_pMemPool->get(&pData))
-	{
-		memcpy(pData, (void*)&apiOrd, nStructSize);
-		PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
-	}
+	//g_log.log(INFO, "[전략발동][%s]Open주문(%s) 전송준비", m_zSymbol, zStratID);
+	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
+	
 
 	m_h->SetOrderSent((double)m_h->ordqty());
 }
@@ -418,13 +410,15 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	{
 		// 손절조건 점검.SL SELL : CurrPrc <= Open Prc
 		strcpy(zBasePrc, m_h->openprc());
-		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, 2/*TODO*/, LEN_PRC);
+		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp <= 0)
 		{
+			g_log.enter();
+			g_log.log(INFO, "===============================================");
 			strcpy(pzStratID, STRATID_SELL_SL);
-			sprintf(pzClrMsg, "LONG손절조건.(오픈가:%s, 진입가:%s, 현재가:%s)",
-				m_h->openprc(), m_h->GetEntryPrc(), pzCurrPrc);
-			CUtil::logOutput("%s\n", pzClrMsg);
+			sprintf(pzClrMsg, "[전략발동][LONG손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) <= 현재가(%s). 참조로 진입가(%s)"
+				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+			g_log.log(INFO, pzClrMsg);
 		}
 
 		else
@@ -433,7 +427,9 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			if (m_h->IsHitPTPrc())
 			{
 				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg)) {
-					g_log.log(LOGTP_SUCC, pzClrMsg);
+					g_log.enter();
+					g_log.log(INFO, "===============================================");
+					g_log.log(INFO, pzClrMsg);
 					strcpy(pzStratID, STRATID_SELL_PT);
 				}
 			}
@@ -445,12 +441,14 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	{
 		// SL BUY : CurrPrc >= Open Prc
 		strcpy(zBasePrc, m_h->openprc());
-		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, 2/*TODO*/, LEN_PRC);
+		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp >= 0) {
 			strcpy(pzStratID, STRATID_BUY_SL);
-			sprintf(pzClrMsg, "SHORT손절조건.(오픈가:%s, 진입가:%s, 현재가:%s)",
-				m_h->openprc(), m_h->GetEntryPrc(), pzCurrPrc);
-			CUtil::logOutput("%s\n", pzClrMsg);
+			g_log.enter();
+			g_log.log(INFO, "===============================================");
+			sprintf(pzClrMsg, "[전략발동][SHORT손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) >= 현재가(%s). 참조로 진입가(%s)"
+				,m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+			g_log.log(INFO, pzClrMsg);
 		}
 		// PT BUY : CurrPrc <= OpenPrc + (OpenPrc * 0.005)
 		else
@@ -459,7 +457,9 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			{
 				char zMsg[512] = { 0, };
 				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg)) {
-					g_log.log(LOGTP_SUCC, pzClrMsg);
+					g_log.enter();
+					g_log.log(INFO, "===============================================");
+					g_log.log(INFO, pzClrMsg);
 					strcpy(pzStratID, STRATID_BUY_PT);
 				}
 			}
@@ -480,79 +480,46 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 
 	if (strcmp(zStratID, STRATID_NONE) == 0)
 	{
-		g_log.log(LOGTP_ERR, "포지션이 없는데 청산전략 점검");
+		//청산조건이 아님
 		return;
 	}
 
-	//ST_MF_STRAT_ORD stOrd;
-	//int nStructSize = sizeof(ST_MF_STRAT_ORD);
-	//memset(&stOrd, 0x20, nStructSize);
-	//memcpy(stOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
+	char* pData = NULL;
+	int nStructSize = sizeof(ST_API_ORD_RQST);
+	if (!m_pMemPool->get(&pData))
+		return;
 
-	ST_API_ORD_RQST apiOrd;
-	memset(&apiOrd, 0x20, sizeof(apiOrd));
-	memcpy(apiOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
-	memcpy(apiOrd.Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
+	ST_API_ORD_RQST *apiOrd = (ST_API_ORD_RQST *)pData;
+	memset(apiOrd, 0x20, sizeof(ST_API_ORD_RQST));
+	memcpy(apiOrd->Symbol, m_zSymbol, strlen(m_zSymbol));
+	memcpy(apiOrd->Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
 
 	if (strcmp(zStratID, STRATID_BUY_SL) == 0)	//매수손절
-		apiOrd.Side[0] = CD_BUY;
+		apiOrd->Side[0] = CD_BUY;
 	if (strcmp(zStratID, STRATID_BUY_PT) == 0)	//매수익절
-		apiOrd.Side[0] = CD_BUY;
+		apiOrd->Side[0] = CD_BUY;
 	if (strcmp(zStratID, STRATID_SELL_SL) == 0)	//매도손절
-		apiOrd.Side[0] = CD_SELL;
+		apiOrd->Side[0] = CD_SELL;
 	if (strcmp(zStratID, STRATID_SELL_PT) == 0)	//매도익절
-		apiOrd.Side[0] = CD_SELL;
-
-	//memcpy(stOrd.StratID, zStratID, strlen(zStratID));
-	//stOrd.ClrTp[0] = CD_CLOSE;
-
-	//memcpy(stOrd.OpenPrc, m_h->openprc(), strlen(m_h->openprc()));
-	//memcpy(stOrd.BasePrc, zBasePrc, strlen(zBasePrc));
-	//memcpy(stOrd.CurrPrc, pzCurrPrc, strlen(pzCurrPrc));
-	//memcpy(stOrd.OrdPrc, pzCurrPrc, strlen(pzCurrPrc));
-
-	//strcpy(zMaxPrc, m_h->GtMaxPLPrc());
-	//memcpy(stOrd.MaxPLPrc, zMaxPrc, strlen(zMaxPrc));
-
-	//strcpy(zEntryPrc, m_h->GetEntryPrc());
-	//memcpy(stOrd.EntryPrc, zEntryPrc, strlen(zEntryPrc));
-
-	//stOrd.OrdProtTp[0] = CD_ORD_TP_MARKET;
+		apiOrd->Side[0] = CD_SELL;
 
 	char tmp[128];
 	strcpy(tmp, CUtil::Get_NowTime());
-	//memcpy(stOrd.OrdTM, tmp, strlen(tmp));
-	//memcpy(stOrd.ApiDT, pzApiDT, strlen(pzApiDT));
-	//memcpy(stOrd.ApiTM, pzApiTm, strlen(pzApiTm));
-	//sprintf(stOrd.Note, "%.*s", min(sizeof(stOrd.Note) - 1, strlen(zClrMsg)), zClrMsg);
-	////PostThreadMessage
-	//char* pData = NULL;
-	//if (m_pMemPool->get(&pData))
-	//{
-	//	memcpy(pData, (void*)&stOrd, nStructSize);
-	//	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
-	//}
-
-
 	////
-	apiOrd.OrdPrcTp[0] = CD_ORD_PROC_NEW;
-	apiOrd.OrdTp[0] = CD_ORD_TP_MARKET;
-	apiOrd.OrdPrc[0] = '0';					//시장가인 경우 "0      "
-	sprintf(tmp, "%-*d", sizeof(apiOrd.OrdQty), m_h->entryqty());	//청산이므로 포지션수량
-	memcpy(apiOrd.OrdQty, tmp, sizeof(apiOrd.OrdQty));
+	apiOrd->OrdPrcTp[0] = CD_ORD_PROC_NEW;
+	apiOrd->OrdTp[0] = CD_ORD_TP_MARKET;
+	apiOrd->OrdPrc[0] = '0';					//시장가인 경우 "0      "
+	sprintf(tmp, "%-*d", sizeof(apiOrd->OrdQty), m_h->entryqty());	//청산이므로 포지션수량
+	memcpy(apiOrd->OrdQty, tmp, sizeof(apiOrd->OrdQty));
 	MakeGUID(tmp);
-	memcpy(apiOrd.UUID, tmp, sizeof(apiOrd.UUID));
-	memcpy(apiOrd.Date, pzApiDT, strlen(pzApiDT));
-	memcpy(apiOrd.TM, pzApiTm, strlen(pzApiTm));
+	memcpy(apiOrd->UUID, tmp, sizeof(apiOrd->UUID));
+	memcpy(apiOrd->Date, pzApiDT, strlen(pzApiDT));
+	memcpy(apiOrd->TM, pzApiTm, strlen(pzApiTm));
+	apiOrd->EOL[0] = DEF_EOL;
+	apiOrd->EOL[1] = 0x00;
 
-	//PostThreadMessage
-	char* pData = NULL;
-	int nStructSize = sizeof(apiOrd);
-	if (m_pMemPool->get(&pData))
-	{
-		memcpy(pData, (void*)&apiOrd, nStructSize);
-		PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
-	}
+	//g_log.log(INFO, "[전략발동][%s]청산주문(%s) 전송준비", m_zSymbol, zStratID);
+	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
 
 	m_h->SetOrderSent((double)m_h->ordqty());
 }
@@ -570,7 +537,10 @@ void CStratMaker::CheckMarketClosing()
 	// 05:00 장마감. ==> 분이 같으면 장마감.
 	if (strncmp(zNow, m_h->endtm(), 5) == 0)
 	{
-		g_log.log(LOGTP_SUCC, "[%s 장마감] (장마감시간:%s) (현재시간:%s)", m_zSymbol, m_h->endtm(), zNow);
+		if (!m_h->IsOpenSrategyExist())
+			return;
+
+		g_log.log(INFO, "[%s 장마감] (장마감시간:%s) (현재시간:%s)", m_zSymbol, m_h->endtm(), zNow);
 		CUtil::logOutput("[%s 장마감] (장마감시간:%s) (현재시간:%s)\n", m_zSymbol, m_h->endtm(), zNow);
 		m_nMarketStatus = MARKET_CLOSING;
 
@@ -587,75 +557,59 @@ VOID CStratMaker::MarketCloseClr()
 	if (!m_h->IsOpenSrategyExist())
 		return;
 
-	//ST_MF_STRAT_ORD stOrd;
-	//int nStructSize = sizeof(ST_MF_STRAT_ORD);
-	//memset(&stOrd, 0x20, nStructSize);
-	//memcpy(stOrd.Symbol, m_zSymbol, strlen(m_zSymbol));	
-
-	//memcpy(stOrd.StratID, STRATID_MARKET_CLR, strlen(STRATID_MARKET_CLR));
-	//stOrd.ClrTp[0] = CD_CLOSE;
-
-	//memcpy(stOrd.OpenPrc, m_h->openprc(), strlen(m_h->openprc()));
-	////memcpy(stOrd.BasePrc, zBasePrc, strlen(zBasePrc));
-	//memcpy(stOrd.CurrPrc, m_zLastCurrPrc, strlen(m_zLastCurrPrc));
-	//memcpy(stOrd.OrdPrc, m_zLastCurrPrc, strlen(m_zLastCurrPrc));
-
-	//char zMaxPLPrc[32];
-	//strcpy(zMaxPLPrc, m_h->GtMaxPLPrc());
-	//memcpy(stOrd.MaxPLPrc, zMaxPLPrc, strlen(zMaxPLPrc));
-	//stOrd.OrdProtTp[0] = CD_ORD_TP_MARKET;
+	char* pData = NULL;
+	int nStructSize = sizeof(ST_API_ORD_RQST);
+	if (!m_pMemPool->get(&pData))
+		return;
 
 	char zTM[128], zDT[128];
 	strcpy(zTM, CUtil::Get_NowTime());
-	//memcpy(stOrd.OrdTM, zTM, strlen(zTM));
-	//memcpy(stOrd.ApiTM, zTM, strlen(zTM));
-
 	strcpy(zDT, CUtil::GetToday(zDT));
-	//memcpy(stOrd.ApiDT, zDT, strlen(zDT));
 
-	char zMsg1[128] = { 0, }, zEntryPrc[32] = { 0, };
+	char zMsg1[512] = { 0, }, zEntryPrc[32] = { 0, };
 	strcpy(zEntryPrc, m_h->GetEntryPrc());
 
 	char tmp[128];
-	ST_API_ORD_RQST apiOrd;
-	memset(&apiOrd, 0x20, sizeof(apiOrd));
-	memcpy(apiOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
-	memcpy(apiOrd.Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
-	apiOrd.OrdPrcTp[0] = CD_ORD_PROC_NEW;
-	apiOrd.OrdTp[0] = CD_ORD_TP_MARKET;
-	apiOrd.OrdPrc[0] = '0';					//시장가인 경우 "0      "
-	sprintf(tmp, "%-*d", sizeof(apiOrd.OrdQty), m_h->entryqty());	//청산이므로 포지션수량
-	memcpy(apiOrd.OrdQty, tmp, sizeof(apiOrd.OrdQty));
+	ST_API_ORD_RQST *apiOrd = (ST_API_ORD_RQST *)pData;;
+	memset(apiOrd, 0x20, sizeof(ST_API_ORD_RQST));
+	memcpy(apiOrd->Symbol, m_zSymbol, strlen(m_zSymbol));
+	memcpy(apiOrd->Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
+	apiOrd->OrdPrcTp[0] = CD_ORD_PROC_NEW;
+	apiOrd->OrdTp[0] = CD_ORD_TP_MARKET;
+	apiOrd->OrdPrc[0] = '0';					//시장가인 경우 "0      "
+	sprintf(tmp, "%-*d", sizeof(apiOrd->OrdQty), m_h->entryqty());	//청산이므로 포지션수량
+	memcpy(apiOrd->OrdQty, tmp, sizeof(apiOrd->OrdQty));
 	MakeGUID(tmp);
-	memcpy(apiOrd.UUID, tmp, sizeof(apiOrd.UUID));
-	memcpy(apiOrd.Date, zDT, strlen(zDT));
-	memcpy(apiOrd.TM, zTM, strlen(zTM));
+	memcpy(apiOrd->UUID, tmp, min(sizeof(apiOrd->UUID), strlen(tmp)));
+	memcpy(apiOrd->Date, zDT, strlen(zDT));
+	memcpy(apiOrd->TM, zTM, strlen(zTM));
+	apiOrd->EOL[0] = DEF_EOL;
+	apiOrd->EOL[1] = 0x00;
 
 	if (m_h->IsShort())
 	{
-		apiOrd.Side[0] = CD_BUY;
-		sprintf(zMsg1, "[매수장마감청산 of SHORT][Curr:%s, 진입가:%s]  TM:%s]",
+		apiOrd->Side[0] = CD_BUY;
+		sprintf(zMsg1, "[전략발동][SHORT매수장마감청산][Curr:%s, 진입가:%s]  TM:%s]",
 			m_zLastCurrPrc, zEntryPrc, zTM);
-		g_log.log(LOGTP_SUCC, zMsg1);
+		g_log.enter();
+		g_log.log(INFO, "================================================");
+		g_log.log(INFO, zMsg1);
 	}
 	if (m_h->IsLong())
 	{
-		apiOrd.Side[0] = CD_BUY;
-		sprintf(zMsg1, "[매도장마감청산 of LONG][Curr:%s, 진입가:%s]  TM:%s]",
+		apiOrd->Side[0] = CD_BUY;
+		sprintf(zMsg1, "[전략발동][LONG매도장마감청산][Curr:%s, 진입가:%s]  TM:%s]",
 			m_zLastCurrPrc, zEntryPrc, zTM);
-		g_log.log(LOGTP_SUCC, zMsg1);
+		g_log.enter();
+		g_log.log(INFO, "================================================");
+		g_log.log(INFO, zMsg1);
 	}
 
 	CUtil::logOutput("%s\n", zMsg1);
 
 	//PostThreadMessage
-	char* pData = NULL;
-	int nStructSize = sizeof(apiOrd);
-	if (m_pMemPool->get(&pData))
-	{
-		memcpy(pData, (void*)&apiOrd, nStructSize);
-		PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
-	}
+	//g_log.log(INFO, "[전략발동][%s]장마감청산(%s) 전송준비", m_zSymbol);
+	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
 
 	m_h->SetOrderSent((double)m_h->ordqty());
 }
@@ -691,7 +645,7 @@ VOID CStratMaker::SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen)
 //	//sprintf(sQ, "SELECT TICK_SIZE, DOT_CNT FROM TRADE_SECURITY_ARTC WHERE ARTC_CODE='%s'", m_zArtc );
 //	//if (FALSE == db->ExecQuery(sQ))
 //	//{
-//	//	g_log.log(LOGTP_ERR, "Load Symbol Info failed(%s)(%s)", sQ, db->GetError());
+//	//	g_log.log(ERR, "Load Symbol Info failed(%s)(%s)", sQ, db->GetError());
 //	//	return FALSE;
 //	//}
 //
@@ -703,7 +657,7 @@ VOID CStratMaker::SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen)
 //	//} // if (db->NextRow())
 //	//else
 //	//{
-//	//	g_log.log(LOGTP_ERR, "There is no symbol info (%s)", sQ);
+//	//	g_log.log(ERR, "There is no symbol info (%s)", sQ);
 //	//	//m_bDoStrategy = FALSE;
 //	//	return FALSE;
 //	//}
@@ -728,9 +682,9 @@ VOID CStratMaker::SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen)
 //
 //	BOOL bRet = m_pMcastRecv->Begin(zLocalIP, zMcastIP, atoi(port));
 //	if (bRet)
-//		g_log.log(LOGTP_SUCC, "[%s]시세수신 Init 성공(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
+//		g_log.log(INFO, "[%s]시세수신 Init 성공(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
 //	else
-//		g_log.log(LOGTP_ERR, "[%s]시세수신 Init 실패(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
+//		g_log.log(ERR, "[%s]시세수신 Init 실패(LOCAL IP:%s)(MCAST IP:%s)(PORT:%s)", zLocalIP, zMcastIP, port);
 //	return bRet;
 //}
 
