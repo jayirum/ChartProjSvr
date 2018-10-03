@@ -317,13 +317,15 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 
 	int nCondition = 0;
 
-	int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zUpperPrc, LEN_PRC, 2, LEN_PRC);	//TODO. 2
-	if (nComp >= 0) nCondition = 1;
+	int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zUpperPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);	//TODO. 2
+	if (nComp >= 0) 
+		nCondition = 1;
 
-	nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zLowerPrc, LEN_PRC, 2, LEN_PRC);	//TODO. 2
-	if (nComp <= 0) nCondition = 2;
+	nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zLowerPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);	//TODO. 2
+	if (nComp <= 0) 
+		nCondition = 2;
 
-	if (!nCondition)
+	if (nCondition==0)
 		return;
 
 	char* pData = NULL;
@@ -351,17 +353,17 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		//stOrd.Side[0] = CD_BUY;
 		apiOrd->Side[0] = CD_BUY;
 		strcpy(zBasePrc, zUpperPrc);
-		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(0.1 Percent)[API TM:%s]"
-			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(), pzApiTm);
+		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(%s Percent)[API TM:%s]"
+			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(),m_h->GetEntryPrc(), pzApiTm);
 		g_log.log(INFO, zMsg1);
 	}
-	else {
+	if (nCondition == 2) {
 		strcpy(zStratID, STRATID_SELL_OPEN);
 		apiOrd->Side[0] = CD_SELL;
 		strcpy(zBasePrc, zLowerPrc);
 
-		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(0.1 Percent)[API TM:%s]"
-			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), pzApiTm);
+		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
+			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
 		g_log.log(INFO, zMsg1);
 	}
 	
@@ -597,7 +599,7 @@ VOID CStratMaker::MarketCloseClr()
 	}
 	if (m_h->IsLong())
 	{
-		apiOrd->Side[0] = CD_BUY;
+		apiOrd->Side[0] = CD_SELL;
 		sprintf(zMsg1, "[전략발동][LONG매도장마감청산][Curr:%s, 진입가:%s]  TM:%s]",
 			m_zLastCurrPrc, zEntryPrc, zTM);
 		g_log.enter();

@@ -305,7 +305,7 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg)
 
 		sprintf(zGapMax, "%.2f", (dEntryPrc - dMaxPrc)*m_param.dPtClrTrigger);
 		sprintf(zGapCurr, "%.2f", dEntryPrc - dCurrPrc);
-		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, 2, LEN_PRC);
+		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, dotcnt(), LEN_PRC);
 		if (nComp<0)
 		{
 			bResult = TRUE;
