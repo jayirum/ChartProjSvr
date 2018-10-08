@@ -121,21 +121,26 @@ BOOL CCreateSaveShm::Create()
 
 VOID CCreateSaveShm::ThreadFunc()
 {
-	for (int i = TP_1MIN; i < TP_DAY; i++)
-	{
-		if (!LoadShmWrapper(i))
-			return;
-	}
-	while (TRUE)
-	{
-		if (WaitForSingleObject(m_hDie, 10000)==WAIT_OBJECT_0)
-			break;
+	BOOL bInit = FALSE;
 
-		// DB WRITE
-		//for (int i = TP_1MIN; i < TP_MON; i++)
-		//{
-		//	DBSaveWrapper(i);
-		//}
+	//for (int i = TP_1MIN; i < TP_DAY; i++)
+	//{
+	//	if (!m_bContinue)
+	//		return;
+
+	//	if (!LoadShmWrapper(i)) {
+	//		printf("LoadSymbolError(%s)(%d)\n", m_zArtc, i);
+	//		return;
+	//	}
+	//}
+
+	while (m_bContinue)
+	{
+		if (WaitForSingleObject(m_hDie, INFINITE) == WAIT_OBJECT_0) {
+			break;
+		}
+
+
 	}
 }
 //
@@ -166,6 +171,8 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 		g_log.log(LOGTP_ERR, "CHART DATA Load-1 Fail(%s)(%s)", db->GetError(), zQ);
 		return FALSE;
 	}
+	g_log.log(LOGTP_SUCC, "Load Initial Chart Data(%s)", m_zArtc);
+
 	while (db->IsNextRow())
 	{
 		char zGroup[128];
@@ -189,6 +196,7 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 			return FALSE;
 		}
 
+		
 		int nLoop = 0;
 		char zTemp[128];
 		CHAR zGroupKey[LEN_GROUP_KEY + 1];
@@ -228,7 +236,7 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 			if (!m_shmQ.GroupFind(zGroupKey))
 			{
 				m_shmQ.GroupInsert(zGroupKey);
-				g_log.log(LOGTP_SUCC, "[GROUP INSERT][%s]", zGroupKey);
+				//g_log.log(LOGTP_SUCC, "[GROUP INSERT][%s]", zGroupKey);
 				m_shmQ.DataInsert(zGroupKey, (char*)&stShm);
 				//g_log.log(LOGTP_SUCC, "[DATA INSERT][%s][%.*s][%.*s]", zGroupKey, LEN_CHART_NM, stShm.Nm, LEN_CHART_NM, stShm.prevNm);
 				//printf("[DATA INSERT][%s][%.*s][%.*s]\n", zGroupKey, LEN_CHART_NM, stShm.Nm, LEN_CHART_NM, stShm.prevNm);
@@ -265,7 +273,6 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 		} // while (db->NextRow())
 
 		db->Close();
-
 
 
 	} // for (it = listGroupKey.begin(); it != listGroupKey.end(); it++)

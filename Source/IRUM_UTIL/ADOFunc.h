@@ -51,7 +51,7 @@ public:
 	double GetDouble(int lField) { return GetDbl(lField); }
 
 	VARIANT GetValue(LPCTSTR pszField);
-	char* GetStr(LPCTSTR pszField, char* pzOut) { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
+	char* GetStr(LPCTSTR pszField, char* pzOut);// { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
 	long GetLong(LPCTSTR pszField) { return (long)(_variant_t)GetValue(pszField); }
 	double GetDbl(LPCTSTR pszField) { return (double)(_variant_t)GetValue(pszField); }
 	double GetDouble(LPCTSTR pszField) { return GetDbl(pszField); }

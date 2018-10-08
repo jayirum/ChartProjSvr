@@ -142,10 +142,19 @@ BOOL CMudFishOrdDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	//	GET LOG DIR
-	char szDir[_MAX_PATH];
+	char szDir[_MAX_PATH] = { 0, };
 	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+	if (!prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY))
+	{
+		AfxMessageBox("Registry Open Failed");
+		return FALSE;
+	}
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_MRYOON"));
+	if(szDir[0]==0)
+	{
+		AfxMessageBox("Registry value Failed");
+		return FALSE;
+	}
 	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	g_log.OpenLog(szDir, EXENAME);
@@ -356,6 +365,8 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
 
+			//char buf[128]; sprintf(buf,"tick[%s]\n", zSymbol);
+			//OutputDebugString(buf);
 			ITMAP_STRAT it = p->m_mapStrat.find(sSymbol);
 			if (it == p->m_mapStrat.end())
 			{
@@ -904,12 +915,14 @@ BOOL CMudFishOrdDlg::LoadSymbolInfo(BOOL bCreateStrat)
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-	if(!m_pDBPool)
-		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-	if (!m_pDBPool->Init(atoi(cnt)))
+	if (!m_pDBPool)
 	{
-		showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
-		return FALSE;
+		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+		if (!m_pDBPool->Init(atoi(cnt)))
+		{
+			showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			return FALSE;
+		}
 	}
 
 	CDBHandlerAdo db(m_pDBPool->Get());

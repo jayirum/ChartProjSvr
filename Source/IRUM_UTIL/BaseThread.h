@@ -38,7 +38,7 @@ public:
 
 	virtual ~CBaseThread()
 	{
-		printf("CBaseThread destructor(%d)(%s)\n", m_dwThreadID, m_zName);
+		//printf("CBaseThread destructor(%d)(%s)\n", m_dwThreadID, m_zName);
 		StopThread();
 	}
 

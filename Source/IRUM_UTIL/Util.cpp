@@ -821,7 +821,7 @@ void CUtil::logOutput(char* pMsg, ...)
 	GetLocalTime(&st);
 	sprintf(buff2, "[%02d:%02d:%02d.%03d]%s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buff1);
 
-	OutputDebugString(buff2);
+	//OutputDebugString(buff2);
 }
 
 

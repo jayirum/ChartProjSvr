@@ -126,9 +126,12 @@ VOID CTcpClient::RecvThread()
 				strncmp(p->Code, CDAPI_CNTR_REAL, 6) == 0
 				)
 			{
-				OutputDebugString(zRecvBuff);
-				OutputDebugString("\n");
+				//OutputDebugString(zRecvBuff);
+				//OutputDebugString("\n");
 			}
+			//OutputDebugString(zRecvBuff);
+			//OutputDebugString("\n");
+
 			//printf("[RECV](%.*s)\n", Ret, zRecvBuff);
 			m_pktHandler.AddPkt(zRecvBuff, Ret);			
 		}

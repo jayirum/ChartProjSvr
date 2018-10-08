@@ -52,12 +52,22 @@ CLogMsg g_log;
 int  _Start()
 {
 	char	msg[512] = { 0, };
-	CHAR	szDir[_MAX_PATH];
+	CHAR	szDir[_MAX_PATH] = { 0 };
 
 	//	GET LOG DIR
 	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	if (!prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY))
+	{
+		printf("registry open error\n");
+		return 0;
+	}
+	
 	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+	if (szDir[0] == 0)
+	{
+		printf("registry GetValue error\n");
+		return 0;
+	}
 
 	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
@@ -143,7 +153,7 @@ int  _Start()
 	}
 	CDBHandlerAdo db(pDBPool->Get());
 	char zQ[1024];
-	sprintf(zQ, "SELECT ARTC_CODE FROM TRADE_SECURITY_ARTC WHERE USE_YN='Y'");
+	sprintf(zQ, "SELECT SYMBOL FROM TRADE_SECURITY WHERE USE_YN='Y'");
 	if (!db->QrySelect(zQ))
 	{
 		g_log.log(LOGTP_ERR, "SELECT error(%s)(%s)", db->GetError(), zQ);
@@ -155,7 +165,7 @@ int  _Start()
 
 	while (db->IsNextRow())
 	{
-		db->GetStr("ARTC_CODE", zCode);
+		db->GetStr("SYMBOL", zCode);
 		ir_cvtcode_uro_6e(zCode, zArtc);
 		CCreateSaveShm* p = new CCreateSaveShm(zArtc);
 		if (!p->Initialize())
@@ -172,7 +182,6 @@ int  _Start()
 
 	db->Close();
 	DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);
-
 	std::list<CCreateSaveShm*>::iterator it;
 	for (it=lstSymbol.begin();it!=lstSymbol.end();it++)
 	{

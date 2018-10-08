@@ -228,6 +228,11 @@ VARIANT CADOFunc::GetValue(LONG lField)
 
 
 
+char* CADOFunc::GetStr(LPCTSTR pszField, char* pzOut)
+{
+	strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; 
+}
+
 
 VARIANT CADOFunc::GetValue(LPCTSTR pszField)
 {
@@ -266,6 +271,7 @@ BOOL CADOFunc::IsNextRow()
 
 void CADOFunc::Next()
 {
+	Sleep(1);
 	m_pRs->MoveNext();
 }
 
