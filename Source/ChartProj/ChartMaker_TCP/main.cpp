@@ -358,11 +358,11 @@ BOOL LoadSymbol()
 		ir_cvtcode_uro_6e(zTemp, zSymbol);
 
 		//TODO
-		if (strncmp(zSymbol, "CL", 2) != 0
-			) {
-			db->Next();
-			continue;
-		}
+		//if (strncmp(zSymbol, "CL", 2) != 0
+		//	) {
+		//	db->Next();
+		//	continue;
+		//}
 		
 		// KR 은 CLQ7, 다른곳은 CLQ17 
 		ir_cvtcode_HD_KR(zSymbol, zTemp);
@@ -392,7 +392,7 @@ BOOL	InitApiClient()
 	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", zIP);
 	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
 	printf("API IP(%s)PORT(%s)", zIP, port);
-	g_pApiRecv = new CTcpClient();
+	g_pApiRecv = new CTcpClient("ChartMaker");
 	if (!g_pApiRecv->Begin(zIP, atoi(port), 10))
 	{
 		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());

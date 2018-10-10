@@ -107,6 +107,7 @@ BEGIN_MESSAGE_MAP(CMudFishOrdDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDCANCEL, &CMudFishOrdDlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDOK, &CMudFishOrdDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_BUTTON_CLOSE_POS, &CMudFishOrdDlg::OnBnClickedButtonClosePos)
 END_MESSAGE_MAP()
 
 
@@ -1343,3 +1344,36 @@ void CMudFishOrdDlg::OnBnClickedOk()
 	End();
 	CDialogEx::OnOK();
 }
+
+
+void CMudFishOrdDlg::OnBnClickedButtonClosePos()
+{
+	int result = AfxMessageBox("현재 포지션을 청산합니다.청산 후에는 재실행 전까지 해당 종목은 운용되지 않습니다.", MB_YESNO, 0);
+
+	if (result == IDNO)
+		return;
+
+	int nCount = m_ctlSymbol.GetItemCount();
+	if (nCount == 0) {
+		AfxMessageBox("청산할 종목을 선택하셔야 합니다.", MB_OK);
+		return;
+	}
+
+	CString sSymbol;
+
+	for (int i = 0; i < nCount; i++)
+	{
+		if (m_ctlSymbol.GetCheck(i))
+		{
+			sSymbol = m_ctlSymbol.GetItemText(i, I_SYMBOL);
+
+			ITMAP_STRAT it = m_mapStrat.find(std::string(sSymbol.GetBuffer()));
+			if (it != m_mapStrat.end())
+			{
+				ST_STRAT* p = (*it).second;
+				PostThreadMessage(p->m->GetStratThreadId(), WM_CLOSE_POSITION, 0,0);
+			}
+		}
+	}
+}
+	

@@ -103,6 +103,25 @@ bool	CMemPool::get(_Out_ char** pBuf)
 	return (*pBuf!=NULL);
 }
 
+
+char*	CMemPool::get()
+{
+	char* p;
+	LOCK();
+	if (m_listPool.size() == 0)
+	{
+		p = new char[m_nBlockSize];
+		m_listPool.push_back(p);
+	}
+
+	p = *m_listPool.begin();
+	m_listPool.pop_front();
+
+	ZeroMemory(p, m_nBlockSize);
+	UNLOCK();
+	return p;
+}
+
 void	CMemPool::release(char* ptr)
 {
 //	printf("\t\t-----------release(%x)\n", ptr);

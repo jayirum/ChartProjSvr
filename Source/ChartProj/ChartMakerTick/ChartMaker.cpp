@@ -148,7 +148,7 @@ VOID CChartMaker::ThreadFunc()
 		// Do Make Signal after receiving marketdata;
 		if (nRecvLen > 0)
 		{
-			ST_PACK2CHART* p = (ST_PACK2CHART*)zMarketDataBuff;
+			ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)zMarketDataBuff;
 			if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0)
 				continue;
 
@@ -253,7 +253,7 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 */
 VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 {
-	ST_PACK2CHART* p = (ST_PACK2CHART*)pIn;
+	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pIn;
 	char temp[32];
 	BOOL bRet;
 
@@ -400,8 +400,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	FORMAT_PRC(dLow, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
 	memcpy(existUnit.low, temp, min(sizeof(existUnit.low), strlen(temp)));
 
-	if (dNow > dOpen)	existUnit.gb[0] = DEF_CANDLE_PLUS;	// ¾çºÀ
-	if (dNow < dOpen)	existUnit.gb[0] = DEF_CANDLE_MINUS;	// À½ºÀ
+	if (dNow > dOpen)	existUnit.gb[0] = CD_PLUS_CANDLE;	// ¾çºÀ
+	if (dNow < dOpen)	existUnit.gb[0] = CD_MINUS_CANDLE;	// À½ºÀ
 	if (dNow == dOpen)	existUnit.gb[0] = '0';
 
 	memcpy(existUnit.close, recvUnit.close, sizeof(recvUnit.close));

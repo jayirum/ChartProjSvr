@@ -39,6 +39,7 @@ private:
 	VOID	StratProc(char* pMarketData);
 	VOID	StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
 	VOID	MarketCloseClr();
+	VOID	ClosePosition();
 	char*	GetCloseOrdType( char* pzCurrPrc, 
 					_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg);
 	VOID	StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);

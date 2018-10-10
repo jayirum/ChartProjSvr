@@ -18,6 +18,7 @@ public:
 	//bool	Begin();
 	void	End();
 	bool	get(_Out_ char** pBuf);
+	char*	get();
 	void	release(char* ptr);
 	int		available() { return m_listPool.size(); }
 private:

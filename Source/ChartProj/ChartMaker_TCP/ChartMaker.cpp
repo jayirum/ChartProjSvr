@@ -355,13 +355,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			g_log.log(LOGTP_ERR, "GroupInsert ERROR!!!(%s)(%s)", m_zSymbol, szGroupKey);
 			return;
 		}
-		printf("GroupInsert(%s)(%s)\n", m_zSymbol, szGroupKey);
+		//printf("GroupInsert(%s)(%s)\n", m_zSymbol, szGroupKey);
 		if(!m_shmQ.DataInsert(szGroupKey, (char*)&recvUnit))
 		{
 			g_log.log(LOGTP_ERR, "DataInsert ERROR-1!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
 			return;
 		}
-		printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
+		//printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		//if (strcmp(m_zSymbol, "6BZ7") == 0) {
 		//	g_log.log(LOGTP_SUCC, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 		//		szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
@@ -392,7 +392,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			g_log.log(LOGTP_ERR, "DataInsert ERROR-2!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
 			return;
 		}
-		printf("DataInsert-2(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
+		//printf("DataInsert-2(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 
 		// DB 저장
 		ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
@@ -446,7 +446,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		return;
 	}
 	else {
-		printf("DataUpdate(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
+		//printf("DataUpdate(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		// DB 저장
 		ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
 		memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
