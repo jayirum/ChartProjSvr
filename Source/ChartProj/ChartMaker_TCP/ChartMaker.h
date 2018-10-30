@@ -20,7 +20,7 @@
 class CChartMaker : public CBaseThread
 {
 public:
-	CChartMaker(char* pzSymbol, char* pzArtcCode, /*CMemPool* pMemPool,*/ unsigned dwMainThreadId);
+	CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId);
 	virtual ~CChartMaker();
 
 	VOID	ChartProc(VOID* pIn, int tp);
@@ -55,4 +55,5 @@ private:
 	HANDLE			m_hWorkThread;
 	HANDLE			m_hWorkDie;
 	unsigned int	m_dwWorkThreadID;
+	int				m_nDotCnt;
 };

@@ -14,20 +14,33 @@ extern CLogMsg g_log;
 //
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-CStratMaker::CStratMaker(char* pzSymbol, CStratHistManager* h):CBaseThread("SratMaker")
+CStratMaker::CStratMaker(char* pzSymbol, char* pzArtc, CStratHistManager* h) :CBaseThread("SratMaker")
 {
 	//InitializeCriticalSection(&_cs);
+	m_chart = NULL;
 	strcpy(m_zSymbol, pzSymbol);
-	m_h= h;
-	m_nMarketStatus = MARKET_ON;
+	strcpy(m_zArtc, pzArtc);
+	GET_SHM_NM(m_zArtc, m_zShmNm);
+	GET_SHM_LOCK_NM(m_zArtc, m_zMutexNm);
 
-	ResumeThread();
+	m_h = h;
+	m_nMarketStatus = MARKET_NONE;
+}
 
+BOOL CStratMaker::Initialize()
+{
+	//CHART SHM
+	if (!InitChartShm())
+		return FALSE;
+
+	ResumeThread();	
+	
 	// worker thread 생성
 	m_hWorkDie = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hStratThread = (HANDLE)_beginthreadex(NULL, 0, &StratThread, this, 0, &m_dwStratThreadID);
-}
 
+	return TRUE;
+}
 
 
 CStratMaker::~CStratMaker()
@@ -39,6 +52,7 @@ CStratMaker::~CStratMaker()
 	}
 	SAFE_CLOSEHANDLE(m_hWorkDie);
 	SAFE_CLOSEHANDLE(m_hStratThread);
+	CloseChartShm();
 
 	//DeleteCriticalSection(&m_cs);
 }
@@ -201,22 +215,45 @@ VOID CStratMaker::APIOrdProc(char* pData)
 }
 
 
+BOOL	CStratMaker::InitChartShm()
+{
+	if (!m_chart)
+		m_chart = new CChartShmUtil;
+
+	if (!m_chart->OpenChart(m_zArtc, &g_log))
+	{
+		g_log.log(LOGTP_ERR, "%s", m_chart->getmsg());
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+VOID	CStratMaker::CloseChartShm()
+{
+	SAFE_DELETE(m_chart);
+}
+
+
 unsigned WINAPI CStratMaker::StratThread(LPVOID lp)
 {
 	CUtil::logOutput("WORKER THREAD ID : %d", GetCurrentThreadId());
 	CStratMaker* p = (CStratMaker*)lp;
+
 	int nLen;
 	char* pData;
 	while (WaitForSingleObject(p->m_hWorkDie, 1) != WAIT_OBJECT_0)
 	{
 		//CHECK Market Close 
-		p->CheckMarketClosing();
+		if (p->CheckMarketTime() != MARKET_ON)
+		{
+			Sleep(1000);
+			continue;
+		}
 
 		MSG msg;
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			
-
 			// 시세처리
 			switch (msg.message)
 			{
@@ -330,11 +367,11 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 
 	int nCondition = 0;
 
-	int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zUpperPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);	//TODO. 2
+	int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zUpperPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 	if (nComp >= 0) 
 		nCondition = 1;
 
-	nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zLowerPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);	//TODO. 2
+	nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zLowerPrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 	if (nComp <= 0) 
 		nCondition = 2;
 
@@ -355,53 +392,128 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	memcpy(apiOrd->Symbol, m_zSymbol, strlen(m_zSymbol));
 	memcpy(apiOrd->Code, CDAPI_ORD_RQST, strlen(CDAPI_ORD_RQST));
 
-	//int nStructSize = sizeof(ST_MF_STRAT_ORD);
-	//memset(&stOrd, 0x20, nStructSize);
-	//memcpy(stOrd.Symbol, m_zSymbol, strlen(m_zSymbol));
+	ABOTLOG_NO1 dblog = { 0, };
+
+	//CHART INFO
+	ST_SHM_CHART_UNIT chart;
+	CROSS_TP cross1, cross3, cross5;
+	char zCross[128] = { 0, }, msg1[512] = { 0, }, msg3[512] = { 0, }, msg5[512] = { 0, };
+	if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
+	{
+		cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
+		sprintf(msg1, "[1분차트:%s]", dblog.zCross_1min);
+	}
+	if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
+	{
+		cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
+		sprintf(msg3, "[3분차트:%s]", dblog.zCross_3min);
+	}
+	if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
+	{
+		cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
+		sprintf(msg5, "[5분차트:%s]", dblog.zCross_5min);
+	}
 
 	char zMsg1[512];
 	char zStratID[32];
-	if (nCondition == 1) {
+	BOOL bFire = FALSE;
+
+	//DB LOG
+	strcpy(dblog.zSymbol, m_zSymbol);
+	dblog.FireYN[0] = 'Y';
+	dblog.OpenClose[0] = 'O';	//O, C
+	strcpy(dblog.zCurrPrc, pzCurrPrc);
+	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zEntryPercent, "%.2f", m_h->entryspread()*100);
+	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
+	sprintf(dblog.zApiTM, pzApiTm);
+
+
+	if (nCondition == 1) 
+	{
 		strcpy(zStratID, STRATID_BUY_OPEN);
 		//stOrd.Side[0] = CD_BUY;
 		apiOrd->Side[0] = CD_BUY;
 		strcpy(zBasePrc, zUpperPrc);
+
 		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(%s Percent)[API TM:%s]"
 			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(),m_h->GetEntryPrc(), pzApiTm);
-		g_log.log(INFO, zMsg1);
+		
+		//DB LOG		
+		strcpy(dblog.zStratID, zStratID);
+		dblog.BsTp[0] = CD_BUY;		//B, S
+		sprintf(dblog.zStratPrc, zUpperPrc);
+		sprintf(dblog.zMsg, zMsg1);
+
+		if (cross1 != GOLDEN_CROSS)
+		{
+			dblog.FireYN[0] = 'N';
+
+			sprintf(zMsg1, "[매수진입조건이나 골드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
+				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+			m_h->SetOpenPrc(pzCurrPrc);
+		}
+		else
+		{
+			bFire = TRUE;
+			g_log.log(INFO, zMsg1);
+			g_log.log(INFO, "%s %s %s", msg1, msg3, msg5);
+		}
 	}
-	if (nCondition == 2) {
+	if (nCondition == 2) 
+	{
 		strcpy(zStratID, STRATID_SELL_OPEN);
 		apiOrd->Side[0] = CD_SELL;
 		strcpy(zBasePrc, zLowerPrc);
 
 		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
 			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
-		g_log.log(INFO, zMsg1);
+
+		//DB LOG
+		strcpy(dblog.zStratID, zStratID);
+		dblog.BsTp[0] = CD_SELL;		//B, S
+		sprintf(dblog.zStratPrc, zLowerPrc);
+		sprintf(dblog.zMsg, zMsg1);
+
+		if (cross1 != DEAD_CROSS)
+		{
+			dblog.FireYN[0] = 'N';
+			sprintf(zMsg1, "[매도진입조건이나 데드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
+				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+			m_h->SetOpenPrc(pzCurrPrc);
+		}
+		else
+		{
+			bFire = TRUE;
+			g_log.log(INFO, zMsg1);
+			g_log.log(INFO, "%s %s %s", msg1, msg3, msg5);
+		}
 	}
 	
+	SaveDBLog(&dblog);
+	if (bFire)
+	{
+		char tmp[128];
+		strcpy(tmp, CUtil::Get_NowTime());
 
-	char tmp[128];
-	strcpy(tmp, CUtil::Get_NowTime());
-	
-	////
-	apiOrd->OrdPrcTp[0] = CD_ORD_PROC_NEW;
-	apiOrd->OrdTp[0] = CD_ORD_TP_MARKET;
-	apiOrd->OrdPrc[0] = '0';					//시장가인 경우 "0      "
-	sprintf(tmp, "%-*d", sizeof(apiOrd->OrdQty), m_h->ordqty());
-	memcpy(apiOrd->OrdQty, tmp, sizeof(apiOrd->OrdQty));
-	MakeGUID(tmp);
-	memcpy(apiOrd->UUID, tmp, min(sizeof(apiOrd->UUID),strlen(tmp))); 
-	memcpy(apiOrd->Date, pzApiDT, strlen(pzApiDT));
-	memcpy(apiOrd->TM, pzApiTm, strlen(pzApiTm));
-	apiOrd->EOL[0] = DEF_EOL;
-	apiOrd->EOL[1] = 0x00;
+		////
+		apiOrd->OrdPrcTp[0] = CD_ORD_PROC_NEW;
+		apiOrd->OrdTp[0] = CD_ORD_TP_MARKET;
+		apiOrd->OrdPrc[0] = '0';					//시장가인 경우 "0      "
+		sprintf(tmp, "%-*d", sizeof(apiOrd->OrdQty), m_h->ordqty());
+		memcpy(apiOrd->OrdQty, tmp, sizeof(apiOrd->OrdQty));
+		MakeGUID(tmp);
+		memcpy(apiOrd->UUID, tmp, min(sizeof(apiOrd->UUID), strlen(tmp)));
+		memcpy(apiOrd->Date, pzApiDT, strlen(pzApiDT));
+		memcpy(apiOrd->TM, pzApiTm, strlen(pzApiTm));
+		apiOrd->EOL[0] = DEF_EOL;
+		apiOrd->EOL[1] = 0x00;
 
-	//g_log.log(INFO, "[전략발동][%s]Open주문(%s) 전송준비", m_zSymbol, zStratID);
-	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
-	
+		//g_log.log(INFO, "[전략발동][%s]Open주문(%s) 전송준비", m_zSymbol, zStratID);
+		PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
 
-	m_h->SetOrderSent((double)m_h->ordqty());
+		m_h->SetOrderSent((double)m_h->ordqty());
+	}
 }
 
 
@@ -414,7 +526,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 */
 
 char* CStratMaker::GetCloseOrdType(char* pzCurrPrc, 
-	_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg)
+	_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg, _Out_ ABOTLOG_NO1 *dblog)
 {
 	double dOpenPrc = atof(m_h->openprc());	
 	strcpy(pzStratID, STRATID_NONE);
@@ -433,7 +545,12 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			strcpy(pzStratID, STRATID_SELL_SL);
 			sprintf(pzClrMsg, "[전략발동][LONG손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) <= 현재가(%s). 참조로 진입가(%s)"
 				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
-			g_log.log(INFO, pzClrMsg);
+
+			// DB LOG
+			dblog->PLTp[0] = 'L'; 
+			dblog->BsTp[0] = CD_SELL;
+			dblog->FireYN[0] = 'Y';
+			sprintf(dblog->zEntryPercent, "%.2f", m_h->entryspread() * 100);
 		}
 
 		else
@@ -441,11 +558,16 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			// 0.5% 건드렸으면 익절조검 점검한다.
 			if (m_h->IsHitPTPrc())
 			{
-				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg)) {
+				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg, (char*)dblog)) {
 					g_log.enter();
 					g_log.log(INFO, "===============================================");
 					g_log.log(INFO, pzClrMsg);
 					strcpy(pzStratID, STRATID_SELL_PT);
+
+					// DB LOG
+					dblog->PLTp[0] = 'P';
+					dblog->BsTp[0] = CD_SELL;
+					dblog->FireYN[0] = 'Y';
 				}
 			}
 		}
@@ -464,6 +586,13 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			sprintf(pzClrMsg, "[전략발동][SHORT손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) >= 현재가(%s). 참조로 진입가(%s)"
 				,m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
 			g_log.log(INFO, pzClrMsg);
+
+			// DB LOG
+			dblog->PLTp[0] = 'L';
+			dblog->BsTp[0] = CD_BUY;
+			dblog->FireYN[0] = 'Y';
+			sprintf(dblog->zEntryPercent, "%.2f", m_h->entryspread() * 100);
+
 		}
 		// PT BUY : CurrPrc <= OpenPrc + (OpenPrc * 0.005)
 		else
@@ -471,11 +600,16 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			if (m_h->IsHitPTPrc())
 			{
 				char zMsg[512] = { 0, };
-				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg)) {
+				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg, (char*)dblog)) {
 					g_log.enter();
 					g_log.log(INFO, "===============================================");
 					g_log.log(INFO, pzClrMsg);
 					strcpy(pzStratID, STRATID_BUY_PT);
+
+					// DB LOG
+					dblog->PLTp[0] = 'P';
+					dblog->BsTp[0] = CD_BUY;
+					dblog->FireYN[0] = 'Y';
 				}
 			}
 		}
@@ -490,14 +624,26 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	char zStratID[32] = { 0, };
 	char zEntryPrc[32] = { 0, };
 	char zClrMsg[512] = { 0, };
+	
+	ABOTLOG_NO1 dblog = { 0, };
+	dblog.FireYN[0] = 'N';
 
-	GetCloseOrdType(pzCurrPrc, zBasePrc, zStratID, zClrMsg);
+	GetCloseOrdType(pzCurrPrc, zBasePrc, zStratID, zClrMsg, &dblog);
 
 	if (strcmp(zStratID, STRATID_NONE) == 0)
 	{
 		//청산조건이 아님
 		return;
 	}
+
+	sprintf(dblog.zSymbol, m_zSymbol);
+	sprintf(dblog.zStratID, zStratID);
+	dblog.OpenClose[0] = 'C';	//O, C
+	sprintf(dblog.zCurrPrc, pzCurrPrc);
+	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
+	sprintf(dblog.zApiTM, pzApiTm);
+	sprintf(dblog.zMsg, zClrMsg);
 
 	char* pData = NULL;
 	int nStructSize = sizeof(ST_API_ORD_RQST);
@@ -537,31 +683,54 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	PostThreadMessage(m_dwSendThread, WM_SENDORD_API, (WPARAM)nStructSize, (LPARAM)pData);
 
 	m_h->SetOrderSent((double)m_h->ordqty());
+
+	SaveDBLog(&dblog);
 }
 
 
-void CStratMaker::CheckMarketClosing()
+INT CStratMaker::CheckMarketTime()
 {
 	if (m_nMarketStatus == MARKET_CLOSING || m_nMarketStatus == MARKET_CLOSED)
-		return;
+		return m_nMarketStatus;
 
 	char zNow[32]; SYSTEMTIME st; GetLocalTime(&st);
 	sprintf(zNow, "%02d:%02d", st.wHour, st.wMinute);
 
 
-	// 05:00 장마감. ==> 분이 같으면 장마감.
-	if (strncmp(zNow, m_h->endtm(), 5) == 0)
+	// 장개시?
+	if (m_nMarketStatus == MARKET_NONE)
 	{
-		if (!m_h->IsOpenSrategyExist())
-			return;
+		if (IsPassedTime(m_h->starttm(), TIME_HH_MM))
+		{
+			m_nMarketStatus = MARKET_ON;
+			g_log.log(INFO, "[%s Market Open] (OpenTime:%s) (CurrTime:%s)", m_zSymbol, m_h->starttm(), zNow);
+		}
 
-		g_log.log(INFO, "[%s 장마감] (장마감시간:%s) (현재시간:%s)", m_zSymbol, m_h->endtm(), zNow);
-		CUtil::logOutput("[%s 장마감] (장마감시간:%s) (현재시간:%s)\n", m_zSymbol, m_h->endtm(), zNow);
-		m_nMarketStatus = MARKET_CLOSING;
-
-		// 장마감 청산
-		MarketCloseClr();
+		return m_nMarketStatus;
 	}
+
+	// 05:00 장마감. ==> 분이 같으면 장마감.
+	if (m_nMarketStatus == MARKET_ON)
+	{
+		if (IsPassedTime(m_h->endtm(), TIME_HH_MM))
+		{
+			// If there is no open position to be closed, just set market closed
+			if (!m_h->IsOpenSrategyExist())
+			{
+				g_log.log(INFO, "[%s MarketClosed] No Open Position (EndTime:%s) (CurrTime:%s)", m_zSymbol, m_h->endtm(), zNow);
+				m_nMarketStatus = MARKET_CLOSED;
+			}
+			else
+			{
+				g_log.log(INFO, "[%s 장마감] (장마감시간:%s) (현재시간:%s)", m_zSymbol, m_h->endtm(), zNow);
+				m_nMarketStatus = MARKET_CLOSING;
+
+				// 장마감 청산
+				MarketCloseClr();
+			}
+		}
+	}
+	return m_nMarketStatus;
 }
 
 // 장마감 청산
@@ -633,18 +802,14 @@ VOID CStratMaker::MarketCloseClr()
 /*
 	Post message to main thread to send data to client
 */
-VOID CStratMaker::SendSaveSignal(_In_ const char* pSignalPacket, int nDataLen)
+VOID CStratMaker::SaveDBLog(_In_ ABOTLOG_NO1* p)
 {
 	char* pData = NULL;
 	if (m_pMemPool->get(&pData))
 	{
-		memcpy(pData, pSignalPacket, nDataLen);
-		PostThreadMessage(m_dwSaveThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData);
+		memcpy(pData, p, sizeof(ABOTLOG_NO1));
+		PostThreadMessage(m_dwSaveThread, WM_STRAT_LOGGING, (WPARAM)sizeof(ABOTLOG_NO1), (LPARAM)pData);
 	}
-	//TODO
-	/*char *pData2 = m_pMemPool->get();
-	memcpy(pData, pSignalPacket, nDataLen);
-	PostThreadMessage(m_dwSendThread, WM_SEND_STRATEGY, (WPARAM)nDataLen, (LPARAM)pData2);*/
 }
 
 

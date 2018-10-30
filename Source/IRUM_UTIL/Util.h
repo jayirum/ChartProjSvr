@@ -31,6 +31,12 @@ char*	GetCnfgValue(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, c
 
 enum { FULLMODE=0, NORMALMODE, DATEMODE, TIMEMODE, HOURMIN, MILLISECMODE };
 enum { EN_SUNDAY=0, EN_MONDAY, EN_TUESDAY, EN_WEDNESDAY, EN_THURSDAY, EN_FRIDAY, EN_SATURDAY};
+typedef enum {
+	TIME_HHMM		//HHMM
+	,TIME_HHMMSS	//HHMMSS
+	,TIME_HH_MM		//HH:MM
+	,TIME_HH_MM_SS	//HH:MM:SS
+}EN_TIMEMODE;
 
 #define FMT_GETTIME_DOT_DATEMODE_LEN			10		/*! YYYY.MM.DD */
 #define FMT_GETTIME_DOT_TIMEMODE_LEN			8		/*! HH:MM:SS */
@@ -128,6 +134,7 @@ enum { EN_SUNDAY=0, EN_MONDAY, EN_TUESDAY, EN_WEDNESDAY, EN_THURSDAY, EN_FRIDAY,
 
 
 char* MakeGUID(char *pzGUID);
+BOOL IsPassedTime(char* pzBaseTime, EN_TIMEMODE timeMode);
 
 class GetSvcNameT
 	: public std::unary_function<VOID, LPCTSTR>
@@ -234,6 +241,8 @@ public:
 	static VOID FormatErrMsg(_In_ int nErrNo, _Out_ char* pzMsg);
 	static VOID SplitData(_In_ char* psData, _In_ char cDelimeter, _Out_ std::list<std::string>* pListResult);
 	static VOID SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize, _Out_ std::list<std::string>* pListResult);
+
+	
 };
 
 

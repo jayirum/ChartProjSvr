@@ -158,6 +158,7 @@
     <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h" />
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\ChartUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
@@ -174,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\IRUM_INC\IRUM_Common.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\ChartUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />

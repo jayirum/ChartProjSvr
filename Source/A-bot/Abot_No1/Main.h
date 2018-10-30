@@ -21,7 +21,7 @@ enum {
 };
 enum { N_SYBOL = 0, N_BS, N_OPENPRC, N_ENTRYPRC, N_CURRPRC, N_PLTICK, N_QTY, N_PL };
 
-#define MEM_BLOCK_SIZE	512
+#define MEM_BLOCK_SIZE	1024
 #define MEM_PRE_ALLOC	100
 #define MEM_MAX_ALLOC	1000
 

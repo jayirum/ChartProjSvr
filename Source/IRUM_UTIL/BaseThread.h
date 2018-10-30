@@ -20,15 +20,18 @@
 class CBaseThread  
 {
 public:
-	
-	CBaseThread(char* pzName=NULL, BOOL bSuspend = TRUE)
+
+	CBaseThread(char* pzName=NULL, BOOL bSuspend=TRUE)
 	{
 		ZeroMemory(m_zName, sizeof(m_zName));
-		if(pzName)
+		if (pzName)
 			strcpy(m_zName, pzName);
+
+		m_bSuspend = bSuspend;
+
 		m_dwThreadID = 0;
-		m_hDie = CreateEvent(NULL, FALSE, FALSE, NULL);	
-		if(bSuspend)
+		m_hDie = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if (m_bSuspend)
 			m_hThread = (HANDLE)_beginthreadex(NULL, 0, &ThreadProc, this, CREATE_SUSPENDED, &m_dwThreadID);
 		else {
 			m_hThread = (HANDLE)_beginthreadex(NULL, 0, &ThreadProc, this, 0, &m_dwThreadID);
@@ -174,6 +177,7 @@ public:
 
 
 	char m_zName[128];
+	BOOL m_bSuspend;
 	BOOL m_bContinue;
 };
 

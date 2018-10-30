@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\ChartCommon.h" />
@@ -75,6 +78,9 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartUtils.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

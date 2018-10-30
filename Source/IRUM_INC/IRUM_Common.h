@@ -181,8 +181,8 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 }
 
 //DEF-SMA
-#define	SMA_SHORT_CNT	10	// 단기 SMA 갯수
-#define	SMA_LONG_CNT	20	// 장기 SMA 갯수
+#define	SMA_SHORT_CNT	2	// 단기 SMA 갯수
+#define	SMA_LONG_CNT	5	// 장기 SMA 갯수
 
 #define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 #define	FORMAT_PRC(prc,dotcnt,out) { sprintf(out, "%0*.*f", LEN_PRC, dotcnt, prc); } // 000000012.12
@@ -524,6 +524,31 @@ typedef struct _ST_MANAGER_NOTIFY
 	char zWorkNote[64];
 	char zAdminID[64];
 }ST_MANAGER_NOTIFY;
+
+
+
+
+typedef struct _ABOTLOG_NO1
+{
+	char	zSymbol[32];
+	char	zStratID[32];
+	char	FireYN[1];		//Y-발동, N-발동하지 않음(단지 정보성)
+	char	OpenClose[1];	//O, C
+	char	PLTp[1];		// P, L
+	char	BsTp[1];		//B, S
+	char	zCurrPrc[32];
+	char	zStratPrc[32];
+	char	zOpenPrc[32];
+	char	zEntryPrc[32];
+	char	zEntryPercent[32];
+	char	zCross_1min[64];
+	char	zCross_3min[64];
+	char	zCross_5min[64];
+	char	zMaxPrc[32];		// 익절 max
+	char	zPtClrTriggerPercent[10];
+	char	zApiTM[32];
+	char	zMsg[256];
+}ABOTLOG_NO1;
 
 
 /////////////////////////////////////////////////////////////////////

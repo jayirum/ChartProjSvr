@@ -40,12 +40,12 @@ private:
 	static unsigned WINAPI Thread_Monitor(LPVOID lp);
 	static unsigned WINAPI Thread_ApiTick(LPVOID lp);
 	static unsigned WINAPI Thread_ApiOrd(LPVOID lp);
-	static unsigned WINAPI Thread_SaveData(LPVOID lp);
+	static unsigned WINAPI Thread_SaveDBLog(LPVOID lp);
 
 
 	BOOL	LoadSymbolInfo(BOOL bCreateStrat);
 	void	ReSetSymbolInfo(char *pzSymbol, double dTickVal, double dTickSize, int nDotCnt
-							, char* pzQty, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt
+							, char* pzQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt
 							, double dEntrySpread, double dClrSpread, double dPtPoint);
 	void	SetOpenPrc(char* pzSymbol, char* pzOpePrc);
 	VOID	ClearStratMap();

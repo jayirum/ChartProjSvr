@@ -44,6 +44,7 @@ typedef struct _ST_STRAT_PARAM
 	char zOpenPrc[32];
 	int nMaxCntSL;	//당일 누적 sl 제한횟수
 	int nMaxCntPT;	//당일 누적 pt 제한횟수
+	char zStartTM[6];
 	char zEndTM[6];	//HH:MM
 	int nOrdQty;
 	double dEntryTrigger;		//0.1%
@@ -87,7 +88,7 @@ public:
 	~CStratHistManager();
 
 	void	SetInitInfo(double dTickVal, double dTickSize, int nDotCnt, 
-		char* pzOpenPrc, int nOrdQty, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
+		char* pzOpenPrc, int nOrdQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
 		double dEntryTrigger, double dClrCheckTrigger, double dProfitRealiezed);
 
 	void	AcptCntrProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
@@ -106,7 +107,7 @@ public:
 
 	//BOOL	IsAlreadySLMaxCnt() { return (m_pos.nTotSLCnt >= m_param.nMaxCntSL); }
 	//BOOL	IsProfitRealized() {return m_pos.bProfitRealized;}
-	BOOL	IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg );
+	BOOL	IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ char* pDbLog );
 
 	char*	GtMaxPLPrc() { return m_pos.zMaxPLPrc; }
 	char*	GetEntryPrc() { return m_pos.zEntryPrc; }
@@ -119,6 +120,7 @@ public:
 	double	openprc_d() { return atof(m_param.zOpenPrc); }
 	char*	openprc() { return m_param.zOpenPrc; }
 	char*	endtm() { return m_param.zEndTM; }
+	char*	starttm() { return m_param.zStartTM; }
 	EN_STATUS_FLAG	status() { return m_pos.Status; }
 	BOOL	IsLong() { return (m_pos.Status == FLAG_OPEN_BUY); }
 	BOOL	IsShort() { return (m_pos.Status == FLAG_OPEN_SELL); }

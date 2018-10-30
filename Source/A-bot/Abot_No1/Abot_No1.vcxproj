@@ -126,6 +126,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp" />
@@ -142,6 +143,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h" />

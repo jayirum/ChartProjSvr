@@ -5,7 +5,8 @@
 #include "../../IRUM_UTIL/Util.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/util.h"
-#include "C:\ta-lib\c\include\ta_libc.h"
+#include "../../IRUM_UTIL/ChartUtils.h"
+//#include "C:\ta-lib\c\include\ta_libc.h"
 
 
 extern CLogMsg g_log;
@@ -45,12 +46,13 @@ void fnGET_CHART_NM_EX(char* date, char*time, int tp, char* out)
 }
 
 
-CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, /*CMemPool* pMemPool,*/ unsigned dwMainThreadId)
+CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId)
 {
 	m_dwMainThreadId = dwMainThreadId;
 	//m_pMemPool = pMemPool;
 	strcpy(m_zSymbol, pzSymbol);
 	strcpy(m_zArtc, pzArtcCode);
+	m_nDotCnt = nDotCnt;
 	GET_SHM_NM(pzArtcCode, m_zShmNm);
 	GET_SHM_LOCK_NM(pzArtcCode, m_zMutexNm);
 
@@ -205,12 +207,14 @@ VOID CChartMaker::ThreadFunc()
 	if (!InitChartSHM())
 	{
 		g_log.log(LOGTP_ERR, ">>>>>> SHM OPEN ERROR <<<<<<<<<");
+		SetEvent(m_hWorkDie);
 		return;
 	}
 
 	if( !InitMemPool())
 	{
 		g_log.log(LOGTP_ERR, ">>>>>> Mempool OPEN ERROR <<<<<<<<<");
+		SetEvent(m_hWorkDie);
 		return;
 	}
 
@@ -254,6 +258,8 @@ VOID CChartMaker::ThreadFunc()
 			} // switch (msg.message)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
+
+	SetEvent(m_hWorkDie);
 }
 
 
@@ -276,12 +282,8 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 				int i = 0;
 				for (i = (int)TP_1MIN; i < (int)TP_DAY; i++)	//일,주,월은 배치로
 				{
-					//TODO 
-					i = (int)TP_5MIN;
-					p->ChartProc((void*)msg.lParam, (int)i); 
-					i = (int)TP_10MIN;
 					p->ChartProc((void*)msg.lParam, (int)i);
-					break;
+					//break;
 				}
 				p->m_pMemPool->release(pData);
 			} //if (msg.message == WM_SEND_STRATEGY)
@@ -344,8 +346,9 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	memcpy(recvUnit.low, p->Close, sizeof(p->Close));
 	memcpy(recvUnit.close, p->Close, sizeof(p->Close));
 	memcpy(recvUnit.cntr_qty, p->CntrQty, sizeof(p->CntrQty));
-	memcpy(recvUnit.dotcnt, p->DecLen, sizeof(p->DecLen));
 
+	sprintf(temp, "%d", m_nDotCnt);
+	memcpy(recvUnit.dotcnt, temp, strlen(temp));
 
 	// group(SYMBOL+TP) 을 찾아서 없으면 insert. 즉, 최초 저장 (Find Group)
 	if (!m_shmQ.GroupFind(szGroupKey))	
@@ -417,10 +420,12 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	dHigh = (dHigh > dNow) ? dHigh : dNow;
 	dLow = (dLow < dNow) ? dLow : dNow;
 
-	FORMAT_PRC(dHigh, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
+	//FORMAT_PRC(dHigh, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
+	FORMAT_PRC(dHigh, m_nDotCnt, temp);
 	memcpy(existUnit.high, temp, min(sizeof(existUnit.high), strlen(temp)));
 
-	FORMAT_PRC(dLow, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
+	//FORMAT_PRC(dLow, S2N(existUnit.dotcnt, sizeof(existUnit.dotcnt)), temp);
+	FORMAT_PRC(dLow, m_nDotCnt, temp);
 	memcpy(existUnit.low, temp, min(sizeof(existUnit.low), strlen(temp)));
 
 	if (dNow > dOpen)	existUnit.gb[0] = CD_PLUS_CANDLE;	// 양봉
@@ -452,10 +457,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
 		memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
 		PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
-		//if (strcmp(m_zSymbol, "6BZ7") == 0) {
-		//	g_log.log(LOGTP_SUCC, "UPDATE Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
-		//		szGroupKey, LEN_CHART_NM, pChart->Nm, pChart->open, pChart->high, pChart->low, pChart->close, pChart->cntr_qty);
-		//}
+
 		//g_log.log(LOGTP_SUCC, "UPDATE DATA[%s][NM:%.*s][CLOSE:%.20s](%.*s)",
 		//	szGroupKey, LEN_CHART_NM, pChart->Nm, pChart->close, sizeof(ST_SHM_CHART_UNIT), (char*)pChart);
 
@@ -482,22 +484,18 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 	ST_SHM_CHART_UNIT* pNowChart = (ST_SHM_CHART_UNIT*)i_pNowChart;
 
 	// 현 종목 차트 개수 가져온다.
-	if(!m_shmQ.IsSavedEnoughDataCnt(pzGroupKey, SMA_LONG_CNT + 1))
+	if (!m_shmQ.IsSavedEnoughDataCnt(pzGroupKey, SMA_LONG_CNT + 1))
 		return;
 
-	char zChartNm[32], zCloseChartNm[32];
+	char zChartNm[32];// , zCloseChartNm[32];
 	ST_SHM_CHART_UNIT chartShm;//, stLastChartShm;
-	TA_Real stSMA[SMA_LONG_CNT] = { 0, };
+	memcpy(&chartShm, pNowChart, sizeof(chartShm));
 
-	int nLoop = SMA_LONG_CNT;
-	sprintf(zChartNm, "%.*s", LEN_CHART_NM, pNowChart->prevNm);
-	int nCnt = 1;
+	CMA	 ma(SMA_SHORT_CNT, SMA_LONG_CNT, FALSE);
 
-	/*
-	ARRAY 에 거꾸로 담아야 한다.
-	*/
-	for (int i = nLoop - 1; i > -1; i--)
+	for (int i = 0; i <SMA_LONG_CNT; i++)
 	{
+		sprintf(zChartNm, "%.*s", LEN_CHART_NM, chartShm.prevNm);
 		if (strcmp(DEFINE_NO_CHART, zChartNm) == 0)	break;
 
 		if (FALSE == m_shmQ.DataGet(pzGroupKey, zChartNm, (char*)&chartShm))
@@ -506,47 +504,96 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 			continue;
 		}
 
-		// 제일 첫번째 차트 정보.
-		if (i == nLoop - 1) {
-			strcpy(zCloseChartNm, zChartNm);
-			//memcpy(&stLastChartShm, &chartShm, sizeof(chartShm));
-		}
-
-		sprintf(zChartNm, "%.*s", LEN_CHART_NM, chartShm.prevNm);
-
-		//Log(TRUE, "[Chart_SMA][%d][NOW:%.4s](%.20s)", i, chartShm.Nm, chartShm.close);
-
-		stSMA[i] = atof(chartShm.close);
+		ma.setClose(atof(chartShm.close));
 	}
 
+	double dShortMA, dLongMA;
+	ma.getMA(&dShortMA, &dLongMA);
 
-	TA_Real		outShort[10], outLong[20];
-	TA_Integer outBeg, outNbElement;
-	TA_Integer outBeg2, outNbElement2;
-	TA_RetCode retCode;
-	retCode = TA_MA(0, 19, &stSMA[0], 20, TA_MAType_SMA, &outBeg, &outNbElement, &outLong[0]);
-	retCode = TA_MA(0, 9, &stSMA[10], 10, TA_MAType_SMA, &outBeg2, &outNbElement2, &outShort[0]);
-
-	char zPrc[32], zDotCnt[32];
-	sprintf(zDotCnt, "%.*s", sizeof(chartShm.dotcnt), chartShm.dotcnt);
-	int nDotCnt = atoi(zDotCnt);
-
-	double dLong = CUtil::roundoff(outLong[0], nDotCnt);	// 반올림
-	double dShort = CUtil::roundoff(outShort[0], nDotCnt);	// 반올림
-
-	FORMAT_PRC(dLong, nDotCnt, zPrc);
-	//memcpy(stLastChartShm.sma_long, zPrc, strlen(zPrc));
+	char zPrc[32];
+	FORMAT_PRC(dLongMA, m_nDotCnt, zPrc);
 	memcpy(pNowChart->sma_long, zPrc, strlen(zPrc));
 
-	FORMAT_PRC(dShort, nDotCnt, zPrc);
-	//memcpy(stLastChartShm.sma_short, zPrc, strlen(zPrc));
+	FORMAT_PRC(dShortMA, m_nDotCnt, zPrc);
 	memcpy(pNowChart->sma_short, zPrc, strlen(zPrc));
-	
+
 	//g_log.log(LOGTP_SUCC, "[Chart_SMA][LMA:%.*s][SMA:%.*s]", LEN_PRC, stLastChartShm.sma_long, LEN_PRC, stLastChartShm.sma_short);
 
 	//SHM 반영
 	//m_shmQ.DataUpdate(pzGroupKey, zCloseChartNm, 0, sizeof(ST_SHM_CHART_UNIT), (char*)&stLastChartShm);
 }
+
+
+//VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ char* i_pNowChart)
+//{
+//	ST_SHM_CHART_UNIT* pNowChart = (ST_SHM_CHART_UNIT*)i_pNowChart;
+//
+//	// 현 종목 차트 개수 가져온다.
+//	if(!m_shmQ.IsSavedEnoughDataCnt(pzGroupKey, SMA_LONG_CNT + 1))
+//		return;
+//
+//	char zChartNm[32], zCloseChartNm[32];
+//	ST_SHM_CHART_UNIT chartShm;//, stLastChartShm;
+//	TA_Real stSMA[SMA_LONG_CNT] = { 0, };
+//
+//	int nLoop = SMA_LONG_CNT;
+//	sprintf(zChartNm, "%.*s", LEN_CHART_NM, pNowChart->prevNm);
+//	int nCnt = 1;
+//
+//	/*
+//	ARRAY 에 거꾸로 담아야 한다.
+//	*/
+//	for (int i = nLoop - 1; i > -1; i--)
+//	{
+//		if (strcmp(DEFINE_NO_CHART, zChartNm) == 0)	break;
+//
+//		if (FALSE == m_shmQ.DataGet(pzGroupKey, zChartNm, (char*)&chartShm))
+//		{
+//			g_log.log(LOGTP_ERR, "[Chart_SMA][%s][%s]차트가 SHM 에 없다", pzGroupKey, zChartNm);
+//			continue;
+//		}
+//
+//		// 제일 첫번째 차트 정보.
+//		if (i == nLoop - 1) {
+//			strcpy(zCloseChartNm, zChartNm);
+//			//memcpy(&stLastChartShm, &chartShm, sizeof(chartShm));
+//		}
+//
+//		sprintf(zChartNm, "%.*s", LEN_CHART_NM, chartShm.prevNm);
+//
+//		//Log(TRUE, "[Chart_SMA][%d][NOW:%.4s](%.20s)", i, chartShm.Nm, chartShm.close);
+//
+//		stSMA[i] = atof(chartShm.close);
+//	}
+//
+//
+//	TA_Real		outShort[10], outLong[20];
+//	TA_Integer outBeg, outNbElement;
+//	TA_Integer outBeg2, outNbElement2;
+//	TA_RetCode retCode;
+//	retCode = TA_MA(0, 19, &stSMA[0], 20, TA_MAType_SMA, &outBeg, &outNbElement, &outLong[0]);
+//	retCode = TA_MA(0, 9, &stSMA[10], 10, TA_MAType_SMA, &outBeg2, &outNbElement2, &outShort[0]);
+//
+//	char zPrc[32], zDotCnt[32];
+//	sprintf(zDotCnt, "%.*s", sizeof(chartShm.dotcnt), chartShm.dotcnt);
+//	int nDotCnt = atoi(zDotCnt);
+//
+//	double dLong = CUtil::roundoff(outLong[0], nDotCnt);	// 반올림
+//	double dShort = CUtil::roundoff(outShort[0], nDotCnt);	// 반올림
+//
+//	FORMAT_PRC(dLong, nDotCnt, zPrc);
+//	//memcpy(stLastChartShm.sma_long, zPrc, strlen(zPrc));
+//	memcpy(pNowChart->sma_long, zPrc, strlen(zPrc));
+//
+//	FORMAT_PRC(dShort, nDotCnt, zPrc);
+//	//memcpy(stLastChartShm.sma_short, zPrc, strlen(zPrc));
+//	memcpy(pNowChart->sma_short, zPrc, strlen(zPrc));
+//	
+//	//g_log.log(LOGTP_SUCC, "[Chart_SMA][LMA:%.*s][SMA:%.*s]", LEN_PRC, stLastChartShm.sma_long, LEN_PRC, stLastChartShm.sma_short);
+//
+//	//SHM 반영
+//	//m_shmQ.DataUpdate(pzGroupKey, zCloseChartNm, 0, sizeof(ST_SHM_CHART_UNIT), (char*)&stLastChartShm);
+//}
 
 void CChartMaker::CloseChartShm()
 {

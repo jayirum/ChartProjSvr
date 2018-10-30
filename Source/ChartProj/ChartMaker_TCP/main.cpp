@@ -348,6 +348,7 @@ BOOL LoadSymbol()
 
 
 	char zTemp[32], zSymbol[32], zArtc[32];
+	int nDotCnt = 0;
 	while (db->IsNextRow())
 	{
 		db->GetStr("ARTC_CODE", zTemp);
@@ -357,19 +358,21 @@ BOOL LoadSymbol()
 		db->GetStr("SYMBOL", zTemp);
 		ir_cvtcode_uro_6e(zTemp, zSymbol);
 
+		nDotCnt = db->GetLong("DOT_CNT");
+
 		//TODO
-		//if (strncmp(zSymbol, "CL", 2) != 0
-		//	) {
-		//	db->Next();
-		//	continue;
-		//}
+		/*if (strncmp(zSymbol, "CL", 2) != 0
+			) {
+			db->Next();
+			continue;
+		}*/
 		
 		// KR 은 CLQ7, 다른곳은 CLQ17 
 		ir_cvtcode_HD_KR(zSymbol, zTemp);
 		std::string symbol = zSymbol;
 
 
-		CChartMaker* p = new CChartMaker(zSymbol, zArtc, /*g_pMemPool,*/ g_unSaveThread);
+		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread);
 
 		g_mapSymbol[symbol] = p;
 		g_log.log(LOGTP_SUCC, "[%s][%s] 차트구성종목", zArtc, zSymbol);

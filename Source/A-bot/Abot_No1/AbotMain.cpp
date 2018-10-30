@@ -34,9 +34,9 @@ CAbotMain::~CAbotMain()
 VOID CAbotMain::Finalize()
 {
 	PostThreadMessage(m_unMonitor, WM_DIE, 0, 0);
-	SAFE_CLOSEHANDLE(m_hMonitor);
-
 	StopStrategies();
+
+	SAFE_CLOSEHANDLE(m_hMonitor);
 	SAFE_DELETE(m_pMemPool);
 	SAFE_DELETE(m_pDBPool);
 	ClearStratMap();
@@ -45,24 +45,6 @@ VOID CAbotMain::Finalize()
 
 BOOL CAbotMain::Initialize()
 {
-	//	GET LOG DIR
-	char szDir[_MAX_PATH] = { 0, };
-	CProp prop;
-	if (!prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY))
-	{
-		showMsg(FALSE, "Registry Open Failed");
-		return FALSE;
-	}
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_ABOT"));
-	if(szDir[0]==0)
-	{
-		showMsg(FALSE, "Registry value Failed");
-		return FALSE;
-	}
-	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
-	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
-	g_log.OpenLog(szDir, EXENAME);
-
 	// mem pool init
 	m_pMemPool = new CMemPool(MEM_PRE_ALLOC, MEM_MAX_ALLOC, MEM_BLOCK_SIZE);
 
@@ -72,13 +54,36 @@ BOOL CAbotMain::Initialize()
 		return FALSE;
 	}
 
+	char ip[32], id[32], pwd[32], cnt[32], name[32];
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
+	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
+
+	if (!m_pDBPool)
+	{
+		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+		if (!m_pDBPool->Init(atoi(cnt)))
+		{
+			showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			return FALSE;
+		}
+	}
+
 	if (!LoadSymbolInfo(TRUE))
 		return FALSE;
 
+	InitApiSocket(API_ORD);
+	InitApiSocket(API_TICK);
+	//TODO InitMonitorSocket();
+
 	// create recv thread
-	m_hMonitor = (HANDLE)_beginthreadex(NULL, 0, &Thread_Monitor, this, 0, &m_unMonitor);
+	//TODO m_hMonitor = (HANDLE)_beginthreadex(NULL, 0, &Thread_Monitor, this, 0, &m_unMonitor);
 
 	ResumeThread();
+	
+	StartStrategies();
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -87,8 +92,6 @@ BOOL CAbotMain::Initialize()
 unsigned WINAPI CAbotMain::Thread_Monitor(LPVOID lp)
 {
 	CAbotMain* pThis = (CAbotMain*)lp;
-
-	pThis->InitMonitorSocket();
 
 	if (!pThis->m_pMonitorClient->Begin((LPSTR)pThis->m_sMonitorIP.c_str(), pThis->m_nMonitorPort, 10))
 	{
@@ -559,93 +562,76 @@ VOID CAbotMain::ApiOrd_RealCntr(char* pPacket)
 		p->ApiCntrDT, p->ApiCntrTM);
 }
 
-unsigned WINAPI CAbotMain::Thread_SaveData(LPVOID lp)
+unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 {
+	CAbotMain* p = (CAbotMain*)lp;
 
-	//CAbotMain* p = (CAbotMain*)lp;
+	CDBHandlerAdo db(p->m_pDBPool->Get());
+	char zQ[1024];
+	while (p->m_bContinue)
+	{
+		Sleep(1);
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_DIE)
+			{
+				return 0;
+			}
+			if (msg.message == WM_STRAT_LOGGING)
+			{
+				ABOTLOG_NO1 *log = (ABOTLOG_NO1*)msg.lParam;
+				int nLen = msg.wParam;
 
-	//ST_PACK2CHART_EX* pSise;
-	//char zSymbol[128];
-	//char tm[9];
-	//char zCurrPrc[32];
-	//int nErrCode, res;
-	//while (p->m_bContinue)
-	//{
-	//	Sleep(1);
-	//	MSG msg;
-	//	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	//	{
-	//		if (msg.message == WM_DIE)
-	//		{
-	//			return 0;
-	//		}
-	//		if (msg.message == WM_SENDORD_API)
-	//		{
-	//			char* pData = (char*)msg.lParam;
-	//			int nLen = msg.wParam;
-
-	//			res = p->m_pApiClient[API_ORD]->SendData(pData, nLen, &nErrCode);
-	//			p->m_pMemPool->release(pData);
-	//			if(res<=0)
-	//			{
-	//				p->showMsg(FALSE, "주문전송 에러(%d)(%s)", nErrCode, p->m_pApiClient[API_ORD]->GetMsg());
-	//				continue;
-	//			}
-	//			p->showMsg(TRUE, "주문전송 성공(%d)(%.*s)", res,nLen, pData);
-	//		}
-	//	}
-
-	//	if (p->m_pApiClient[API_ORD]->HappenedRecvError())
-	//	{
-	//		p->showMsg(FALSE, "API_ORD DATA RECV ERROR:%s", p->m_pApiClient[API_ORD]->GetMsg());
-	//		continue;
-	//	}
-	//	char* pBuf = NULL;;
-	//	if (!p->m_pMemPool->get(&pBuf))
-	//	{
-	//		p->showMsg(FALSE, "memory pool get error");
-	//		continue;
-	//	}
-	//	int nLen = p->m_pApiClient[API_ORD]->GetOneRecvedPacket(pBuf);
-	//	if (nLen == 0) {
-	//		p->m_pMemPool->release(pBuf);
-	//		continue;
-	//	}
-	//	if (nLen < 0)
-	//	{
-	//		p->showMsg(FALSE, "API_ORD DATA PAKCET 이상(%s)(%s)", pBuf, p->m_pApiClient[API_ORD]->GetMsg());
-	//		p->m_pMemPool->release(pBuf);
-	//		continue;
-	//	}
-
-	//	if (nLen > 0)
-	//	{
-	//		pSise = (ST_PACK2CHART_EX*)pBuf;
-	//		sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
-	//		memcpy(pSise->Time, tm, sizeof(pSise->Time));
-	//		sprintf(zCurrPrc, "%.*s", sizeof(pSise->Close), pSise->Close);
-
-	//		sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
-	//		CUtil::TrimAll(zSymbol, strlen(zSymbol));
-	//		std::string sSymbol = zSymbol;
-
-	//		ITMAP_STRAT it = p->m_mapStrat.find(sSymbol);
-	//		if (it == p->m_mapStrat.end())
-	//		{
-	//			p->m_pMemPool->release(pBuf);
-	//			continue;
-	//			//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
-	//		}
-
-	//		// 화면에 표시
-	//		//p->DatafeedProc(sSymbol, pBuf);
-	//		p->showMsg(TRUE, "주문수신(%d)(%.*s)", nLen, nLen, pBuf);
-
-	//		// strat class 에 전달
-	//		ST_STRAT* pStrat = (*it).second;
-	//		PostThreadMessage(pStrat->m->GetStratThreadId(), WM_RECV_API_ORD, 0, (LPARAM)pBuf);
-	//	}
-	//}
+				sprintf(zQ, "EXEC ABORT_NO1_SAVELOG "
+					"'%s'"	//@I_SYMBOL	varchar(11)
+					",'%s'"	//@I_START_ID varchar(20)
+					",'%.1s'"	//@I_FIRE_YN char(1)
+					",'%.1s'"	//@I_OPEN_CLOS char(1)
+					",'%.1s'"	//, @I_PL_TP	CHAR(1)		--P, L
+					",'%.1s'"	//@I_BS_TP char(1)
+					",'%s'"	//@I_CURR_PRC varchar(20)
+					",'%s'"	//@I_STRAT_PRC varchar(20)
+					",'%s'"	//@I_OPEN_PRC varchar(20)
+					",'%s'"	//@I_ENTRY_PRC varchar(20)
+					",'%s'"	//@I_ENTRY_PERCENT varchar(10)
+					",'%s'"	//@I_CROSS_1MIN varchar(10)
+					",'%s'"	//@I_CROSS_3MIN varchar(10)
+					",'%s'"	//@I_CROSS_5MIN varchar(10)
+					",'%s'"	//, @I_MAX_PRC	VARCHAR(20)
+					",'%s'"	//, @I_PTCLR_PERCENT VARCHAR(10)
+					",'%s'"	//@I_API_TM varchar(9)
+					",'%s'"	//@I_MSG varchar(256)
+					,
+					log->zSymbol
+					, log->zStratID
+					, log->FireYN
+					, log->OpenClose
+					, log->PLTp
+					, log->BsTp
+					, log->zCurrPrc
+					, log->zStratPrc
+					, log->zOpenPrc
+					, log->zEntryPrc
+					, log->zEntryPercent
+					, log->zCross_1min
+					, log->zCross_3min
+					, log->zCross_5min
+					, log->zMaxPrc
+					, log->zPtClrTriggerPercent
+					, log->zApiTM
+					, log->zMsg
+				);
+				if (FALSE == db->ExecQuery(zQ))
+				{
+					p->showMsg(FALSE, "ABORT_NO1_SAVELOG Error(%s)", zQ);
+				}
+				db->Close();
+				p->m_pMemPool->release((char*)log);
+			}// if (msg.message == WM_STRAT_LOGGING)
+		
+		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	}
 	return 0;
 }
 
@@ -667,6 +653,7 @@ void CAbotMain::ReSetSymbolInfo(
 	, double dTickSize
 	, int nDotCnt
 	, char* pzQty
+	, char* pzStartTM
 	, char* pzEndTM
 	, int nMaxSLCnt
 	, int nMaxPTCnt
@@ -687,6 +674,7 @@ void CAbotMain::ReSetSymbolInfo(
 			nDotCnt,
 			"",	//(LPSTR)sOpenPrc.GetString(),
 			atoi(pzQty),
+			pzStartTM,
 			pzEndTM,
 			nMaxSLCnt,
 			nMaxPTCnt,
@@ -707,22 +695,6 @@ void CAbotMain::ReSetSymbolInfo(
 BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 {
 	showMsg(TRUE, "trying to LoadSymbolInfo...");
-	char ip[32], id[32], pwd[32], cnt[32], name[32];
-	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
-	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
-	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
-	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
-	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
-
-	if (!m_pDBPool)
-	{
-		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-		if (!m_pDBPool->Init(atoi(cnt)))
-		{
-			showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
-			return FALSE;
-		}
-	}
 
 	CDBHandlerAdo db(m_pDBPool->Get());
 	char zQ[1024];
@@ -735,30 +707,46 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 	{
 		while (db->IsNextRow())
 		{
+			char zArtc[128];	db->GetStr("ARTC_CD", zArtc);
 			char zSymbol[128];	db->GetStr("SYMBOL", zSymbol);
 			char zName[128];	db->GetStr("NAME", zName);
 			double dTickVal		= db->GetDouble("TICK_VALUE");
 			double dTickSize	= db->GetDouble("TICK_SIZE");
 			int nDotCnt			= db->GetLong("DOT_CNT");
 			char zQty[128];		db->GetStr("ORD_QTY", zQty);			
-			char zEndTM[128];	db->GetStr("END_TM", zEndTM);		
+			char zEndTM[128];	db->GetStr("END_TM", zEndTM);
+			char zStartTM[128];	db->GetStr("START_TM", zStartTM);
 			int nMaxCntSL		= db->GetLong("MAXCNT_SL");			
 			int nMaxCntPT		= db->GetLong("MAXCNT_PT");			
 			double dEntrySpread = db->GetDouble("ENTRY_SPREAD");			
 			double dClrSpread	= db->GetDouble("CLR_SPREAD");
 			double dPtPoint		= db->GetDouble("PT_POINT");
 
+			//TODO
+			//if (strncmp(zSymbol, "CL", 2) != 0) {
+			//	db->Next();
+			//	continue;
+			//}
 			if (bCreateStrat)
 			{
 				ST_STRAT* st = new ST_STRAT;
 				st->h = new CStratHistManager(zSymbol);
-				st->m = new CStratMaker(zSymbol, st->h);
+				st->m = new CStratMaker(zSymbol, zArtc, st->h);
+				if (!st->m->Initialize())
+				{
+					g_log.log(LOGTP_FATAL, ">>>>>>>>>Strat Maker Initialize Failed<<<<<<<<<<");
+					delete st->h;
+					delete st->m;
+					continue;
+				}
 
 				st->bFirstFeed = FALSE;
 				m_mapStrat[zSymbol] = st;
+				g_log.log(LOGTP_SUCC, "LoadSymbol(%s)", zSymbol);
+				printf("LoadSymbol(%s)\n", zSymbol);
 			}
 			ReSetSymbolInfo(zSymbol, dTickVal, dTickSize, nDotCnt,
-				zQty, zEndTM, nMaxCntSL, nMaxCntPT, dEntrySpread, dClrSpread, dPtPoint);
+				zQty, zStartTM, zEndTM, nMaxCntSL, nMaxCntPT, dEntrySpread, dClrSpread, dPtPoint);
 
 			db->Next();
 		}
@@ -798,6 +786,7 @@ void CAbotMain::showMsg(BOOL bSucc, char* pMsg, ...)
 	
 	if(bSucc)	g_log.log(INFO, buff1);
 	else		g_log.log(ERR, buff1);
+	printf("%s\n", buff1);
 }
 
 
@@ -813,8 +802,6 @@ void CAbotMain::StartStrategies()
 		return;
 	}
 
-	InitApiSocket(API_ORD);
-	InitApiSocket(API_TICK);
 
 	// create recv thread
 	m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiTick, this, 0, &m_unApiTick);
@@ -823,7 +810,7 @@ void CAbotMain::StartStrategies()
 	m_hApiOrd = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiOrd, this, 0, &m_unApiOrd);
 
 	// create save thread
-	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveData, this, 0, &m_unSaveData);
+	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveDBLog, this, 0, &m_unSaveData);
 
 	ITMAP_STRAT it;
 	for (it = m_mapStrat.begin(); it != m_mapStrat.end(); ++it)

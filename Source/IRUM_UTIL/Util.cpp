@@ -1240,6 +1240,109 @@ VOID CUtil::SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize,
 	SplitData(pData, '@', pListResult);
 }
 
+/*
+	24시간 고려한 점검
+
+	07~23:59:59
+	00 ~ 05:59:59
+
+	TIME_HHMM		//HHMM
+	,TIME_HHMMSS	//HHMMSS
+	,TIME_HH_MM		//HH:MM
+	,TIME_HH_MM_SS	//HH:MM:SS
+*/
+BOOL IsPassedTime(char* pzBaseTime, EN_TIMEMODE timeMode)
+{
+	BOOL bPassed = FALSE;
+
+	SYSTEMTIME st;
+	GetLocalTime(&st); 
+	char now1[32];
+	sprintf(now1, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+	BOOL bNowIsToday = FALSE;
+	if (strncmp(now1, "07:00:00", 8) >= 0 &&
+		strncmp(now1, "23:59:59", 8) <= 0)
+	{
+		bNowIsToday = TRUE;
+	}
+
+	char now[32];
+	BOOL bBaseTimeIsToday = FALSE;
+	switch (timeMode)
+	{
+	case TIME_HHMM:
+		sprintf(now, "%02d%02d", st.wHour, st.wMinute);
+
+		if (strncmp(pzBaseTime, "0700", 4) >= 0 &&
+			strncmp(pzBaseTime, "2359", 4) <= 0)
+			bBaseTimeIsToday = TRUE;
+
+		break;
+
+	case TIME_HHMMSS:
+		sprintf(now, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+
+		if (strncmp(pzBaseTime, "070000", 6) >= 0 &&
+			strncmp(pzBaseTime, "235959", 6) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+
+	case TIME_HH_MM:
+		sprintf(now, "%02d:%02d", st.wHour, st.wMinute);
+
+		if (strncmp(pzBaseTime, "07:00", 5) >= 0 &&
+			strncmp(pzBaseTime, "23:59", 5) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+
+	case TIME_HH_MM_SS:
+		sprintf(now, "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+
+		if (strncmp(pzBaseTime, "07:00:00", 8) >= 0 &&
+			strncmp(pzBaseTime, "23:59:59", 8) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+	}
+
+
+	
+	
+	
+
+	// 07~23
+	if (bNowIsToday)
+	{
+		// 07~23
+		if (bBaseTimeIsToday)
+		{
+			if (strcmp(now, pzBaseTime) >= 0)
+				bPassed = TRUE;
+		}
+		// 00 ~ 06
+		else
+		{
+			bPassed = FALSE;
+		}
+	}
+	// 00~06
+	if (!bNowIsToday)
+	{
+		// 00~06
+		if (!bBaseTimeIsToday)
+		{
+			if (strcmp(now, pzBaseTime) >= 0)
+				bPassed = TRUE;
+		}
+		// 07 ~ 23
+		else
+		{
+			bPassed = FALSE;
+		}
+	}
+
+	return bPassed;
+}
+
 VOID CUtil::SplitData(_In_ char* psData, _In_ char cDelimeter, _Out_ std::list<std::string>* pListResult)
 {
 	char* pFind;

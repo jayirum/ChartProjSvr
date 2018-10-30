@@ -28,7 +28,7 @@ VOID CStratHistManager::SetOpenPrc(char *pzOpenPrc)
 
 
 void CStratHistManager::SetInitInfo(double dTickVal, double dTickSize, int nDotCnt,
-	char* pzOpenPrc, int nOrdQty, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
+	char* pzOpenPrc, int nOrdQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
 	double dEntryTrigger, double dClrCheckTrigger, double dPtClrTrigger)
 {
 	lock();
@@ -36,6 +36,7 @@ void CStratHistManager::SetInitInfo(double dTickVal, double dTickSize, int nDotC
 	m_symbol.dTickSize = dTickSize;
 	m_symbol.nDotCnt = nDotCnt;
 	strcpy(m_param.zOpenPrc, pzOpenPrc);
+	strcpy(m_param.zStartTM, pzStartTM);
 	strcpy(m_param.zEndTM, pzEndTM);
 	m_param.nOrdQty = nOrdQty;
 	m_param.nMaxCntSL = nMaxSLCnt;
@@ -246,10 +247,12 @@ ex)
  (MAX - 진입가) / 진입가 >= 0.3%
 
 */
-BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg)
+BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ char* pDbLog)
 {
 	BOOL bResult = FALSE;
 	char zGapMax[32], zGapCurr[32];
+
+	ABOTLOG_NO1 *dblog = (ABOTLOG_NO1*)pDbLog;
 
 	int nComp = CUtil::CompPrc(m_pos.zMaxPLPrc, LEN_PRC, m_pos.zEntryPrc, LEN_PRC, m_symbol.nDotCnt, LEN_PRC);
 	if (nComp == 0)
@@ -288,6 +291,9 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg)
 				zGapMax
 			);
 
+			//DB LOG
+			sprintf(dblog->zMaxPrc, m_pos.zMaxPLPrc);
+			sprintf(dblog->zPtClrTriggerPercent, "%.2f", m_param.dPtClrTrigger * 100);
 		}
 	}
 
@@ -318,6 +324,10 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg)
 				m_pos.zEntryPrc, pzCurrPrc, zGapCurr,
 				zGapMax
 			);
+
+			//DB LOG
+			sprintf(dblog->zMaxPrc, m_pos.zMaxPLPrc);
+			sprintf(dblog->zPtClrTriggerPercent, "%.2f", m_param.dPtClrTrigger * 100);
 		}
 	}
 
