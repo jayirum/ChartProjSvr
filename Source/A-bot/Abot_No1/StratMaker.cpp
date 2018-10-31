@@ -1,11 +1,12 @@
 
+#include "../../IRUM_UTIL/adofunc.h"
 #include "StratMaker.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_INC/IRUM_Common.h"
 
 extern CLogMsg g_log;
-
+extern char			g_zConfig[_MAX_PATH];
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,66 +60,66 @@ CStratMaker::~CStratMaker()
 
 void CStratMaker::SetInitInfo(CMemPool* pMemPool,unsigned dwSaveThread, unsigned dwSendThread)
 {
-	//lock();
 	m_dwSaveThread = dwSaveThread;
 	m_dwSendThread = dwSendThread;
 	m_pMemPool = pMemPool;
-	//unlock();
+
+	TradeOption();
 }
 
+BOOL CStratMaker::TradeOption()
+{
+	m_option.bCross = FALSE;
+	char zCrossApplied[32];
+	CUtil::GetConfig(g_zConfig, "TRADE_OPTION", "CROSS_APPLIED", zCrossApplied);
+	if (zCrossApplied[0] != 'Y')
+	{
+		g_log.log(INFO, "Not Apply Cross to All Symbols");
+		return TRUE;
+	}
+	
+	char zCrossAppliedMode[32];
+	CUtil::GetConfig(g_zConfig, "TRADE_OPTION", "CROSS_APPLIED_MODE", zCrossAppliedMode);
+	if (strcmp(zCrossAppliedMode, "ALL_SYMBOL")==0)
+	{
+		m_option.bCross = TRUE;
+		g_log.log(INFO, "Apply Cross to All Symbols");
+	}
 
-//BOOL CStratMaker::BeginShm()
-//{
-//	char szDir[_MAX_PATH], szModule[_MAX_PATH], szConfig[_MAX_PATH];
-//	CUtil::GetMyModuleAndDir(szDir, szModule, szConfig);
-//
-//	//	OPEN SHM
-//	m_pShmQ = new CQueueShm();
-//	if (!m_pShmQ->Open((LPCTSTR)m_zShmNm, (LPCTSTR)m_zMutexNm))
-//	{
-//		g_log.log(LOGTP_FATAL, ">>>>>>>CHART SHM OPEN 에러(%s)(symbol:%s)(%s)", m_zShmNm, m_zSymbol, m_pShmQ->GetErr());
-//		return FALSE;
-//	}
-//	g_log.log(INFO, "SHM OPEN 성공(%s)", m_zMutexNm);
-//
-//
-//	return TRUE;
-//}
+	if (strcmp(zCrossAppliedMode, "BY_SYMBOL")==0)
+	{
+		char ip[32], id[32], pwd[32], cnt[32], name[32], zCrossApplied[32];
+		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
+		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
+		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
+		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
+		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-//
+		CDBPoolAdo		*pDBPool;
 
-//BOOL CStratMaker::BeginDB()
-//{
-//	char ip[32], id[32], pwd[32], cnt[32], name[32];
-//	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
-//	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
-//	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
-//	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
-//	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
-//
-//	//m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-//	//if (!m_pDBPool->Init(1))
-//	//{
-//	//	g_log.log(ERR, "DB OPEN FAIL(MSG:%s)", m_pDBPool->GetMsg());
-//	//	g_log.log(ERR, "(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
-//	//	return FALSE;
-//	//}
-//	//g_log.log(ERR, "DB OPEN OK(IP:%s)(ID:%s)(PWD:%s)(DB:%s)", ip, id, pwd, name);
-//	return TRUE;
-//}
+		pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+		if (!pDBPool->Init(1))
+		{
+			g_log.log(ERR, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			return FALSE;
+		}
+		CDBHandlerAdo db(pDBPool->Get());
+		char zQ[1024];
+		sprintf(zQ, "SELECT * FROM ABOT_NO1_STRAT_CONFIG WHERE SYMBOL = '%s'", m_zSymbol);
+		if (FALSE == db->ExecQuery(zQ))
+		{
+			g_log.log(ERR, "failed in querying options(%s)", zQ);
+			return FALSE;
+		}
+		db->GetStr("CROSS_APPLIED", zCrossApplied);
+		db->Close();
 
-//VOID CStratMaker::EndDB()
-//{
-//	//SAFE_DELETE(m_pDBPool);
-//}
-//
-//void CStratMaker::EndShm()
-//{
-//	m_pShmQ->Close();
-//
-//	//TODO 
-//	SAFE_DELETE(m_pShmQ);
-//}
+		m_option.bCross = (zCrossApplied[0] == 'Y') ? TRUE : FALSE;
+		g_log.log(INFO, "Apply Cross to (%s) : %c", m_zSymbol, zCrossApplied[0]);
+	}
+
+	return TRUE;
+}
 
 
 
@@ -398,22 +399,24 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	ST_SHM_CHART_UNIT chart;
 	CROSS_TP cross1, cross3, cross5;
 	char zCross[128] = { 0, }, msg1[512] = { 0, }, msg3[512] = { 0, }, msg5[512] = { 0, };
-	if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
+	if (m_option.bCross)
 	{
-		cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
-		sprintf(msg1, "[1분차트:%s]", dblog.zCross_1min);
+		if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
+		{
+			cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
+			sprintf(msg1, "[1분차트:%s]", dblog.zCross_1min);
+		}
+		if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
+		{
+			cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
+			sprintf(msg3, "[3분차트:%s]", dblog.zCross_3min);
+		}
+		if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
+		{
+			cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
+			sprintf(msg5, "[5분차트:%s]", dblog.zCross_5min);
+		}
 	}
-	if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
-	{
-		cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
-		sprintf(msg3, "[3분차트:%s]", dblog.zCross_3min);
-	}
-	if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
-	{
-		cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
-		sprintf(msg5, "[5분차트:%s]", dblog.zCross_5min);
-	}
-
 	char zMsg1[512];
 	char zStratID[32];
 	BOOL bFire = FALSE;
@@ -445,12 +448,12 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zStratPrc, zUpperPrc);
 		sprintf(dblog.zMsg, zMsg1);
 
-		if (cross1 != GOLDEN_CROSS)
+		if (m_option.bCross && (cross1 != GOLDEN_CROSS))
 		{
 			dblog.FireYN[0] = 'N';
-
 			sprintf(zMsg1, "[매수진입조건이나 골드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
 				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+			sprintf(dblog.zMsg, zMsg1); 
 			m_h->SetOpenPrc(pzCurrPrc);
 		}
 		else
@@ -475,11 +478,12 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zStratPrc, zLowerPrc);
 		sprintf(dblog.zMsg, zMsg1);
 
-		if (cross1 != DEAD_CROSS)
+		if (m_option.bCross&&(cross1 != DEAD_CROSS))
 		{
 			dblog.FireYN[0] = 'N';
 			sprintf(zMsg1, "[매도진입조건이나 데드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
 				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+			sprintf(dblog.zMsg, zMsg1);
 			m_h->SetOpenPrc(pzCurrPrc);
 		}
 		else

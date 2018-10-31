@@ -46,8 +46,9 @@ void fnGET_CHART_NM_EX(char* date, char*time, int tp, char* out)
 }
 
 
-CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId)
+CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId, BOOL bSaveChart)
 {
+	m_bSaveChart = bSaveChart;
 	m_dwMainThreadId = dwMainThreadId;
 	//m_pMemPool = pMemPool;
 	strcpy(m_zSymbol, pzSymbol);
@@ -66,9 +67,6 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 CChartMaker::~CChartMaker()
 {
 	CloseChartShm();
-	//EndMcastRecv();
-	CloseMemPool();
-
 	SetEvent(m_hWorkDie);
 	if (WaitForSingleObject(m_hWorkThread, 3000) != WAIT_OBJECT_0) {
 		DWORD dwExitCode = 0;
@@ -77,6 +75,7 @@ CChartMaker::~CChartMaker()
 	CloseHandle(m_hWorkDie);
 	CloseHandle(m_hWorkThread);
 	m_hDie = m_hThread = NULL;
+	CloseMemPool();
 }
 
 BOOL CChartMaker::IsMySymbol(char* pSise)
@@ -275,20 +274,19 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 			if (msg.message == WM_RECV_API_MD)
 			{
 				char* pData = (char*)msg.lParam;
-				//TODO
-				//g_log.log(LOGTP_ERR, "RECV(%s)", pData);
 				int nLen = (int)msg.wParam;
 
 				int i = 0;
 				for (i = (int)TP_1MIN; i < (int)TP_DAY; i++)	//일,주,월은 배치로
 				{
-					p->ChartProc((void*)msg.lParam, (int)i);
-					//break;
+					p->ChartProc((void*)pData, (int)i);
 				}
 				p->m_pMemPool->release(pData);
 			} //if (msg.message == WM_SEND_STRATEGY)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
+
+	//p->CloseMemPool();
 	return 0;
 }
 
@@ -398,14 +396,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		//printf("DataInsert-2(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 
 		// DB 저장
-		ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
-		memcpy(pChart, &recvUnit, sizeof(ST_SHM_CHART_UNIT));
-		memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
-		PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
-		//if (strcmp(m_zSymbol, "6BZ7") == 0) {
-		//	g_log.log(LOGTP_SUCC, "DB INSERT Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
-		//		szGroupKey, LEN_CHART_NM, pChart->Nm, pChart->open, pChart->high, pChart->low, pChart->close, pChart->cntr_qty);
-		//}
+		if (m_bSaveChart)
+		{
+			ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
+			memcpy(pChart, &recvUnit, sizeof(ST_SHM_CHART_UNIT));
+			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
+			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
+		}
 		return;
 	}
 
@@ -453,23 +450,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	else {
 		//printf("DataUpdate(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		// DB 저장
-		ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
-		memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
-		memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
-		PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
-
-		//g_log.log(LOGTP_SUCC, "UPDATE DATA[%s][NM:%.*s][CLOSE:%.20s](%.*s)",
-		//	szGroupKey, LEN_CHART_NM, pChart->Nm, pChart->close, sizeof(ST_SHM_CHART_UNIT), (char*)pChart);
-
-		//Log(TRUE, "NOW CHART[%s][NM:%.4s][NEW_SEQ:%.10s][OPEN:%.20s][NOW_H:%.20s][NOW_L:%.20s][NOW_C:%.20s][%.1s] LAST_NM[%.4s]",
-		//	szGroupKey, recvUnit.Nm, recvUnit.seq, existUnit.open, existUnit.high, existUnit.low, recvUnit.close, existUnit.gb, lastNm.LastChartNm);
-		//printf("CHART[%s][%.12s][%.12s][O:%7.5f][C:%7.5f][%.1s]\n",
-		//	szGroupKey, existUnit.Nm, existUnit.prevNm, atof(existUnit.open), atof(existUnit.close), existUnit.gb);
-
-		//ST_SHM_CHART_UNIT debug;
-		//m_shm[CHART].GetData(szGroupKey, szChartNm, (char*)&debug);
-		//Log(TRUE, "DEBUG[%s][%.4s][PREV:%.4s][%5d][O:%7.5f][C:%7.5f][%.1s]",
-		//	szGroupKey, debug.Nm, debug.prevNm, atoi(debug.seq), atof(debug.open), atof(debug.close), debug.gb);
+		if (m_bSaveChart)
+		{
+			ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
+			memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
+			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
+			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
+		}	//	szGroupKey, debug.Nm, debug.prevNm, atoi(debug.seq), atof(debug.open), atof(debug.close), debug.gb);
 	}
 }
 

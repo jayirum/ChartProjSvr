@@ -7,9 +7,6 @@
 
 #pragma warning(disable:4996)
 
-CRITICAL_SECTION   g_cs;
-#define LOCK() {EnterCriticalSection(&g_cs);}
-#define UNLOCK() {LeaveCriticalSection(&g_cs);}
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -21,7 +18,7 @@ CMemPool::CMemPool(int nPreAlloc, int nMaxAlloc, int nBlockSize)
 	m_nBlockSize = nBlockSize;
 	m_nPrevAlloc = nPreAlloc;
 	m_nMaxAlloc = nMaxAlloc;
-	InitializeCriticalSection(&g_cs);
+	InitializeCriticalSection(&m_cs);
 
 	LOCK();
 	for (std::size_t i = 0; i < m_nPrevAlloc; i++)
@@ -40,7 +37,7 @@ CMemPool::CMemPool(int nPreAlloc, int nMaxAlloc, int nBlockSize)
 void CMemPool::End()
 {
 	clear();
-	DeleteCriticalSection(&g_cs);
+	DeleteCriticalSection(&m_cs);
 }
 
 CMemPool::~CMemPool()
@@ -76,7 +73,6 @@ bool	CMemPool::get(_Out_ char** pBuf)
 		if (m_listPool.size()==0)
 		{
 			*pBuf = new char[m_nBlockSize];
-			//printf("new.....%x\n", *pBuf);
 		}
 		else
 		{
@@ -84,7 +80,6 @@ bool	CMemPool::get(_Out_ char** pBuf)
 			char* p = *m_listPool.begin();
 			m_listPool.pop_front();
 
-			//printf("\tmem pop:%d.%x\n", m_listPool.size(), p);
 			if (!p)
 				*pBuf = new char[m_nBlockSize];
 			else

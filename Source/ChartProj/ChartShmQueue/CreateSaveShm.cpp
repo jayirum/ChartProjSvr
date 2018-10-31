@@ -107,7 +107,7 @@ BOOL CCreateSaveShm::Create()
 		//}
 	}
 	//int Size = shmData.lMaxGroupCnt*CHART_TP_CNT*MAX_CHART_UNIT_CNT * sizeof(ST_SHM_CHART_UNIT);
-	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = 총그룹갯수(심볼수:%d)*차트수(%d)*차트당UNIT수(%d)*UNIT크기(%d) = %d (%10.2f MB)",
+	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = Total Group Cnt(Symbol:%d)*ChartCnt(%d)*Unit Per Chart%d)*UNIT Size(%d) = %d (%10.2f MB)",
 		m_zShmNm, m_zMutexNm,
 		MAX_SYMBOL_PER_ARTC, CHART_TP_CNT, MAX_CHART_UNIT_CNT, sizeof(ST_SHM_CHART_UNIT),
 		nTotSize, (double)nTotSize /1024./1024.);

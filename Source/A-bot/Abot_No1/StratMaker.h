@@ -14,6 +14,11 @@ typedef struct _SYMBOL_INFO
 	int		nDotCnt;
 }SYMBOL_INFO;
 
+typedef struct _TRADE_OPTION
+{
+	BOOL	bCross;
+}TRADE_OPTION;
+
 enum { SLPT_NONE=0, SL_BUY, SL_SELL, PT_BUY, PT_SELL};
 enum { MARKET_NONE=0, MARKET_ON, MARKET_CLOSING, MARKET_CLOSED};
 
@@ -52,13 +57,12 @@ private:
 
 	// work thread
 	static unsigned WINAPI StratThread(LPVOID lp);
-	//void	lock() { EnterCriticalSection(&m_cs); }
-	//void	unlock() { LeaveCriticalSection(&m_cs); }
+
+	BOOL	TradeOption();
 private:
-	CMemPool		*m_pMemPool;
+	CMemPool			*m_pMemPool;
 	CStratHistManager	*m_h;
-	//CQueueShm			*m_shm;
-	CChartShmUtil			*m_chart;
+	CChartShmUtil		*m_chart;
 
 	char			m_zSymbol[128];
 	char			m_zArtc[128];
@@ -70,12 +74,13 @@ private:
 	SYMBOL_INFO		m_SymbolInfo;
 
 	int				m_nMarketStatus;
-	//CRITICAL_SECTION	m_cs;
 
 	// worker thread
-	HANDLE		m_hStratThread;
-	HANDLE		m_hWorkDie;
-	unsigned int		m_dwStratThreadID;
+	HANDLE			m_hStratThread;
+	HANDLE			m_hWorkDie;
+	unsigned int	m_dwStratThreadID;
+
+	TRADE_OPTION	m_option;
 };
 
 

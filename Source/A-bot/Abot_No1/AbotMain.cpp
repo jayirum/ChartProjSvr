@@ -54,6 +54,8 @@ BOOL CAbotMain::Initialize()
 		return FALSE;
 	}
 
+	CUtil::GetConfig(g_zConfig, "SERVER_ID", "SERVER_ID", m_zServerID);
+
 	char ip[32], id[32], pwd[32], cnt[32], name[32];
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
@@ -584,7 +586,8 @@ unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 				int nLen = msg.wParam;
 
 				sprintf(zQ, "EXEC ABORT_NO1_SAVELOG "
-					"'%s'"	//@I_SYMBOL	varchar(11)
+					"'%s'"
+					",'%s'"	//@I_SYMBOL	varchar(11)
 					",'%s'"	//@I_START_ID varchar(20)
 					",'%.1s'"	//@I_FIRE_YN char(1)
 					",'%.1s'"	//@I_OPEN_CLOS char(1)
@@ -603,7 +606,8 @@ unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 					",'%s'"	//@I_API_TM varchar(9)
 					",'%s'"	//@I_MSG varchar(256)
 					,
-					log->zSymbol
+					p->m_zServerID
+					, log->zSymbol
 					, log->zStratID
 					, log->FireYN
 					, log->OpenClose
@@ -686,7 +690,8 @@ void CAbotMain::ReSetSymbolInfo(
 		s->m->SetInitInfo(
 			m_pMemPool,
 			m_unSaveData,
-			m_unApiOrd);
+			m_unApiOrd
+		);
 		m_mapStrat[symbol] = s;
 	}
 }

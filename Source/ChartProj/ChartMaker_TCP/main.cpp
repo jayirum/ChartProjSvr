@@ -88,9 +88,9 @@ int  _Start()
 	g_log.OpenLog(szDir, EXENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	g_log.log(LOGTP_SUCC, "버전[%s]%s", __DATE__, __APP_VERSION);
+	g_log.log(LOGTP_SUCC, "Version[%s]%s", __DATE__, __APP_VERSION);
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	printf("버전[%s]%s\n", __DATE__, __APP_VERSION);
+	printf("Version[%s]%s\n", __DATE__, __APP_VERSION);
 
 	//---------------------------------------------
 	//	프로그램 전체를 끝내는 이벤트
@@ -134,12 +134,17 @@ int  _Start()
 		CChartMaker* p = (*it).second;
 		delete p;
 	}
-
-	SAFE_DELETE(g_ado);
-	SAFE_DELETE(g_pApiRecv);
-	SAFE_CLOSEHANDLE(g_hRecvThread);
-	SAFE_CLOSEHANDLE(g_hSaveThread);
-	SAFE_DELETE(g_pMemPool);
+	//printf("----------------1\n");
+	//SAFE_DELETE(g_ado);
+	//printf("----------------2\n");
+	//SAFE_DELETE(g_pApiRecv);
+	//printf("----------------3\n");
+	//SAFE_CLOSEHANDLE(g_hRecvThread);
+	//printf("----------------4\n");
+	//SAFE_CLOSEHANDLE(g_hSaveThread);
+	//printf("----------------5\n");
+	//SAFE_DELETE(g_pMemPool);
+	//printf("----------------6\n");
 	CoUninitialize();
 
 	return 0; 
@@ -200,8 +205,8 @@ void RecvMDThreadFn()
 		}
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
-			printf("PAKCET 이상(%s)\n", g_pApiRecv->GetMsg());
+			g_log.log(LOGTP_ERR, "PAKCET Error(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
+			//printf("PAKCET Error(%s)\n", g_pApiRecv->GetMsg());
 			g_pMemPool->release(pBuf);
 			continue;
 		}
@@ -212,7 +217,6 @@ void RecvMDThreadFn()
 			char tm[9];
 			sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
 			memcpy(pSise->Time, tm, sizeof(pSise->Time));
-			//printf("[RECV](%s)\n", pBuf);
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
@@ -221,14 +225,11 @@ void RecvMDThreadFn()
 			if (it == g_mapSymbol.end())
 			{
 				g_pMemPool->release(pBuf);
-				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 			}
 			else
 			{
 				CChartMaker* p = (*it).second;
 				PostThreadMessage(p->GetChartThreadId(), WM_RECV_API_MD, 0, (LPARAM)pBuf);
-				//printf("[RECV](%s)\n", pBuf);
-				//g_log.log(LOGTP_SUCC, "[RECV-2](%.80s)", pBuf);
 			}
 		}
 	}
@@ -285,8 +286,8 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 				);
 				if (FALSE == db->ExecQuery(zQ))
 				{
-					g_log.log(LOGTP_ERR, "CHART DATA Save 에러(%s)(%s)", db->GetError(), zQ);
-					printf("CHART DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
+					g_log.log(LOGTP_ERR, "CHART DATA Save err(%s)(%s)", db->GetError(), zQ);
+					//printf("CHART DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
 				}
 				else
 				{
@@ -342,10 +343,10 @@ BOOL LoadSymbol()
 		return FALSE;
 	}
 
-	char yearLen[32], euroDollar[32];
+	char saveYn[32], yearLen[32], euroDollar[32];
+	CUtil::GetConfig(g_zConfig, "CHART_SAVE", "SAVEONDB", saveYn);
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "YEAR_LENGTH", yearLen);
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "EURO_DOLLAR", euroDollar);
-
 
 	char zTemp[32], zSymbol[32], zArtc[32];
 	int nDotCnt = 0;
@@ -371,15 +372,12 @@ BOOL LoadSymbol()
 		ir_cvtcode_HD_KR(zSymbol, zTemp);
 		std::string symbol = zSymbol;
 
-
-		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread);
+		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread, (saveYn[0]=='Y'));
 
 		g_mapSymbol[symbol] = p;
-		g_log.log(LOGTP_SUCC, "[%s][%s] 차트구성종목", zArtc, zSymbol);
-		printf("[%s][%s] 차트구성종목\n", zArtc, zSymbol);
+		g_log.log(LOGTP_SUCC, "[%s][%s] Chart Symbol", zArtc, zSymbol);
+		//printf("[%s][%s] 차트구성종목\n", zArtc, zSymbol);
 
-		//TODO
-		//break;
 		db->Next();
 	}
 	db->Close();
@@ -401,7 +399,7 @@ BOOL	InitApiClient()
 		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());
 	}
 	else
-		g_log.log(LOGTP_SUCC, "TCP CLIENT 초기화 및 connect 성공(IP:%s)(PORT:%s)", zIP,  port);
+		g_log.log(LOGTP_SUCC, "TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP,  port);
 	
 	g_pApiRecv->StartRecvData();
 
@@ -568,7 +566,7 @@ void install()
 	SERVICE_DESCRIPTION lpDes;
 	char Desc[64];
 	strcpy(Desc, SERVICENAME);
-	strcat(Desc, " 서비스!");
+	strcat(Desc, " Service");
 
 	hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if(hScm == NULL)
@@ -585,7 +583,7 @@ void install()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스 프로그램이 같은 디렉토리에 없습니다");
-		printf("서비스 프로그램이 같은 디렉토리에 없습니다\n");
+		printf("There is no service process in same directory");
 		return;
 	}
 
@@ -611,14 +609,14 @@ void install()
 
 	if(hSrv == NULL)
 	{
-		printf("서비스를 설치하지 못 했습니다 : %d\n", GetLastError());
+		printf("Failed to install the service : %d\n", GetLastError());
 	}
 	else
 	{
 		lpDes.lpDescription = Desc;
 		ChangeServiceConfig2(hSrv, SERVICE_CONFIG_DESCRIPTION, &lpDes);
 		//log.LogEventInf(-1, "서비스를 성공적으로 설치했습니다.");
-		printf("서비스를 성공적으로 설치했습니다.\n");
+		printf("Succeeded in installing the service.\n");
 		CloseServiceHandle(hSrv);
 	}
 	CloseServiceHandle(hScm);
@@ -631,7 +629,7 @@ void uninstall()
 	if(hScm == NULL)
 	{
 		//log.LogEventErr(-1, "서비스 메니져와 연결할 수 없습니다");
-		printf("서비스 메니져와 연결할 수 없습니다\n");
+		printf("Can't connect to SCM\n");
 		return;
 	}
 
@@ -640,7 +638,7 @@ void uninstall()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스가 설치되어 있지 않습니다");
-		printf("서비스가 설치되어 있지 않습니다 : %d\n", GetLastError());
+		printf("Service is not installed: %d\n", GetLastError());
 		return ;
 	}	
 
@@ -656,10 +654,10 @@ void uninstall()
 	if(DeleteService(hSrv))
 	{
 		//log.LogEventInf(-1, "성공적으로 서비스를 제거했습니다");
-		printf("성공적으로 서비스를 제거했습니다\n");
+		printf("Succeeded in removing the service \n");
 	}
 	else{
-		printf("서비스를 제거하지 못했습니다.\n");
+		printf("Failed in removing the service\n");
 	}
 	CloseServiceHandle(hSrv);
 	CloseServiceHandle(hScm);

@@ -74,9 +74,8 @@ int  _Start()
 	g_log.OpenLog(szDir, EXENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	g_log.log(LOGTP_SUCC, "버전[%s] %s", __DATE__, __APP_VERSION);
+	g_log.log(LOGTP_SUCC, "Version[%s] %s", __DATE__, __APP_VERSION);
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	printf("버전[%s] %s\n", __DATE__, __APP_VERSION);
 
 	//---------------------------------------------
 	//---------------------------------------------
@@ -92,51 +91,6 @@ int  _Start()
 		//log.LogEventInf(-1," 서비스를 시작합니다.");
 	}
 
-
-	////////////////////////////////////////////////////
-	// LAST CHART SHM
-	//CSharedMem shmLast;
-
-	//INIT_DATA	shmData;
-	//shmData.lMaxGroupCnt = MAX_ARTC_CNT * MAX_SYMBOL_PER_ARTC * CHART_TP_CNT;			// 차트종류만큼 
-	//shmData.lGroupKeySize = LEN_SHM_GROUP_KEY;		// SYMBOL + 차트종류
-	//shmData.lHeaderSize = 0;
-	//shmData.lStructSize = sizeof(ST_SHM_LAST_CHART);
-	//shmData.lStructKeySize = LEN_SHM_GROUP_KEY;
-	//shmData.lMaxStructCnt = 1;
-
-	////	CREATE SHM
-	//int nRet = shmLast.Create(NULL, &shmData, LASTCHART_SHM_NM, LASTCHART_LOCK_NM);
-	//if (nRet<1)
-	//{
-	//	g_log.log(LOGTP_ERR, "[SHM CREATE ERROR](%s)(%s)(%s)", LASTCHART_SHM_NM, LASTCHART_LOCK_NM, shmLast.GetErr());
-	//	return FALSE;
-	//}
-
-	//// 이미 open
-	//else if (nRet == 0)
-	//{
-	//	if (!shmLast.Open(LASTCHART_SHM_NM, LASTCHART_LOCK_NM))
-	//	{
-	//		g_log.log(LOGTP_ERR, "[SHM OPEN ERROR](%s)(%s)(%s)\n", LASTCHART_SHM_NM, LASTCHART_LOCK_NM, shmLast.GetErr());
-	//		return FALSE;
-	//	}
-	//}
-	//else
-	//{
-	//	if (!shmLast.SetInitSize(shmData.lMaxGroupCnt
-	//		, shmData.lGroupKeySize
-	//		, shmData.lHeaderSize
-	//		, shmData.lStructSize
-	//		, shmData.lStructKeySize
-	//		, shmData.lMaxStructCnt)
-	//		)
-	//	{
-	//		g_log.log(LOGTP_ERR, "[SHM SetInitSize ERROR](%s)(%s)", LASTCHART_SHM_NM, LASTCHART_LOCK_NM);
-	//		return FALSE;
-	//	}
-	//}
-
 	char ip[32], id[32], pwd[32], name[32], cnt[32];
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
@@ -148,6 +102,7 @@ int  _Start()
 	pDBPool = new CDBPoolAdo(ip, id, pwd, name);
 	if (!pDBPool->Init(atoi(cnt)))
 	{
+		printf("DB Open Error(%s)\n", pDBPool->GetMsg());
 		SAFE_DELETE(pDBPool);
 		return 0;
 	}
@@ -176,7 +131,6 @@ int  _Start()
 		}
 		g_log.log(LOGTP_SUCC, "SHM Initialize succeeded(%s)", zArtc);
 		lstSymbol.push_back(p);
-
 		db->Next();
 	}
 
@@ -354,7 +308,7 @@ void install()
 	SERVICE_DESCRIPTION lpDes;
 	char Desc[64];
 	strcpy(Desc, SERVICENAME);
-	strcat(Desc, " 서비스!");
+	strcat(Desc, " Service!");
 
 	hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if(hScm == NULL)
@@ -371,7 +325,6 @@ void install()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스 프로그램이 같은 디렉토리에 없습니다");
-		printf("서비스 프로그램이 같은 디렉토리에 없습니다\n");
 		printf("There is no service process in same directory");
 		return;
 	}
@@ -398,16 +351,14 @@ void install()
 
 	if(hSrv == NULL)
 	{
-		printf("서비스를 설치하지 못 했습니다 : %d\n", GetLastError());
-		printf("Failed to install service : %d\n", GetLastError());
+		printf("Failed to install the service : %d\n", GetLastError());
 	}
 	else
 	{
 		lpDes.lpDescription = Desc;
 		ChangeServiceConfig2(hSrv, SERVICE_CONFIG_DESCRIPTION, &lpDes);
 		//log.LogEventInf(-1, "서비스를 성공적으로 설치했습니다.");
-		printf("서비스를 성공적으로 설치했습니다.\n");
-		printf("succeeded in installing service\n");
+		printf("Succeeded in installing the service.\n");
 		CloseServiceHandle(hSrv);
 	}
 	CloseServiceHandle(hScm);
@@ -420,8 +371,7 @@ void uninstall()
 	if(hScm == NULL)
 	{
 		//log.LogEventErr(-1, "서비스 메니져와 연결할 수 없습니다");
-		printf("서비스 메니져와 연결할 수 없습니다\n");
-		printf("Fail to connect service manager\n");
+		printf("Can't connect to SCM\n");
 		return;
 	}
 
@@ -430,7 +380,6 @@ void uninstall()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스가 설치되어 있지 않습니다");
-		printf("서비스가 설치되어 있지 않습니다 : %d\n", GetLastError());
 		printf("Service is not installed: %d\n", GetLastError());
 		return ;
 	}	
@@ -447,11 +396,9 @@ void uninstall()
 	if(DeleteService(hSrv))
 	{
 		//log.LogEventInf(-1, "성공적으로 서비스를 제거했습니다");
-		printf("성공적으로 서비스를 제거했습니다\n");
 		printf("succeeded in removing service\n");
 	}
 	else{
-		printf("서비스를 제거하지 못했습니다.\n");
 		printf("failed to remove service\n");
 	}
 	CloseServiceHandle(hSrv);

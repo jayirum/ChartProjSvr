@@ -76,9 +76,9 @@ private:
 	HANDLE			m_hApiTick, m_hApiOrd, m_hSaveData, m_hMonitor;
 	unsigned int	m_unApiTick, m_unApiOrd, m_unSaveData, m_unMonitor;
 
-	MAP_STRAT				m_mapStrat;
-	
+	MAP_STRAT		m_mapStrat;
 	BOOL	m_bContinue;
+	char	m_zServerID[32];
 public:
 	void CloseOpenPosition(char *pzSymbol);
 	void StartStrategies();

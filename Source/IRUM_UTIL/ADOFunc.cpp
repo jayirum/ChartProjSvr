@@ -500,7 +500,7 @@ BOOL CDBPoolAdo::Init(int nInitCnt)
 {
 	if (nInitCnt <= 0)
 	{
-		sprintf_s(m_zMsg, "DB POOL Count ¿À·ù:%d", nInitCnt);
+		sprintf_s(m_zMsg, "DB POOL Count Err:%d", nInitCnt);
 		return FALSE;
 	}
 	for (int i = 0; i < nInitCnt; i++)
