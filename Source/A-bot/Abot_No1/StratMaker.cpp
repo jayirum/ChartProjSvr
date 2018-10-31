@@ -425,6 +425,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	strcpy(dblog.zSymbol, m_zSymbol);
 	dblog.FireYN[0] = 'Y';
 	dblog.OpenClose[0] = 'O';	//O, C
+	sprintf(dblog.zOrdQty, "%d", m_h->ordqty());
 	strcpy(dblog.zCurrPrc, pzCurrPrc);
 	sprintf(dblog.zOpenPrc, m_h->openprc());
 	sprintf(dblog.zEntryPercent, "%.2f", m_h->entryspread()*100);
@@ -643,6 +644,7 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	sprintf(dblog.zSymbol, m_zSymbol);
 	sprintf(dblog.zStratID, zStratID);
 	dblog.OpenClose[0] = 'C';	//O, C
+	sprintf(dblog.zOrdQty, "%d", m_h->entryqty());
 	sprintf(dblog.zCurrPrc, pzCurrPrc);
 	sprintf(dblog.zOpenPrc, m_h->openprc());
 	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
@@ -793,7 +795,22 @@ VOID CStratMaker::MarketCloseClr()
 		g_log.log(INFO, zMsg1);
 	}
 
-	CUtil::logOutput("%s\n", zMsg1);
+	//DB LOG
+	ABOTLOG_NO1 dblog = { 0, };
+	strcpy(dblog.zSymbol, m_zSymbol);
+	dblog.FireYN[0] = 'Y';
+	dblog.OpenClose[0] = 'C';	//O, C
+	sprintf(dblog.zOrdQty, "%d", m_h->entryqty());
+	strcpy(dblog.zCurrPrc, m_zLastCurrPrc);
+	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zEntryPercent, "%.2f", m_h->entryspread() * 100);
+	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
+	sprintf(dblog.zApiTM, zTM);
+	strcpy(dblog.zStratID, "MARKET_CLOSE");
+	dblog.BsTp[0] = apiOrd->Side[0];		//B, S
+	sprintf(dblog.zStratPrc, m_zLastCurrPrc);
+	sprintf(dblog.zMsg, "MARKET CLOSE ORDER");
+	SaveDBLog(&dblog);
 
 	//PostThreadMessage
 	//g_log.log(INFO, "[전략발동][%s]장마감청산(%s) 전송준비", m_zSymbol);

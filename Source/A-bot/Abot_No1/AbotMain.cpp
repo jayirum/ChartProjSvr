@@ -593,6 +593,7 @@ unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 					",'%.1s'"	//@I_OPEN_CLOS char(1)
 					",'%.1s'"	//, @I_PL_TP	CHAR(1)		--P, L
 					",'%.1s'"	//@I_BS_TP char(1)
+					",'%s'"	//@@I_ORD_QTY varchar(10)
 					",'%s'"	//@I_CURR_PRC varchar(20)
 					",'%s'"	//@I_STRAT_PRC varchar(20)
 					",'%s'"	//@I_OPEN_PRC varchar(20)
@@ -613,6 +614,7 @@ unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 					, log->OpenClose
 					, log->PLTp
 					, log->BsTp
+					, log->zOrdQty
 					, log->zCurrPrc
 					, log->zStratPrc
 					, log->zOpenPrc

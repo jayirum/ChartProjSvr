@@ -536,6 +536,7 @@ typedef struct _ABOTLOG_NO1
 	char	OpenClose[1];	//O, C
 	char	PLTp[1];		// P, L
 	char	BsTp[1];		//B, S
+	char	zOrdQty[32];
 	char	zCurrPrc[32];
 	char	zStratPrc[32];
 	char	zOpenPrc[32];
