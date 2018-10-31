@@ -1,23 +1,19 @@
 #pragma once
 
 
-//#include "../../IRUM_UTIL/ADOFunc.h"
+#include "TradeOption.h"
 #include <string>
 #include "../../IRUM_UTIL/BaseThread.h"
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/ChartShmUtil.h"
 #include "StratHistManager.h"
 
+
 typedef struct _SYMBOL_INFO
 {
 	char	zTickSize[10];
 	int		nDotCnt;
 }SYMBOL_INFO;
-
-typedef struct _TRADE_OPTION
-{
-	BOOL	bCross;
-}TRADE_OPTION;
 
 enum { SLPT_NONE=0, SL_BUY, SL_SELL, PT_BUY, PT_SELL};
 enum { MARKET_NONE=0, MARKET_ON, MARKET_CLOSING, MARKET_CLOSED};
@@ -59,6 +55,7 @@ private:
 	static unsigned WINAPI StratThread(LPVOID lp);
 
 	BOOL	TradeOption();
+
 private:
 	CMemPool			*m_pMemPool;
 	CStratHistManager	*m_h;
@@ -80,7 +77,7 @@ private:
 	HANDLE			m_hWorkDie;
 	unsigned int	m_dwStratThreadID;
 
-	TRADE_OPTION	m_option;
+	CTradeOption	*m_option;
 };
 
 

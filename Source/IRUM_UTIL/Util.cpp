@@ -1109,6 +1109,12 @@ char* CUtil::GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyN
 	char* pComment = strstr(o_psValue, "//");
 	if (pComment)
 		*(pComment) = 0x00;
+
+	// tab Á¦°Å
+	char* pTab = strchr(o_psValue, '\t');
+	if(pTab)
+		*(pTab) = 0x00;
+
 	return o_psValue;
 }
 

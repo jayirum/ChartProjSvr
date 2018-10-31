@@ -1,12 +1,12 @@
 
-#include "../../IRUM_UTIL/adofunc.h"
+
 #include "StratMaker.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_INC/IRUM_Common.h"
 
 extern CLogMsg g_log;
-extern char			g_zConfig[_MAX_PATH];
+extern char	g_zConfig[_MAX_PATH];
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,7 @@ extern char			g_zConfig[_MAX_PATH];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 CStratMaker::CStratMaker(char* pzSymbol, char* pzArtc, CStratHistManager* h) :CBaseThread("SratMaker")
 {
-	//InitializeCriticalSection(&_cs);
+	m_option = NULL;
 	m_chart = NULL;
 	strcpy(m_zSymbol, pzSymbol);
 	strcpy(m_zArtc, pzArtc);
@@ -69,53 +69,16 @@ void CStratMaker::SetInitInfo(CMemPool* pMemPool,unsigned dwSaveThread, unsigned
 
 BOOL CStratMaker::TradeOption()
 {
-	m_option.bCross = FALSE;
-	char zCrossApplied[32];
-	CUtil::GetConfig(g_zConfig, "TRADE_OPTION", "CROSS_APPLIED", zCrossApplied);
-	if (zCrossApplied[0] != 'Y')
-	{
-		g_log.log(INFO, "Not Apply Cross to All Symbols");
-		return TRUE;
-	}
-	
-	char zCrossAppliedMode[32];
-	CUtil::GetConfig(g_zConfig, "TRADE_OPTION", "CROSS_APPLIED_MODE", zCrossAppliedMode);
-	if (strcmp(zCrossAppliedMode, "ALL_SYMBOL")==0)
-	{
-		m_option.bCross = TRUE;
-		g_log.log(INFO, "Apply Cross to All Symbols");
+	// TRADE OPTION
+	if (m_option) {
+		SAFE_DELETE(m_option);
 	}
 
-	if (strcmp(zCrossAppliedMode, "BY_SYMBOL")==0)
+	m_option = new CTradeOption(g_zConfig);
+	if (!m_option->TurnOn_Cross(m_zSymbol))
 	{
-		char ip[32], id[32], pwd[32], cnt[32], name[32], zCrossApplied[32];
-		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
-		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_ID", id);
-		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_PWD", pwd);
-		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
-		CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
-
-		CDBPoolAdo		*pDBPool;
-
-		pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-		if (!pDBPool->Init(1))
-		{
-			g_log.log(ERR, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
-			return FALSE;
-		}
-		CDBHandlerAdo db(pDBPool->Get());
-		char zQ[1024];
-		sprintf(zQ, "SELECT * FROM ABOT_NO1_STRAT_CONFIG WHERE SYMBOL = '%s'", m_zSymbol);
-		if (FALSE == db->ExecQuery(zQ))
-		{
-			g_log.log(ERR, "failed in querying options(%s)", zQ);
-			return FALSE;
-		}
-		db->GetStr("CROSS_APPLIED", zCrossApplied);
-		db->Close();
-
-		m_option.bCross = (zCrossApplied[0] == 'Y') ? TRUE : FALSE;
-		g_log.log(INFO, "Apply Cross to (%s) : %c", m_zSymbol, zCrossApplied[0]);
+		g_log.log(ERR, "%s", m_option);
+		return FALSE;
 	}
 
 	return TRUE;
@@ -398,23 +361,23 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	//CHART INFO
 	ST_SHM_CHART_UNIT chart;
 	CROSS_TP cross1, cross3, cross5;
-	char zCross[128] = { 0, }, msg1[512] = { 0, }, msg3[512] = { 0, }, msg5[512] = { 0, };
-	if (m_option.bCross)
+	//char zCross[128] = { 0, }, msgCross1[512] = { 0, }, msgCross3[512] = { 0, }, msgCross5[512] = { 0, };
+	if (m_option->IsOn_Cross())
 	{
 		if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
 		{
 			cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
-			sprintf(msg1, "[1분차트:%s]", dblog.zCross_1min);
+			//sprintf(msgCross1, "[1분차트:%s]", dblog.zCross_1min);
 		}
 		if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
 		{
 			cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
-			sprintf(msg3, "[3분차트:%s]", dblog.zCross_3min);
+			//sprintf(msgCross3, "[3분차트:%s]", dblog.zCross_3min);
 		}
 		if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
 		{
 			cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
-			sprintf(msg5, "[5분차트:%s]", dblog.zCross_5min);
+			//sprintf(msgCross5, "[5분차트:%s]", dblog.zCross_5min);
 		}
 	}
 	char zMsg1[512];
@@ -449,19 +412,24 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zStratPrc, zUpperPrc);
 		sprintf(dblog.zMsg, zMsg1);
 
-		if (m_option.bCross && (cross1 != GOLDEN_CROSS))
+		bFire = TRUE;
+		if (m_option->IsOn_Cross())
 		{
-			dblog.FireYN[0] = 'N';
-			sprintf(zMsg1, "[매수진입조건이나 골드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
-				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
-			sprintf(dblog.zMsg, zMsg1); 
-			m_h->SetOpenPrc(pzCurrPrc);
-		}
-		else
-		{
-			bFire = TRUE;
-			g_log.log(INFO, zMsg1);
-			g_log.log(INFO, "%s %s %s", msg1, msg3, msg5);
+			if (m_option->cross()->Is_1MinCandle() && (cross1 != GOLDEN_CROSS))
+				bFire = FALSE;
+			if (m_option->cross()->Is_3MinCandle() && (cross3 != GOLDEN_CROSS))
+				bFire = FALSE;
+			if (m_option->cross()->Is_5MinCandle() && (cross5 != GOLDEN_CROSS))
+				bFire = FALSE;
+
+			if (!bFire)
+			{
+				dblog.FireYN[0] = 'N';
+				sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
+					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+				sprintf(dblog.zMsg, zMsg1);
+				m_h->SetOpenPrc(pzCurrPrc);
+			}
 		}
 	}
 	if (nCondition == 2) 
@@ -479,25 +447,30 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zStratPrc, zLowerPrc);
 		sprintf(dblog.zMsg, zMsg1);
 
-		if (m_option.bCross&&(cross1 != DEAD_CROSS))
+		if ( m_option->IsOn_Cross())
 		{
-			dblog.FireYN[0] = 'N';
-			sprintf(zMsg1, "[매도진입조건이나 데드가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
-				, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
-			sprintf(dblog.zMsg, zMsg1);
-			m_h->SetOpenPrc(pzCurrPrc);
-		}
-		else
-		{
-			bFire = TRUE;
-			g_log.log(INFO, zMsg1);
-			g_log.log(INFO, "%s %s %s", msg1, msg3, msg5);
+			if (m_option->cross()->Is_1MinCandle() && (cross1 != GOLDEN_CROSS))
+				bFire = FALSE;
+			if (m_option->cross()->Is_3MinCandle() && (cross3 != GOLDEN_CROSS))
+				bFire = FALSE;
+			if (m_option->cross()->Is_5MinCandle() && (cross5 != GOLDEN_CROSS))
+				bFire = FALSE;
+			if (!bFire)
+			{
+				dblog.FireYN[0] = 'N';
+				sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
+					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+				sprintf(dblog.zMsg, zMsg1);
+				m_h->SetOpenPrc(pzCurrPrc);
+			}
 		}
 	}
 	
 	SaveDBLog(&dblog);
 	if (bFire)
 	{
+		g_log.log(INFO, zMsg1);
+
 		char tmp[128];
 		strcpy(tmp, CUtil::Get_NowTime());
 
