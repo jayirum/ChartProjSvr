@@ -93,60 +93,60 @@ BOOL CCrossOpt::TurnOn(void* p1)
 	return TRUE;
 }
 
-
-
-CProfitSecured::CProfitSecured(char* pzConfig) :COptBase(pzConfig)
-{
-
-}
-
-CProfitSecured::~CProfitSecured()
-{}
-
-BOOL CProfitSecured::TurnOn(void* p1)
-{
-	char zPSecuredApplied[32];
-	CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "PROFIT_SECURED_APPLIED", zPSecuredApplied);
-	if (zPSecuredApplied[0] != 'Y')
-	{
-		m_bOn = FALSE;
-		return TRUE;
-	}
-
-	CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "PROFIT_SECURED_AMT", m_zSecuredAmt);
-
-	if (!ConnectDB())
-		return FALSE;
-
-	CDBHandlerAdo db(m_pDBPool->Get());
-	char zQ[1024];
-	sprintf(zQ, "EXEC ABOT_NO1_PROFITSECURED_TICK_PRC '%s', %f", (char*)p1, atof(m_zSecuredAmt));
-	if (FALSE == db->ExecQuery(zQ))
-	{
-		sprintf(m_zMsg, "failed in querying options(%s)", zQ);
-		return FALSE;
-	}
-	m_dSecuredPrcGap = db->GetDbl("PRC_GAP");
-
-	db->Close();
-
-	m_bOn = (m_dSecuredPrcGap > 0) ? TRUE : FALSE;
-
-	return TRUE;
-}
+//
+//
+//CProfitSecured::CProfitSecured(char* pzConfig) :COptBase(pzConfig)
+//{
+//
+//}
+//
+//CProfitSecured::~CProfitSecured()
+//{}
+//
+//BOOL CProfitSecured::TurnOn(void* p1)
+//{
+//	char zPSecuredApplied[32];
+//	CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "PROFIT_SECURED_APPLIED", zPSecuredApplied);
+//	if (zPSecuredApplied[0] != 'Y')
+//	{
+//		m_bOn = FALSE;
+//		return TRUE;
+//	}
+//
+//	CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "PROFIT_SECURED_AMT", m_zSecuredAmt);
+//
+//	if (!ConnectDB())
+//		return FALSE;
+//
+//	CDBHandlerAdo db(m_pDBPool->Get());
+//	char zQ[1024];
+//	sprintf(zQ, "EXEC ABOT_NO1_PROFITSECURED_TICK_PRC '%s', %f", (char*)p1, atof(m_zSecuredAmt));
+//	if (FALSE == db->ExecQuery(zQ))
+//	{
+//		sprintf(m_zMsg, "failed in querying options(%s)", zQ);
+//		return FALSE;
+//	}
+//	m_dSecuredPrcGap = db->GetDbl("PRC_GAP");
+//
+//	db->Close();
+//
+//	m_bOn = (m_dSecuredPrcGap > 0) ? TRUE : FALSE;
+//
+//	return TRUE;
+//}
 
 
 CTradeOption::CTradeOption(char* pzConfig)
 {
 	m_Cross = new CCrossOpt(pzConfig);
-	m_PSecured = new CProfitSecured(pzConfig);
+	//m_PSecured = new CProfitSecured(pzConfig);
 }
 
 
 CTradeOption::~CTradeOption()
 {
 	SAFE_DELETE(m_Cross);
-	SAFE_DELETE(m_PSecured);
+	//SAFE_DELETE(m_PSecured);
 }
 
 
@@ -160,12 +160,12 @@ BOOL CTradeOption::TurnOn_Cross(char* pzSymbol)
 }
 
 
-
-BOOL CTradeOption::TurnOn_PSecured(char* pzSymbol)
-{
-	BOOL bRet = m_PSecured->TurnOn(pzSymbol);
-	if (!bRet)
-		strcpy(m_zMsg, m_PSecured->getmsg());
-
-	return bRet;
-}
+//
+//BOOL CTradeOption::TurnOn_PSecured(char* pzSymbol)
+//{
+//	BOOL bRet = m_PSecured->TurnOn(pzSymbol);
+//	if (!bRet)
+//		strcpy(m_zMsg, m_PSecured->getmsg());
+//
+//	return bRet;
+//}

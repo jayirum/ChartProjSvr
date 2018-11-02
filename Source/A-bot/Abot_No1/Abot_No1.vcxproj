@@ -133,6 +133,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\SymbolUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="AbotMain.cpp" />

@@ -44,9 +44,10 @@ private:
 
 
 	BOOL	LoadSymbolInfo(BOOL bCreateStrat);
-	void	ReSetSymbolInfo(char *pzSymbol, double dTickVal, double dTickSize, int nDotCnt
-							, char* pzQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt
-							, double dEntrySpread, double dClrSpread, double dPtPoint);
+	//void	ReSetSymbolInfo(char *pzSymbol, double dTickVal, double dTickSize, int nDotCnt
+	//						, char* pzQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt
+	//						, double dEntrySpread, double dClrSpread, double dPtPoint);
+	VOID	ResetSymbolInfo(char *pzSymbol);
 	void	SetOpenPrc(char* pzSymbol, char* pzOpePrc);
 	VOID	ClearStratMap();
 	void	showMsg(BOOL bSucc, char* pMsg, ...);
@@ -61,6 +62,10 @@ private:
 	VOID	ApiOrd_RealOrd(char* pPacket);
 	VOID	ApiOrd_RealCntr(char* pPacket);
 
+
+private:
+	void	lock() { EnterCriticalSection(&m_csMap); }
+	void	unlock() { LeaveCriticalSection(&m_csMap); }
 private:
 	CMemPool		*m_pMemPool;
 	CTcpClient		*m_pApiClient[2];
@@ -77,6 +82,7 @@ private:
 	unsigned int	m_unApiTick, m_unApiOrd, m_unSaveData, m_unMonitor;
 
 	MAP_STRAT		m_mapStrat;
+	CRITICAL_SECTION	m_csMap;
 	BOOL	m_bContinue;
 	char	m_zServerID[32];
 public:

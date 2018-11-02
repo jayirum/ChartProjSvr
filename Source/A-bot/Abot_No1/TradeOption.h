@@ -23,19 +23,19 @@ protected:
 };
 
 
-
-class CProfitSecured : public COptBase
-{
-public:
-	CProfitSecured(char* pzConfig);
-	~CProfitSecured();
-
-	virtual BOOL	TurnOn(void* p1);
-	double GetSecuredPrcGap() { return m_dSecuredPrcGap; }
-private:
-	char		m_zSecuredAmt[32];
-	double		m_dSecuredPrcGap;
-};
+//
+//class CProfitSecured : public COptBase
+//{
+//public:
+//	CProfitSecured(char* pzConfig);
+//	~CProfitSecured();
+//
+//	virtual BOOL	TurnOn(void* p1);
+//	double GetSecuredPrcGap() { return m_dSecuredPrcGap; }
+//private:
+//	char		m_zSecuredAmt[32];
+//	double		m_dSecuredPrcGap;
+//};
 
 
 class CCrossOpt : public COptBase
@@ -66,15 +66,15 @@ public:
 	CCrossOpt* cross() { return m_Cross; }
 	
 	
-	CProfitSecured* p_secured() { return m_PSecured; }
-	BOOL TurnOn_PSecured(char* pzSymbol);
-	void TurnOff_PSecured() { m_PSecured->TurnOff(); }
-	BOOL IsOn_PSecurd() {return m_PSecured->IsOn();	}
+	//CProfitSecured* p_secured() { return m_PSecured; }
+	//BOOL TurnOn_PSecured(char* pzSymbol);
+	//void TurnOff_PSecured() { m_PSecured->TurnOff(); }
+	//BOOL IsOn_PSecurd() {return m_PSecured->IsOn();	}
 
 	char*	getmsg() { return m_zMsg; }
 private:
 	CCrossOpt		*m_Cross;
-	CProfitSecured	*m_PSecured;
+	//CProfitSecured	*m_PSecured;
 	char			m_zMsg[1024];
 };
 

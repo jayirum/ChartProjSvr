@@ -81,11 +81,11 @@ BOOL CStratMaker::TradeOption()
 		return FALSE;
 	}
 
-	if(!m_option->TurnOn_PSecured(m_zSymbol))
-	{
-		g_log.log(ERR, "%s", m_option->p_secured()->getmsg());
-		return FALSE;
-	}
+	//if(!m_option->TurnOn_PSecured(m_zSymbol))
+	//{
+	//	g_log.log(ERR, "%s", m_option->p_secured()->getmsg());
+	//	return FALSE;
+	//}
 
 	return TRUE;
 }
@@ -507,10 +507,10 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 
 */
 
-char* CStratMaker::GetCloseOrdType(char* pzCurrPrc, 
+char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg, _Out_ ABOTLOG_NO1 *dblog)
 {
-	double dOpenPrc = atof(m_h->openprc());	
+	double dOpenPrc = atof(m_h->openprc());
 	strcpy(pzStratID, STRATID_NONE);
 	char zBasePrc[32];
 
@@ -560,24 +560,21 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	}
 
 
-		
+
 	///////////////////////////////////////////////////////////////////////////////////////////
 	// 익절 점검
 	///////////////////////////////////////////////////////////////////////////////////////////
-	// 0.5% 건드렸으면 익절조검 점검한다.
-	if (m_h->IsHitPTPrc())
+	if (m_h->IsProfitTakingCondition(pzCurrPrc, (void*)m_option, pzClrMsg, pzStratID))
 	{
-		if (m_h->IsProfitTakingCondition(pzCurrPrc, (void*)m_option, pzClrMsg, pzStratID) )
-		{
-			// DB LOG
-			dblog->PLTp[0] = 'P';
-			dblog->BsTp[0] = (m_h->IsLong())? CD_BUY : CD_SELL;
-			dblog->FireYN[0] = 'Y';
-			sprintf(dblog->zCurrPrc, pzCurrPrc);
-		}
+		// DB LOG
+		dblog->PLTp[0] = 'P';
+		dblog->BsTp[0] = (m_h->IsLong()) ? CD_BUY : CD_SELL;
+		dblog->FireYN[0] = 'Y';
+		sprintf(dblog->zCurrPrc, pzCurrPrc);
 	}
 	return pzStratID;
 }
+
 
 VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 {
