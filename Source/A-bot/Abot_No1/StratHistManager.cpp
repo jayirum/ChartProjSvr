@@ -272,10 +272,10 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ c
 		//	return FALSE;
 
 		// (1)최고가일때 수익의 50%수준.
-		sprintf(zGapMax, "%.2f", (dMaxPrc - dEntryPrc)*m_param.dPtClrTrigger);
+		sprintf(zGapMax, "%.*f", m_symbol.nDotCnt, (dMaxPrc - dEntryPrc)*m_param.dPtClrTrigger);
 
 		// (2)현재가에 의한 수익(현재수익)
-		sprintf(zGapCurr, "%.2f", dCurrPrc - dEntryPrc);
+		sprintf(zGapCurr, "%.*f", m_symbol.nDotCnt, dCurrPrc - dEntryPrc);
 
 		// 현재수익 < (1) 이면 바로 익절한다.
 		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, m_symbol.nDotCnt, LEN_PRC);
@@ -294,7 +294,7 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ c
 
 			//DB LOG
 			sprintf(dblog->zMaxPrc, m_pos.zMaxPLPrc);
-			sprintf(dblog->zPtClrTriggerPercent, "%.2f", m_param.dPtClrTrigger * 100);
+			sprintf(dblog->zPtClrTriggerPercent, "%.*f", m_symbol.nDotCnt, m_param.dPtClrTrigger * 100);
 		}
 	}
 
@@ -310,8 +310,8 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ c
 		//if (dGapPrc < (m_param.dClrCheckTrigger - m_param.dEntryTrigger)/2.)
 		//	return FALSE;
 
-		sprintf(zGapMax, "%.2f", (dEntryPrc - dMaxPrc)*m_param.dPtClrTrigger);
-		sprintf(zGapCurr, "%.2f", dEntryPrc - dCurrPrc);
+		sprintf(zGapMax, "%.*f", m_symbol.nDotCnt, (dEntryPrc - dMaxPrc)*m_param.dPtClrTrigger);
+		sprintf(zGapCurr, "%.*f", m_symbol.nDotCnt, dEntryPrc - dCurrPrc);
 		int nComp = CUtil::CompPrc(zGapCurr, LEN_PRC, zGapMax, LEN_PRC, dotcnt(), LEN_PRC);
 		if (nComp<0)
 		{
@@ -328,7 +328,7 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ c
 
 			//DB LOG
 			sprintf(dblog->zMaxPrc, m_pos.zMaxPLPrc);
-			sprintf(dblog->zPtClrTriggerPercent, "%.2f", m_param.dPtClrTrigger * 100);
+			sprintf(dblog->zPtClrTriggerPercent, "%.*f", m_symbol.nDotCnt, m_param.dPtClrTrigger * 100);
 		}
 	}
 

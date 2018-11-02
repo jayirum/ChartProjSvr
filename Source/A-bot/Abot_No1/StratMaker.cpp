@@ -533,7 +533,7 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			dblog->PLTp[0] = 'L';
 			dblog->BsTp[0] = CD_SELL;
 			dblog->FireYN[0] = 'Y';
-			sprintf(dblog->zEntryPercent, "%.2f", m_h->entryspread() * 100);
+			sprintf(dblog->zEntryPercent, "%.2f",m_h->entryspread() * 100);
 
 			return pzStratID;
 		}
@@ -567,7 +567,7 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	// 0.5% 건드렸으면 익절조검 점검한다.
 	if (m_h->IsHitPTPrc())
 	{
-		if (m_h->IsProfitTakingCondition(pzCurrPrc, (void*)m_option, pzClrMsg, pzStratID) )
+		if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg,(char*) dblog) )
 		{
 			// DB LOG
 			dblog->PLTp[0] = 'P';
