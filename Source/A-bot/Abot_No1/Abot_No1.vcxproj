@@ -140,6 +140,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="StratHistManager.cpp" />
     <ClCompile Include="StratMaker.cpp" />
+    <ClCompile Include="TradeOption.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\SymbolUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="AbotMain.h" />
@@ -158,6 +160,7 @@
     <ClInclude Include="StratHistManager.h" />
     <ClInclude Include="StratID.h" />
     <ClInclude Include="StratMaker.h" />
+    <ClInclude Include="TradeOption.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
