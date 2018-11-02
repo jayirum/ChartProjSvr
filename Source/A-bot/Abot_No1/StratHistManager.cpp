@@ -1,3 +1,4 @@
+#include "TradeOption.h"
 #include "StratHistManager.h"
 #include "../../IRUM_UTIL/Util.h"
 #include "../../IRUM_UTIL/LogMsg.h"
@@ -334,6 +335,137 @@ BOOL CStratHistManager::IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ c
 	return bResult;
 }
 
+
+/*
+	(PLGAP-1) 최고대비50%가 - 진입가
+	(PLGAP-2) 수익확보가격 - 진입가
+	(PLGAP-3) 현재가 - 진입가
+
+	(PLGAP-1) > (PLGAP-2) ==> (PLGAP-1) > (PLGAP-3) : 익절
+	(PLGAP-1) < (PLGAP-2) ==> (PLGAP-2) > (PLGAP-3) : 수익확보
+*/
+BOOL CStratHistManager::IsProfitTakingCondition(
+	char* pzCurrPrc, void* pOption, _Out_ char* pMsg, _Out_ char* pzStratID
+)
+{
+	if (!m_pos.bHitPTPrc)
+		return FALSE;
+
+	int nComp = CUtil::CompPrc(m_pos.zMaxPLPrc, LEN_PRC, m_pos.zEntryPrc, LEN_PRC, m_symbol.nDotCnt, LEN_PRC);
+	if (nComp == 0)
+		return FALSE;
+
+	CTradeOption* pOpt = (CTradeOption*)pOption;
+	
+	char zPrcHalfOfMax[32] = { 0, }, zPrcPSecured[32] = { 0 };
+	int nPSecuredPosition = 0;	// 수익확보Prc 가 Max대비 위치. 1:50%보다 더 위, -1:아래, 0:무차별(indifference)
+
+	double dPrcMax = atof(m_pos.zMaxPLPrc);
+	//double dPrcHalfOfMax = dPrcMax * m_param.dPtClrTrigger;
+	double dPrcEntry = atof(m_pos.zEntryPrc);
+	double dPrcCurr = atof(pzCurrPrc);
+	double dPrcPSecured = 0;	// 수익확보금액을 위한 틱 적용한 가격
+	
+	if(IsLong())	dPrcPSecured = dPrcEntry + pOpt->p_secured()->GetSecuredPrcGap();
+	else			dPrcPSecured = dPrcEntry - pOpt->p_secured()->GetSecuredPrcGap();
+	
+
+	double dPLGapHalfOfMax = 0;
+	double dPLGapPSecured = 0;
+	double dPLGapCurr = 0;
+
+	
+	if (IsLong())
+	{
+		// (1) 최고대비50%가 - 진입가
+		dPLGapHalfOfMax = (dPrcMax - dPrcEntry) * m_param.dPtClrTrigger;
+
+		// (2) 수익확보가격 - 진입가
+		dPLGapPSecured = (dPrcPSecured - dPrcEntry);
+
+		// (3) 현재가 - 진입가
+		dPLGapCurr = dPrcCurr - dPrcEntry;
+	}
+	else
+	{
+		// (1) 최고대비50%가 - 진입가
+		dPLGapHalfOfMax = (dPrcEntry - dPrcMax) * m_param.dPtClrTrigger;
+
+		// (2) 수익확보가격 - 진입가
+		dPLGapPSecured = (dPrcEntry - dPrcPSecured);
+
+		// (3) 현재가 - 진입가
+		dPLGapCurr = dPrcEntry - dPrcCurr;
+	}
+
+	BOOL bResult = FALSE;
+
+	///////////////////////////////////////////////////////////////////////////
+	// 수익확보 전술이 없으면 바로 비교
+	if (!pOpt->IsOn_PSecurd())
+	{
+		if (dPLGapHalfOfMax >= dPLGapCurr)
+		{
+			if (IsLong())	strcpy(pzStratID, STRATID_SELL_PT);
+			else			strcpy(pzStratID, STRATID_BUY_PT);
+
+			bResult = TRUE;
+			sprintf(pMsg, "[전략발동][익절조건]\n"
+				"[1]( 최고대비1/2 PLGap(%.*f)\n"
+				"[2]( 현재가대비  PLGap(%.*f)\n"
+				"현재가대비 PL이 익절조건 보다 작으므로 즉시 익절"
+				,
+				m_symbol.nDotCnt, dPLGapHalfOfMax,m_symbol.nDotCnt, dPLGapCurr
+			);
+
+			g_log.log(INFO, pMsg);
+		}
+		return bResult;
+	}
+
+
+	if (dPLGapHalfOfMax >= dPLGapPSecured)
+	{
+		if (dPLGapHalfOfMax >= dPLGapCurr)
+		{
+			if (IsLong())	strcpy(pzStratID, STRATID_SELL_PSECURED);
+			else			strcpy(pzStratID, STRATID_BUY_PSECURED);
+
+			bResult = TRUE;
+
+			sprintf(pMsg, "[전략발동][수익확보]\n"
+				"[1]( 최고대비1/2 PLGap(%.*f)\n"
+				"[2]( 현재가대비  PLGap(%.*f)\n"
+				"현재가대비 PL이 익절조건 보다 작으므로 즉시 익절"
+				,
+				m_symbol.nDotCnt, dPLGapHalfOfMax, m_symbol.nDotCnt, dPLGapCurr
+			);
+			g_log.log(INFO, pMsg);
+		}
+	}
+	if (dPLGapHalfOfMax < dPLGapPSecured)
+	{
+		if (dPLGapPSecured >= dPLGapCurr)
+		{
+			if (IsLong())	strcpy(pzStratID, STRATID_SELL_PSECURED);
+			else			strcpy(pzStratID, STRATID_BUY_PSECURED);
+
+			bResult = TRUE;
+			sprintf(pMsg, "[전략발동][수익확보]\n"
+				"[1]( 수익확보금액 PLGap(%.*f)\n"
+				"[2]( 현재가대비  PLGap(%.*f)\n"
+				"현재가대비 PL이 익절조건 보다 작으므로 즉시 익절"
+				,
+				m_symbol.nDotCnt, dPLGapPSecured, m_symbol.nDotCnt, dPLGapCurr
+			);
+			g_log.log(INFO, pMsg);
+		}
+	}
+
+	return bResult;
+
+
+}
 
 
 VOID CStratHistManager::SetConfigInfo(LPCSTR pzOpenPrc, LPCSTR pzOrdQty, LPCSTR pzEndTM, LPCSTR sMaxSL,

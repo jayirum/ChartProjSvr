@@ -77,7 +77,13 @@ BOOL CStratMaker::TradeOption()
 	m_option = new CTradeOption(g_zConfig);
 	if (!m_option->TurnOn_Cross(m_zSymbol))
 	{
-		g_log.log(ERR, "%s", m_option);
+		g_log.log(ERR, "%s", m_option->cross()->getmsg());
+		return FALSE;
+	}
+
+	if(!m_option->TurnOn_PSecured(m_zSymbol))
+	{
+		g_log.log(ERR, "%s", m_option->p_secured()->getmsg());
 		return FALSE;
 	}
 
@@ -347,9 +353,6 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	if (!m_pMemPool->get(&pData))
 		return;
 
-	g_log.enter();
-	g_log.log(INFO, "===============================================");
-
 //	ST_MF_STRAT_ORD stOrd;
 	ST_API_ORD_RQST* apiOrd = (ST_API_ORD_RQST*)pData;
 	memset(apiOrd, 0x20, sizeof(ST_API_ORD_RQST));
@@ -386,7 +389,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 
 	//DB LOG
 	strcpy(dblog.zSymbol, m_zSymbol);
-	dblog.FireYN[0] = 'Y';
+	//dblog.FireYN[0] = 'Y';
 	dblog.OpenClose[0] = 'O';	//O, C
 	sprintf(dblog.zOrdQty, "%d", m_h->ordqty());
 	strcpy(dblog.zCurrPrc, pzCurrPrc);
@@ -395,7 +398,6 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
 	sprintf(dblog.zApiTM, pzApiTm);
 
-
 	if (nCondition == 1) 
 	{
 		strcpy(zStratID, STRATID_BUY_OPEN);
@@ -403,8 +405,8 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		apiOrd->Side[0] = CD_BUY;
 		strcpy(zBasePrc, zUpperPrc);
 
-		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(%s Percent)[API TM:%s]"
-			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(),m_h->GetEntryPrc(), pzApiTm);
+		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(%.2f Percent)[API TM:%s]"
+			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(),m_h->entryspread(), pzApiTm);
 		
 		//DB LOG		
 		strcpy(dblog.zStratID, zStratID);
@@ -425,8 +427,8 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			if (!bFire)
 			{
 				dblog.FireYN[0] = 'N';
-				sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
-					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+				sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
+					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
 				sprintf(dblog.zMsg, zMsg1);
 				m_h->SetOpenPrc(pzCurrPrc);
 			}
@@ -438,8 +440,8 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		apiOrd->Side[0] = CD_SELL;
 		strcpy(zBasePrc, zLowerPrc);
 
-		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
-			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
+			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
 
 		//DB LOG
 		strcpy(dblog.zStratID, zStratID);
@@ -447,6 +449,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zStratPrc, zLowerPrc);
 		sprintf(dblog.zMsg, zMsg1);
 
+		bFire = TRUE;
 		if ( m_option->IsOn_Cross())
 		{
 			if (m_option->cross()->Is_1MinCandle() && (cross1 != GOLDEN_CROSS))
@@ -458,14 +461,15 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			if (!bFire)
 			{
 				dblog.FireYN[0] = 'N';
-				sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%s Percent)[API TM:%s]"
-					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->GetEntryPrc(), pzApiTm);
+				sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
+					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
 				sprintf(dblog.zMsg, zMsg1);
 				m_h->SetOpenPrc(pzCurrPrc);
 			}
 		}
 	}
 	
+	dblog.FireYN[0] = (bFire) ? 'Y' : 'N';
 	SaveDBLog(&dblog);
 	if (bFire)
 	{
@@ -510,7 +514,9 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	strcpy(pzStratID, STRATID_NONE);
 	char zBasePrc[32];
 
-	// BUY OPEN
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// 손절 점검
+	///////////////////////////////////////////////////////////////////////////////////////////
 	if (m_h->IsLong())
 	{
 		// 손절조건 점검.SL SELL : CurrPrc <= Open Prc
@@ -518,40 +524,21 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp <= 0)
 		{
-			g_log.enter();
-			g_log.log(INFO, "===============================================");
 			strcpy(pzStratID, STRATID_SELL_SL);
 			sprintf(pzClrMsg, "[전략발동][LONG손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) <= 현재가(%s). 참조로 진입가(%s)"
 				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+			g_log.log(INFO, pzClrMsg);
 
 			// DB LOG
-			dblog->PLTp[0] = 'L'; 
+			dblog->PLTp[0] = 'L';
 			dblog->BsTp[0] = CD_SELL;
 			dblog->FireYN[0] = 'Y';
 			sprintf(dblog->zEntryPercent, "%.2f", m_h->entryspread() * 100);
-		}
 
-		else
-		{
-			// 0.5% 건드렸으면 익절조검 점검한다.
-			if (m_h->IsHitPTPrc())
-			{
-				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg, (char*)dblog)) {
-					g_log.enter();
-					g_log.log(INFO, "===============================================");
-					g_log.log(INFO, pzClrMsg);
-					strcpy(pzStratID, STRATID_SELL_PT);
-
-					// DB LOG
-					dblog->PLTp[0] = 'P';
-					dblog->BsTp[0] = CD_SELL;
-					dblog->FireYN[0] = 'Y';
-				}
-			}
+			return pzStratID;
 		}
 	}
 
-	// SELL OPEN
 	if (m_h->IsShort())
 	{
 		// SL BUY : CurrPrc >= Open Prc
@@ -559,10 +546,8 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp >= 0) {
 			strcpy(pzStratID, STRATID_BUY_SL);
-			g_log.enter();
-			g_log.log(INFO, "===============================================");
 			sprintf(pzClrMsg, "[전략발동][SHORT손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) >= 현재가(%s). 참조로 진입가(%s)"
-				,m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
 			g_log.log(INFO, pzClrMsg);
 
 			// DB LOG
@@ -570,26 +555,25 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 			dblog->BsTp[0] = CD_BUY;
 			dblog->FireYN[0] = 'Y';
 			sprintf(dblog->zEntryPercent, "%.2f", m_h->entryspread() * 100);
-
+			return pzStratID;
 		}
-		// PT BUY : CurrPrc <= OpenPrc + (OpenPrc * 0.005)
-		else
-		{
-			if (m_h->IsHitPTPrc())
-			{
-				char zMsg[512] = { 0, };
-				if (m_h->IsPTCondition(pzCurrPrc, pzClrMsg, (char*)dblog)) {
-					g_log.enter();
-					g_log.log(INFO, "===============================================");
-					g_log.log(INFO, pzClrMsg);
-					strcpy(pzStratID, STRATID_BUY_PT);
+	}
 
-					// DB LOG
-					dblog->PLTp[0] = 'P';
-					dblog->BsTp[0] = CD_BUY;
-					dblog->FireYN[0] = 'Y';
-				}
-			}
+
+		
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// 익절 점검
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// 0.5% 건드렸으면 익절조검 점검한다.
+	if (m_h->IsHitPTPrc())
+	{
+		if (m_h->IsProfitTakingCondition(pzCurrPrc, (void*)m_option, pzClrMsg, pzStratID) )
+		{
+			// DB LOG
+			dblog->PLTp[0] = 'P';
+			dblog->BsTp[0] = (m_h->IsLong())? CD_BUY : CD_SELL;
+			dblog->FireYN[0] = 'Y';
+			sprintf(dblog->zCurrPrc, pzCurrPrc);
 		}
 	}
 	return pzStratID;
@@ -606,7 +590,10 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	ABOTLOG_NO1 dblog = { 0, };
 	dblog.FireYN[0] = 'N';
 
+	///////////////////////////////////////////////////////////////////
 	GetCloseOrdType(pzCurrPrc, zBasePrc, zStratID, zClrMsg, &dblog);
+	///////////////////////////////////////////////////////////////////
+
 
 	if (strcmp(zStratID, STRATID_NONE) == 0)
 	{
@@ -637,10 +624,14 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	if (strcmp(zStratID, STRATID_BUY_SL) == 0)	//매수손절
 		apiOrd->Side[0] = CD_BUY;
 	if (strcmp(zStratID, STRATID_BUY_PT) == 0)	//매수익절
+		apiOrd->Side[0] = CD_BUY; 
+	if (strcmp(zStratID, STRATID_BUY_PSECURED) == 0)	//매수수익확보
 		apiOrd->Side[0] = CD_BUY;
 	if (strcmp(zStratID, STRATID_SELL_SL) == 0)	//매도손절
 		apiOrd->Side[0] = CD_SELL;
 	if (strcmp(zStratID, STRATID_SELL_PT) == 0)	//매도익절
+		apiOrd->Side[0] = CD_SELL;
+	if (strcmp(zStratID, STRATID_SELL_PSECURED) == 0)	//매도수익확보
 		apiOrd->Side[0] = CD_SELL;
 
 	char tmp[128];

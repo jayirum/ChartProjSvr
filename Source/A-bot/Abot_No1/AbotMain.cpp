@@ -348,7 +348,7 @@ unsigned WINAPI CAbotMain::Thread_ApiOrd(LPVOID lp)
 					p->showMsg(FALSE,"API_ORD DATA Send ERROR:%.*s", (int)msg.wParam, pData);
 					continue;
 				}
-				p->showMsg(TRUE, "API_ORD SEND(%.*s)", (int)msg.wParam, pData);
+				p->showMsg(TRUE, "[API_ORD SEND](%.*s)", (int)msg.wParam, pData);
 			}
 		}
 
@@ -375,7 +375,7 @@ unsigned WINAPI CAbotMain::Thread_ApiOrd(LPVOID lp)
 			continue;
 		}
 
-		//p->showMsg(TRUE, "API_ORD응답수신(%s)", pBuf);
+		p->showMsg(TRUE, "[API_ORD RECV](%.*s)", nLen, pBuf);
 
 		ITMAP_STRAT it;
 		ST_API_ORD_RESPONSE *pData = (ST_API_ORD_RESPONSE*)pBuf;
@@ -725,15 +725,15 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 			char zStartTM[128];	db->GetStr("START_TM", zStartTM);
 			int nMaxCntSL		= db->GetLong("MAXCNT_SL");			
 			int nMaxCntPT		= db->GetLong("MAXCNT_PT");			
-			double dEntrySpread = db->GetDouble("ENTRY_SPREAD");			
-			double dClrSpread	= db->GetDouble("CLR_SPREAD");
-			double dPtPoint		= db->GetDouble("PT_POINT");
+			double dEntrySpread = db->GetDouble("ENTRY_SPREAD");	//0.001(0.1%)			
+			double dClrSpread = db->GetDouble("CLR_SPREAD");		//0.005(0.5%)
+			double dPtPoint		= db->GetDouble("PT_POINT");		//0.5(50%)
 
 			//TODO
-			//if (strncmp(zSymbol, "CL", 2) != 0) {
-			//	db->Next();
-			//	continue;
-			//}
+			/*if (strncmp(zSymbol, "GC", 2) != 0) {
+				db->Next();
+				continue;
+			}*/
 			if (bCreateStrat)
 			{
 				ST_STRAT* st = new ST_STRAT;

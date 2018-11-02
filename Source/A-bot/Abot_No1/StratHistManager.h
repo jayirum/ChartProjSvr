@@ -108,6 +108,7 @@ public:
 	//BOOL	IsAlreadySLMaxCnt() { return (m_pos.nTotSLCnt >= m_param.nMaxCntSL); }
 	//BOOL	IsProfitRealized() {return m_pos.bProfitRealized;}
 	BOOL	IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ char* pDbLog );
+	BOOL	IsProfitTakingCondition(char* pzCurrPrc, void* pOption, _Out_ char* pMsg,_Out_ char* pzStratID );
 
 	char*	GtMaxPLPrc() { return m_pos.zMaxPLPrc; }
 	char*	GetEntryPrc() { return m_pos.zEntryPrc; }

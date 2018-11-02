@@ -1342,7 +1342,7 @@ BOOL IsPassedTime(char* pzBaseTime, EN_TIMEMODE timeMode)
 		// 07 ~ 23
 		else
 		{
-			bPassed = FALSE;
+			bPassed = TRUE;
 		}
 	}
 
