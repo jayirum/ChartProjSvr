@@ -402,7 +402,7 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 
 	///////////////////////////////////////////////////////////////////////////
 	// 수익확보 전술이 없으면 바로 비교
-	if (!pOpt->IsOn_PSecurd())
+	//if (!pOpt->IsOn_PSecurd())
 	{
 		if (dPLGapHalfOfMax >= dPLGapCurr)
 		{
@@ -410,9 +410,9 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 			else			strcpy(pzStratID, STRATID_BUY_PT);
 
 			bResult = TRUE;
-			sprintf(pMsg, "[전략발동][익절조건]\n"
-				"[1]( 최고대비1/2 PLGap(%.*f)\n"
-				"[2]( 현재가대비  PLGap(%.*f)\n"
+			sprintf(pMsg, "[전략발동][익절조건]"
+				"[1]( 최고대비1/2 PLGap(%.*f)"
+				"[2]( 현재가대비  PLGap(%.*f)"
 				"현재가대비 PL이 익절조건 보다 작으므로 즉시 익절"
 				,
 				m_symbol.nDotCnt, dPLGapHalfOfMax,m_symbol.nDotCnt, dPLGapCurr
@@ -443,6 +443,8 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 			g_log.log(INFO, pMsg);
 		}
 	}
+
+
 	if (dPLGapHalfOfMax < dPLGapPSecured)
 	{
 		if (dPLGapPSecured >= dPLGapCurr)

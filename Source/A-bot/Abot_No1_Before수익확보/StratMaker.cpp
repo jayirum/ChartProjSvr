@@ -81,11 +81,11 @@ BOOL CStratMaker::TradeOption()
 		return FALSE;
 	}
 
-	if(!m_option->TurnOn_PSecured(m_zSymbol))
-	{
-		g_log.log(ERR, "%s", m_option->p_secured()->getmsg());
-		return FALSE;
-	}
+	//if(!m_option->TurnOn_PSecured(m_zSymbol))
+	//{
+	//	g_log.log(ERR, "%s", m_option->p_secured()->getmsg());
+	//	return FALSE;
+	//}
 
 	return TRUE;
 }
@@ -382,9 +382,10 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			nFindChart++;
 			cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
 		}
+
 		if (nFindChart == 0)
 		{
-			g_log.log(ERR, "[CHAART SHM 오류]SHM 이상으로 차트데이터를 읽지 못함");
+			g_log.log(ERR, "Chart SHM 이상으로 차트데이터를 읽지 못함");
 		}
 	}
 	char zMsg1[512];
@@ -419,7 +420,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		sprintf(dblog.zMsg, zMsg1);
 
 		bFire = TRUE;
-		if (m_option->IsOn_Cross() && nFindChart>0)
+		if (m_option->IsOn_Cross() && nFindChart>0 )
 		{
 			if (m_option->cross()->Is_1MinCandle() && (cross1 != GOLDEN_CROSS))
 				bFire = FALSE;

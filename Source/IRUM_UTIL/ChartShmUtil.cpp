@@ -71,7 +71,7 @@ BOOL CChartShmUtil::CurrChart(char *pzSymbol, CHART_TP ChartTp, char* date, char
 	// retry 2 times
 	while (FALSE == bExist)
 	{
-		Sleep(1000);
+		Sleep(10);
 		if (++nLoop > 2) {
 			// There is no chart of the current time. Something is wrong.
 			sprintf(m_zMsg, "[%s][%s] No Chart even if receive curr price.",zGroupKey, zChartNm);
