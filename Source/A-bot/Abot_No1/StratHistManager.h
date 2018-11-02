@@ -9,6 +9,7 @@
 	
 */
 #include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/SymbolUtils.h"
 #include "StratID.h"
 #include <windows.h>
 #include <string>
@@ -29,15 +30,15 @@ typedef enum _EN_CNTR_FLAG
 	FLAG_REVERSE
 }EN_CNTR_FLAG;
 
-typedef struct _ST_SYMBOL_INFO
-{
-	char zArtcCd[32];
-	char zSymbol[32];
-	char zName[128];
-	double dTickSize;
-	double dTickValue;
-	int nDotCnt;
-}ST_SYMBOL_INFO;
+//typedef struct _ST_SYMBOL_INFO
+//{
+//	char zArtcCd[32];
+//	char zSymbol[32];
+//	char zName[128];
+//	double dTickSize;
+//	double dTickValue;
+//	int nDotCnt;
+//}ST_SYMBOL_INFO;
 
 typedef struct _ST_STRAT_PARAM
 {
@@ -47,9 +48,10 @@ typedef struct _ST_STRAT_PARAM
 	char zStartTM[6];
 	char zEndTM[6];	//HH:MM
 	int nOrdQty;
-	double dEntryTrigger;		//0.1%
-	double dClrCheckTrigger;	//0.5%
-	double dPtClrTrigger;		//최고대비 x% 떨어지면 익절
+	double dEntryTouchPoint;	//0.1%
+	double dPT50_TouchPoint;	//0.5%
+	double dPT80_TouchPoint;	//0.8%
+	double dPT90_TouchPoint;	//0.9%
 }ST_STRAT_PARAM;
 
 class ST_POSITION
@@ -76,10 +78,13 @@ public:
 	int				nTotPTCnt;	//당일 누적 pt 횟수
 	//BOOL			bProfitRealized;
 	char			zMaxPLPrc[LEN_PRC + 1];	//진입 후 최고 수익가격
-	BOOL			bHitPTPrc;	// 0.5% 수익구간을 찍었나?
-	
+	BOOL			bPT50Touched, bPT80Touched, bPT90Touched;	
 	BOOL			bFinish;
 };
+
+#define PTRATE_90	0.9
+#define PTRATE_80	0.8
+#define PTRATE_50	0.5
 
 class CStratHistManager
 {
@@ -87,10 +92,11 @@ public:
 	CStratHistManager(char* pzSymbol);
 	~CStratHistManager();
 
-	void	SetInitInfo(double dTickVal, double dTickSize, int nDotCnt, 
-		char* pzOpenPrc, int nOrdQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
-		double dEntryTrigger, double dClrCheckTrigger, double dProfitRealiezed);
+	//void	SetInitInfo(double dTickVal, double dTickSize, int nDotCnt, 
+	//	char* pzOpenPrc, int nOrdQty, char* pzStartTM, char* pzEndTM, int nMaxSLCnt, int nMaxPTCnt,
+	//	double dEntryTouchPoint, double dPT50_TouchPoint, double dProfitRealiezed);
 
+	BOOL	LoadStratInfo();
 	void	AcptCntrProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
 	void	AcptEntryNewProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
 	void	AcptEntryAddProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
@@ -102,21 +108,23 @@ public:
 	BOOL	IsOpenSrategyExist() { return (m_pos.Status != FLAG_NONE); }
 	VOID	SetOrderSent(double dSentQty);
 	VOID	SetOpenPrc(char *pzOpenPrc);
-	VOID	SetConfigInfo(LPCSTR pzOpenPRc, LPCSTR pzOrdQty, LPCSTR pzEndTM, LPCSTR sMaxSL,
-		LPCSTR sMaxPT, LPCSTR sEntrySpread, LPCSTR sClrSpread, LPCSTR sPtPoint);
+	//VOID	SetConfigInfo(LPCSTR pzOpenPRc, LPCSTR pzOrdQty, LPCSTR pzEndTM, LPCSTR sMaxSL,
+	//	LPCSTR sMaxPT, LPCSTR sEntrySpread, LPCSTR sClrSpread, LPCSTR sPtPoint);
 
 	//BOOL	IsAlreadySLMaxCnt() { return (m_pos.nTotSLCnt >= m_param.nMaxCntSL); }
 	//BOOL	IsProfitRealized() {return m_pos.bProfitRealized;}
-	BOOL	IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ char* pDbLog );
+	//BOOL	IsPTCondition(char* pzCurrPrc, _Out_ char* pMsg, _Out_ char* pDbLog );
 	BOOL	IsProfitTakingCondition(char* pzCurrPrc, void* pOption, _Out_ char* pMsg,_Out_ char* pzStratID );
+	double	GetPTLevelTouched();
 
 	char*	GtMaxPLPrc() { return m_pos.zMaxPLPrc; }
 	char*	GetEntryPrc() { return m_pos.zEntryPrc; }
-	BOOL	IsHitPTPrc() { return m_pos.bHitPTPrc; }
+	BOOL	IsPT50Touched() { return m_pos.bPT50Touched; }
+	BOOL	IsPT80Touched() { return m_pos.bPT80Touched; }
+	BOOL	IsPT90Touched() { return m_pos.bPT90Touched; }
 	BOOL	IsAlreadySent() { return (m_pos.dOrdSentQty > 0); }
 	void	lock() { EnterCriticalSection(&m_cs); }
 	void	unlock() { LeaveCriticalSection(&m_cs); }
-
 public:
 	double	openprc_d() { return atof(m_param.zOpenPrc); }
 	char*	openprc() { return m_param.zOpenPrc; }
@@ -125,14 +133,14 @@ public:
 	EN_STATUS_FLAG	status() { return m_pos.Status; }
 	BOOL	IsLong() { return (m_pos.Status == FLAG_OPEN_BUY); }
 	BOOL	IsShort() { return (m_pos.Status == FLAG_OPEN_SELL); }
-	double	entryspread() { return m_param.dEntryTrigger; }
+	double	entryspread() { return m_param.dEntryTouchPoint; }
 	int		ordqty() { return m_param.nOrdQty; }
 	int		entryqty() { return (int)m_pos.dQty; }
-	int		dotcnt() { return m_symbol.nDotCnt; }
+	int		dotcnt() { return m_symbol.dotcnt(); }
 
 private:
 
-	ST_SYMBOL_INFO	m_symbol;
+	CSymbolUtils	m_symbol;
 	ST_STRAT_PARAM	m_param;
 	ST_POSITION		m_pos;
 	

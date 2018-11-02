@@ -23,11 +23,13 @@ CAbotMain::CAbotMain():CBaseThread("Abot", TRUE)
 	m_bContinue = TRUE;
 	m_pApiClient[0] = m_pApiClient[1] = NULL;
 	m_pMonitorClient = NULL;
+	InitializeCriticalSection(&m_csMap);
 }	
 
 CAbotMain::~CAbotMain()
 {
 	Finalize();
+	DeleteCriticalSection(&m_csMap);
 }
 
 
@@ -257,11 +259,11 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
 
-			//char buf[128]; sprintf(buf,"tick[%s]\n", zSymbol);
-			//OutputDebugString(buf);
+			p->lock();
 			ITMAP_STRAT it = p->m_mapStrat.find(sSymbol);
 			if (it == p->m_mapStrat.end())
 			{
+				p->unlock();
 				p->m_pMemPool->release(pBuf);
 				continue;
 				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
@@ -279,6 +281,7 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 			else {
 				PostThreadMessage(pStrat->m->GetStratThreadId(), WM_RECV_API_MD, 0, (LPARAM)pBuf);
 			}
+			p->unlock();
 		}
 	}
 	p->CloseApiSocket(API_TICK);
@@ -392,14 +395,16 @@ unsigned WINAPI CAbotMain::Thread_ApiOrd(LPVOID lp)
 			sprintf(zSymbol, "%.*s", sizeof(pData->Symbol), pData->Symbol);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
-
+			p->lock();
 			it = p->m_mapStrat.find(sSymbol);
 			if (it == p->m_mapStrat.end())
 			{
+				p->unlock();
 				p->m_pMemPool->release(pBuf);
 				p->showMsg(FALSE, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 				continue;
 			}
+			p->unlock();
 		}
 
 		if (strncmp(pData->Code, CDAPI_ORD_ACPT, strlen(CDAPI_ORD_ACPT)) == 0)
@@ -645,49 +650,72 @@ unsigned WINAPI CAbotMain::Thread_SaveDBLog(LPVOID lp)
 void CAbotMain::SetOpenPrc(char* pzSymbol, char* pzOpePrc)
 {
 	std::string symbol = (LPCSTR)pzSymbol;
+
+	lock();
 	ITMAP_STRAT it = m_mapStrat.find(symbol);
 	if (it != m_mapStrat.end())
 	{
 		ST_STRAT* s = (*it).second;
 		s->h->SetOpenPrc(pzOpePrc);
 	}
+	unlock();
 }
 
-void CAbotMain::ReSetSymbolInfo(
-	char *pzSymbol
-	, double dTickVal
-	, double dTickSize
-	, int nDotCnt
-	, char* pzQty
-	, char* pzStartTM
-	, char* pzEndTM
-	, int nMaxSLCnt
-	, int nMaxPTCnt
-	, double dEntrySpread
-	, double dClrSpread
-	, double dPtPoint
-)
-{
+//void CAbotMain::ReSetSymbolInfo(
+//	char *pzSymbol
+//	, double dTickVal
+//	, double dTickSize
+//	, int nDotCnt
+//	, char* pzQty
+//	, char* pzStartTM
+//	, char* pzEndTM
+//	, int nMaxSLCnt
+//	, int nMaxPTCnt
+//	, double dEntrySpread
+//	, double dClrSpread
+//	, double dPtPoint
+//)
+//{
+//
+//	std::string symbol = (LPCSTR)pzSymbol;
+//	ITMAP_STRAT it = m_mapStrat.find(symbol);
+//	if (it != m_mapStrat.end())
+//	{
+//		ST_STRAT* s = (*it).second;
+//		s->h->SetInitInfo(
+//			dTickVal,
+//			dTickSize,
+//			nDotCnt,
+//			"",	//(LPSTR)sOpenPrc.GetString(),
+//			atoi(pzQty),
+//			pzStartTM,
+//			pzEndTM,
+//			nMaxSLCnt,
+//			nMaxPTCnt,
+//			dEntrySpread,
+//			dClrSpread,
+//			dPtPoint
+//		);
+//
+//		s->m->SetInitInfo(
+//			m_pMemPool,
+//			m_unSaveData,
+//			m_unApiOrd
+//		);
+//		m_mapStrat[symbol] = s;
+//	}
+//}
 
+VOID CAbotMain::ResetSymbolInfo(char *pzSymbol)
+{
 	std::string symbol = (LPCSTR)pzSymbol;
+
+	lock();
 	ITMAP_STRAT it = m_mapStrat.find(symbol);
 	if (it != m_mapStrat.end())
 	{
 		ST_STRAT* s = (*it).second;
-		s->h->SetInitInfo(
-			dTickVal,
-			dTickSize,
-			nDotCnt,
-			"",	//(LPSTR)sOpenPrc.GetString(),
-			atoi(pzQty),
-			pzStartTM,
-			pzEndTM,
-			nMaxSLCnt,
-			nMaxPTCnt,
-			dEntrySpread,
-			dClrSpread,
-			dPtPoint
-		);
+		s->h->LoadStratInfo();
 
 		s->m->SetInitInfo(
 			m_pMemPool,
@@ -696,8 +724,8 @@ void CAbotMain::ReSetSymbolInfo(
 		);
 		m_mapStrat[symbol] = s;
 	}
+	unlock();
 }
-
 
 BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 {
@@ -748,12 +776,14 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 				}
 
 				st->bFirstFeed = FALSE;
+				lock();
 				m_mapStrat[zSymbol] = st;
+				unlock();
+
 				g_log.log(LOGTP_SUCC, "LoadSymbol(%s)", zSymbol);
 				printf("LoadSymbol(%s)\n", zSymbol);
 			}
-			ReSetSymbolInfo(zSymbol, dTickVal, dTickSize, nDotCnt,
-				zQty, zStartTM, zEndTM, nMaxCntSL, nMaxCntPT, dEntrySpread, dClrSpread, dPtPoint);
+			ResetSymbolInfo(zSymbol);
 
 			db->Next();
 		}
@@ -768,6 +798,7 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 VOID CAbotMain::ClearStratMap()
 {
 	ITMAP_STRAT it;
+	lock();
 	for (it = m_mapStrat.begin(); it != m_mapStrat.end();++it )
 	{
 		ST_STRAT* s = (*it).second;
@@ -776,6 +807,7 @@ VOID CAbotMain::ClearStratMap()
 		delete s;
 	}
 	m_mapStrat.clear();
+	unlock();
 }
 
 void CAbotMain::showMsg(BOOL bSucc, char* pMsg, ...)
@@ -820,6 +852,7 @@ void CAbotMain::StartStrategies()
 	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveDBLog, this, 0, &m_unSaveData);
 
 	ITMAP_STRAT it;
+	lock();
 	for (it = m_mapStrat.begin(); it != m_mapStrat.end(); ++it)
 	{
 		ST_STRAT* p = (*it).second;
@@ -828,6 +861,7 @@ void CAbotMain::StartStrategies()
 			m_unSaveData,
 			m_unApiOrd);
 	}
+	unlock();
 }
 
 
@@ -921,10 +955,12 @@ void CAbotMain::ThreadFunc()
 
 void CAbotMain::CloseOpenPosition(char *pzSymbol)
 {
+	lock();
 	ITMAP_STRAT it = m_mapStrat.find(std::string(pzSymbol));
 	if (it != m_mapStrat.end())
 	{
 		ST_STRAT* p = (*it).second;
 		PostThreadMessage(p->m->GetStratThreadId(), WM_CLOSE_POSITION, 0, 0);
 	}
+	unlock();
 }
