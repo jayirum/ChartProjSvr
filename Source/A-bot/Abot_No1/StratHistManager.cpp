@@ -317,13 +317,12 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	double dPrcFire = 0;
 	double dPrcGap = 0;
 
-	dPrcGap = (dPrcMax - dPrcEntry) * dPTRate;
-
 	BOOL bResult = FALSE;
 
 	// LONG 일때, 현재가 < FIRE PRC 이면 익절
 	if (IsLong())
 	{
+		dPrcGap = (dPrcMax - dPrcEntry) * dPTRate;
 		dPrcFire = dPrcEntry + dPrcGap;
 		nComp = CUtil::CompPrc(dPrcCurr, dPrcFire, m_symbol.dotcnt(), LEN_PRC);
 	}
@@ -331,6 +330,7 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	// SHORT 일때, 현재가 > FIRE PRC 이면 익절
 	if (IsShort())
 	{
+		dPrcGap = (dPrcEntry - dPrcMax) * dPTRate;
 		dPrcFire = dPrcEntry - dPrcGap;
 		nComp = CUtil::CompPrc(dPrcFire, dPrcCurr, m_symbol.dotcnt(), LEN_PRC);
 	}

@@ -369,22 +369,22 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	{
 		if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
 		{
-			nFindChart++;
 			cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
+			nFindChart++;
 		}
 		if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
 		{
-			nFindChart++;
 			cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
+			nFindChart++;
 		}
 		if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
 		{
-			nFindChart++;
 			cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
+			nFindChart++;
 		}
 		if (nFindChart == 0)
 		{
-			g_log.log(ERR, "[CHAART SHM 오류]SHM 이상으로 차트데이터를 읽지 못함");
+			g_log.log(ERR, "Chart SHM 이상으로 차트데이터를 읽지 못함");
 		}
 	}
 	char zMsg1[512];
