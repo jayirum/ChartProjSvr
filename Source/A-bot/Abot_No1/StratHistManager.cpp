@@ -303,10 +303,12 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	char* pzCurrPrc, void* pOption, _Out_ char* pMsg, _Out_ char* pzStratID
 )
 {
+	// 50%, 80%, 90%
 	double dPTRate = GetPTLevelTouched();
 	if (dPTRate == 0)
 		return FALSE;
 
+	// MAXPLPrc == EntryPrc ==> skip
 	int nComp = CUtil::CompPrc(m_pos.zMaxPLPrc, LEN_PRC, m_pos.zEntryPrc, LEN_PRC, m_symbol.dotcnt(), LEN_PRC);
 	if (nComp == 0)
 		return FALSE;
@@ -379,14 +381,14 @@ VOID CStratHistManager::SetOrderSent(double dSentQty)
 // and check the profit taking price is touched.
 void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 {
+	if (m_pos.Status == FLAG_NONE)
+		return;
+
 	if (m_pos.zMaxPLPrc[0] == 0x00)
 	{
 		strcpy(m_pos.zMaxPLPrc, pzCurrPrc);
 		return;
 	}
-
-	if (m_pos.Status == FLAG_NONE)
-		return;
 
 	int nComp = 0;
 	if (IsLong())	// BUY POS. MAXPL -> HIGHER
