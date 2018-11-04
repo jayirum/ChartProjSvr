@@ -588,15 +588,12 @@ void install()
 	}
 
 	////	종속 서비스
-	CHAR	szDir[_MAX_PATH];
-	char szDependency[64] = { 0, };
-
-	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
-
-	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
-	CUtil::GetConfig(g_zConfig, "SERVICE", "DEPENDENCY", szDependency);
+//	char szDependency[64];
+// 	memset(szDependency, 0x00, sizeof(szDependency));	
+// 	CProp prop;
+// 	prop.SetBaseKey(HKEY_LOCAL_MACHINE, REG_FRONTSERVER);
+// 	strcpy(szDependency, prop.GetValue("Dependency"));
+// 	prop.Close();
 
 	hSrv = CreateService(hScm, SERVICENAME, DISPNAME,
         SERVICE_ALL_ACCESS, 
@@ -606,7 +603,7 @@ void install()
 		SrvPath,
 		NULL,
 		NULL,
-		szDependency,
+		"IRUM_ChartShmQueue",	//NULL, //szDependency,
 		NULL,
 		NULL);
 
@@ -619,7 +616,7 @@ void install()
 		lpDes.lpDescription = Desc;
 		ChangeServiceConfig2(hSrv, SERVICE_CONFIG_DESCRIPTION, &lpDes);
 		//log.LogEventInf(-1, "서비스를 성공적으로 설치했습니다.");
-		printf("Succeeded in installing the service.(dependency:%s)\n", szDependency);
+		printf("Succeeded in installing the service.\n");
 		CloseServiceHandle(hSrv);
 	}
 	CloseServiceHandle(hScm);
