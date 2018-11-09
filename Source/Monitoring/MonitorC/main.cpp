@@ -87,10 +87,11 @@ int  _Start()
 	//CAbotMain bot;
 	//if (bot.Initialize())
 
-	CMonitor mon;
-	//mon.initializelkl
-	//mon.resume
-	//mon.
+	CMonitor monMonitor;
+	monMonitor.ResumeThread();
+
+	CMonitor monMonitor2;
+	monMonitor.ResumeThread();
 
 	
 	DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);

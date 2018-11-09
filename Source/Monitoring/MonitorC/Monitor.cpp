@@ -1,18 +1,21 @@
 #include "Monitor.h"
+#include "../../IRUM_UTIL/BaseThread.h"
 
 
-
-CMonitor::CMonitor()
-{
-
-}
-
-
-CMonitor::~CMonitor()
-{
-}
+//CMonitor::CMonitor()
+//{
+//}
+//
+//
+//CMonitor::~CMonitor()
+//{
+//}
 
 void CMonitor::ThreadFunc()
 {
-	printf("this is thread class...");
+	while (1)
+	{
+		printf("this is thread class...");
+		Sleep(100);
+	}
 }
