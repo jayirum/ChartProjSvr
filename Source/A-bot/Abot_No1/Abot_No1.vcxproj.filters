@@ -60,6 +60,15 @@
     <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\SymbolUtils.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TradeOption.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -108,6 +117,15 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SymbolUtils.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TradeOption.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

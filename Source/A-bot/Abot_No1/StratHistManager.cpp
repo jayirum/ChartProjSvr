@@ -39,16 +39,13 @@ BOOL CStratHistManager::LoadStratInfo()
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
 	//CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-	
-		CDBPoolAdo* dbPool = new CDBPoolAdo(ip, id, pwd, name);
-		if (!dbPool->Init(1))
-		{
-			return FALSE;
-		}
-	
+	CDBPoolAdo* dbPool = new CDBPoolAdo(ip, id, pwd, name);
+	if (!dbPool->Init(1))
+	{
+		return FALSE;
+	}
 
-
-	CDBHandlerAdo db(dbPool->Get());
+	CDBHandlerAdo db(dbPool);
 	char zQ[1024];
 	sprintf(zQ, "EXEC ABOT_NO1_LOAD_SYMBOL_INDI '%s' ", m_symbol.symbol());
 	if (FALSE == db->ExecQuery(zQ))
@@ -60,7 +57,7 @@ BOOL CStratHistManager::LoadStratInfo()
 	{
 		if (db->IsNextRow())
 		{
-			char zArtc[128];	
+			char zArtc[128]={ 0, };
 			db->GetStr("ARTC_CD", zArtc);	
 			m_symbol.set_artc(zArtc);
 			char zName[128];	db->GetStr("NAME", zName);		m_symbol.set_name(zName);

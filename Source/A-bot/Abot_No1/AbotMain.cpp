@@ -8,6 +8,7 @@
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/TimeInterval.h"
 #include "Main.h"
 
 extern CLogMsg		g_log;
@@ -178,6 +179,8 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 
 	CAbotMain* p = (CAbotMain*)lp;
 
+	CTimeInterval interval;
+
 	ST_PACK2CHART_EX* pSise;
 	char zSymbol[128];
 	char tm[9];
@@ -193,27 +196,19 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 
 	p->m_pApiClient[API_TICK]->StartRecvData();
 
+
+	interval.start();
+
 	while (p->m_bContinue)
 	{
 		Sleep(1);
-		//connect
-		//if (p->m_pApiClient[API_TICK]) {
-		//	if (!p->m_pApiClient[API_TICK]->IsConnected())
-		//	{
-		//		sprintf(temp, "socket:%d, m_bConnect:%d\n", p->m_pApiClient[API_TICK]->m_sock, 
-		//			p->m_pApiClient[API_TICK]->m_bConn);
-		//		OutputDebugString(temp);
 
-		//		if (!p->m_pApiClient[API_TICK]->Connect())
-		//		{
-		//			p->showMsg(FALSE, "API DataFeed Socket connect Error[%s][%d]", p->m_sApiIP[API_TICK].c_str(), p->m_nApiPort[API_TICK]);
-		//			Sleep(5000);
-		//			continue;
-		//		}
-		//		p->showMsg(TRUE, "API DataFeed Socket connect OK(%s)(%d)", p->m_sApiIP[API_TICK].c_str(), p->m_nApiPort[API_TICK]);
-		//		Sleep(1000);
-		//	}
-		//}
+		if (interval.isPassed(MODE_MIN, 30))
+		{
+			p->showMsg(FALSE, "30 mins passed without receiving any market data");
+			Sleep(1000);
+		}
+
 		MSG msg;
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -250,6 +245,8 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 
 		if (nLen > 0)
 		{
+			interval.nomore_check();
+
 			pSise = (ST_PACK2CHART_EX*)pBuf;
 			sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
 			memcpy(pSise->Time, tm, sizeof(pSise->Time));

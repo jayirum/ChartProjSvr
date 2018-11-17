@@ -135,6 +135,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\SymbolUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="AbotMain.cpp" />
     <ClCompile Include="main.cpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
     <ClInclude Include="..\..\IRUM_UTIL\SymbolUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="AbotMain.h" />
     <ClInclude Include="Main.h" />

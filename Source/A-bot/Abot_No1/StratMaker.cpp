@@ -367,20 +367,31 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	int nFindChart = 0;
 	if (m_option->IsOn_Cross())
 	{
-		if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
+		if (m_option->cross()->Is_1MinCandle())
 		{
-			cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
-			nFindChart++;
+			if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
+			{
+				cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
+				nFindChart++;
+			}
 		}
-		if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
+
+		if (m_option->cross()->Is_3MinCandle())
 		{
-			cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
-			nFindChart++;
+			if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
+			{
+				cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
+				nFindChart++;
+			}
 		}
-		if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
+
+		if (m_option->cross()->Is_5MinCandle())
 		{
-			cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
-			nFindChart++;
+			if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
+			{
+				cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
+				nFindChart++;
+			}
 		}
 		if (nFindChart == 0)
 		{

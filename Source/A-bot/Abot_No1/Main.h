@@ -1,13 +1,13 @@
 #pragma once
 
 
-#define	SERVICENAME		"A-Bot No1"
+#define	SERVICENAME		"ABot_No1"
 #define DISPNAME		"A-Bot No1"
 #define DESC			"Strategy No 1"
 #define EXENAME			"Abot_No1.exe"
 
 
-#define __APP_VERSION "v1.0"
+#define __APP_VERSION "v2.0"
 
 
 enum {
