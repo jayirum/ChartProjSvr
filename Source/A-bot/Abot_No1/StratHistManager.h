@@ -97,6 +97,7 @@ public:
 	//	double dEntryTouchPoint, double dPT50_TouchPoint, double dProfitRealiezed);
 
 	BOOL	LoadStratInfo();
+	BOOL	LoadStratInfoInner();
 	void	AcptCntrProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
 	void	AcptEntryNewProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
 	void	AcptEntryAddProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCSTR lpCntrQty);
@@ -145,6 +146,7 @@ private:
 	ST_POSITION		m_pos;
 	
 	CRITICAL_SECTION	m_cs;
+	char			m_zMsg[1024];
 private:
 };
 

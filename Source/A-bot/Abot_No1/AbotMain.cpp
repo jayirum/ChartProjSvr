@@ -748,6 +748,7 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 			char zQty[128];		db->GetStr("ORD_QTY", zQty);			
 			char zEndTM[128];	db->GetStr("END_TM", zEndTM);
 			char zStartTM[128];	db->GetStr("START_TM", zStartTM);
+			
 			int nMaxCntSL		= db->GetLong("MAXCNT_SL");			
 			int nMaxCntPT		= db->GetLong("MAXCNT_PT");			
 			double dEntrySpread = db->GetDouble("ENTRY_SPREAD");	//0.001(0.1%)			
@@ -755,10 +756,10 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 			double dPtPoint		= db->GetDouble("PT_POINT");		//0.5(50%)
 
 			//TODO
-			/*if (strncmp(zSymbol, "GC", 2) != 0) {
-				db->Next();
-				continue;
-			}*/
+			//if (strncmp(zSymbol, "GC", 2) != 0) {
+			//	db->Next();
+			//	continue;
+			//}
 			if (bCreateStrat)
 			{
 				ST_STRAT* st = new ST_STRAT;
@@ -833,10 +834,10 @@ void CAbotMain::StartStrategies()
 	showMsg(TRUE, "전략을 시작합니다!!!!!");
 	showMsg(TRUE, "=======================================================");
 	m_bContinue = TRUE;
-	if (!LoadSymbolInfo(FALSE))
-	{
-		return;
-	}
+	//if (!LoadSymbolInfo(FALSE))
+	//{
+	//	return;
+	//}
 
 
 	// create recv thread

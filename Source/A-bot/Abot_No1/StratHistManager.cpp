@@ -29,8 +29,21 @@ VOID CStratHistManager::SetOpenPrc(char *pzOpenPrc)
 	strcpy(m_param.zOpenPrc, pzOpenPrc);
 }
 
-
 BOOL CStratHistManager::LoadStratInfo()
+{
+	BOOL bRet = FALSE;;
+	__try
+	{
+		bRet = LoadStratInfoInner();
+	}
+	__except (ReportException(GetExceptionCode(), "LoadStratInfo", m_zMsg))
+	{
+		g_log.log(ERR, "[LoadStratInfo ERROR](%s)", m_zMsg);
+	}
+	return bRet;
+}
+
+BOOL CStratHistManager::LoadStratInfoInner()
 {
 	char ip[32], id[32], pwd[32], name[32];
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_IP", ip);
@@ -45,7 +58,8 @@ BOOL CStratHistManager::LoadStratInfo()
 		return FALSE;
 	}
 
-	CDBHandlerAdo db(dbPool);
+	//CDBHandlerAdo db(dbPool);
+	CADOFunc* db = dbPool->GetAvailableDB();
 	char zQ[1024];
 	sprintf(zQ, "EXEC ABOT_NO1_LOAD_SYMBOL_INDI '%s' ", m_symbol.symbol());
 	if (FALSE == db->ExecQuery(zQ))
@@ -55,10 +69,17 @@ BOOL CStratHistManager::LoadStratInfo()
 	}
 	else
 	{
+		int nLen = 0;
 		if (db->IsNextRow())
 		{
-			char zArtc[128]={ 0, };
-			db->GetStr("ARTC_CD", zArtc);	
+			//Sleep(10);
+			char zArtc[512]={ 0, };
+			db->GetStr(0L, zArtc);
+			if (strlen(zArtc) == 0)
+			{
+				g_log.log(ERR, "[ADO ERROR](%s)", db->GetError());
+				int a = 0;
+			}
 			m_symbol.set_artc(zArtc);
 			char zName[128];	db->GetStr("NAME", zName);		m_symbol.set_name(zName);
 			m_symbol.set_tickval(db->GetDouble("TICK_VALUE"));
@@ -72,16 +93,17 @@ BOOL CStratHistManager::LoadStratInfo()
 			m_param.nMaxCntPT = db->GetLong("MAXCNT_PT");
 
 
-			m_param.dEntryTouchPoint = db->GetDouble("ENTRY_TOUCHPOINT_PCT");	//0.1%
-			m_param.dPT50_TouchPoint = db->GetDouble("PT50_CHK_TOUCHPOINT_PCT");	//0.5%
-			m_param.dPT80_TouchPoint = db->GetDouble("PT80_CHK_TOUCHPOINT_PCT");	//0.8%
-			m_param.dPT90_TouchPoint = db->GetDouble("PT90_CHK_TOUCHPOINT_PCT");	//0.9%
+			m_param.dEntryTouchPoint = db->GetDouble("ENTRY_TOUCHPOINT_PCT")/100.;	//0.1%
+			m_param.dPT50_TouchPoint = db->GetDouble("PT50_CHK_TOUCHPOINT_PCT")/100.;	//0.5%
+			m_param.dPT80_TouchPoint = db->GetDouble("PT80_CHK_TOUCHPOINT_PCT")/100.;	//0.8%
+			m_param.dPT90_TouchPoint = db->GetDouble("PT90_CHK_TOUCHPOINT_PCT")/100.;	//0.9%
 
 			db->Next();
 		}
 		db->Close();
 	}
 
+	delete dbPool;
 	return TRUE;
 }
 //

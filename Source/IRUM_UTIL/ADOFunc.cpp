@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "Util.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -230,13 +231,47 @@ VARIANT CADOFunc::GetValue(LONG lField)
 
 char* CADOFunc::GetStr(LPCTSTR pszField, char* pzOut)
 {
-	strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; 
+	VARIANT vVal;
+	if (!GetValueEx(pszField, &vVal))
+		return NULL;
+
+	//strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); 
+	strcpy(pzOut, (LPCSTR)(_bstr_t)vVal);
+	return pzOut;
+}
+
+
+int CADOFunc::GetStrEx(LPCTSTR pszField, char* pzOut, int * pnLen)
+{
+	*pnLen = -1;
+	__try {
+		GetStr(pszField, pzOut);
+		*pnLen = strlen(pzOut);
+	}
+	__except (ReportException(GetExceptionCode(), "CADOFunc::GetStr", pzOut))
+	{
+	}
+	return *pnLen;
 }
 
 
 VARIANT CADOFunc::GetValue(LPCTSTR pszField)
 {
 	return m_pRs->Fields->Item[_bstr_t(pszField)]->Value;
+}
+
+
+BOOL CADOFunc::GetValueEx(LPCTSTR pszField, VARIANT* pRet)
+{
+	BOOL bRet = TRUE;
+	__try {
+		*pRet = GetValue(pszField);
+	}
+	__except (ReportException(GetExceptionCode(), "CADOFunc::GetValueEx", m_szMessage))
+	{
+		bRet = FALSE;
+	}
+	return bRet;
 }
 
 BOOL CADOFunc::GetRows(VARIANT *pRecordArray)
@@ -609,6 +644,25 @@ CADOFunc* CDBPoolAdo::GetAvailableDB()
 	return p;//(*it);
 }
 
+CADOFunc* CDBPoolAdo::GetAvailableAdo(CADOFunc* p)
+{
+	if (m_setDB.size() == 0)
+	{
+		if (!AddNew())
+		{
+			sprintf(m_zMsg, "POOL 에 남아있는 세션이 없음 ");
+			return NULL;
+		}
+	}
+
+	LOCK();
+	std::set<CADOFunc*>::iterator it = m_setDB.begin();
+	p = (*it);
+	m_setDB.erase(it);
+	UNLOCK();
+
+	return p;//(*it);
+}
 
 //<DBPool>
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
