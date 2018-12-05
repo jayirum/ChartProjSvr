@@ -465,7 +465,7 @@ void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 	{
 		// 현재가 : 1.2707,  시가:1.2718  0.1%:1.2705  0.5%:1.2667  
 		dTouchPrc = dOpenPrc * (1.0 - dTouchPoint);
-		nComp = CUtil::CompPrc(dTouchPrc, atof(pzCurrPrc), m_symbol.dotcnt(), LEN_PRC);
+		nComp = CUtil::CompPrc(atof(pzCurrPrc), dTouchPrc, m_symbol.dotcnt(), LEN_PRC);
 		if (nComp > 0)
 			return;
 	}
