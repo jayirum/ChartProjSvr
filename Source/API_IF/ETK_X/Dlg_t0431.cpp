@@ -4,8 +4,9 @@
 #include "stdafx.h"
 #include "XingAPI_Sample.h"
 #include "Dlg_t0431.h"
+#include "../Inc_ETK\t0431.h"
 
-#include "../../include/API_ETK/t0431.h"
+//#include "../../include/API_ETK/t0431.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -129,61 +130,61 @@ void CDlg_t0431::RequestData( BOOL bNext )
 {
 	//-----------------------------------------------------------
 	// 선물/옵션잔고평가(주문팝업)(t0431) ( attr,tuxcode=t0431,headtype=D )
-	t0431InBlock	pckInBlock;
+	//t0431InBlock	pckInBlock;
 
-	TCHAR			szTrNo[]	= "t0431";
-	char			szNextKey[]	= "";
+	//TCHAR			szTrNo[]	= "t0431";
+	//char			szNextKey[]	= "";
 
-	//-----------------------------------------------------------
-	// 데이터 취득
-	CString str_accno		; GetDlgItemText( IDC_COMBO_INBLOCK_ACCNO	  , str_accno		);		// 계좌번호
-	CString str_passwd		; GetDlgItemText( IDC_EDIT_INBLOCK_PASSWD	  , str_passwd		);		// 비밀번호
-	CString str_cts_expcode	; GetDlgItemText( IDC_EDIT_INBLOCK_CTS_EXPCODE, str_cts_expcode );		// CTS_종목번호
-	CString str_cts_medocd	; GetDlgItemText( IDC_EDIT_INBLOCK_CTS_MEDOCD , str_cts_medocd  );		// CTS_매매구분
+	////-----------------------------------------------------------
+	//// 데이터 취득
+	//CString str_accno		; GetDlgItemText( IDC_COMBO_INBLOCK_ACCNO	  , str_accno		);		// 계좌번호
+	//CString str_passwd		; GetDlgItemText( IDC_EDIT_INBLOCK_PASSWD	  , str_passwd		);		// 비밀번호
+	//CString str_cts_expcode	; GetDlgItemText( IDC_EDIT_INBLOCK_CTS_EXPCODE, str_cts_expcode );		// CTS_종목번호
+	//CString str_cts_medocd	; GetDlgItemText( IDC_EDIT_INBLOCK_CTS_MEDOCD , str_cts_medocd  );		// CTS_매매구분
 
-	// 다음 조회일경우에 다음 조회시 사용하는 Field는 데이터를 넣으면 안된다.
-	if( bNext == FALSE )
-	{
-		str_cts_expcode = "";
-		str_cts_medocd = "";
-	}
-	
-	//-----------------------------------------------------------
-	// 데이터 초기화
-	FillMemory( &pckInBlock, sizeof( pckInBlock ), ' ' );
-	
-	//-----------------------------------------------------------
-	// 데이터 입력
-	SetPacketData( pckInBlock.accno		 , sizeof( pckInBlock.accno		 ), str_accno		, DATA_TYPE_STRING );	// 계좌번호
-	SetPacketData( pckInBlock.passwd	 , sizeof( pckInBlock.passwd	 ), str_passwd		, DATA_TYPE_STRING );	// 비밀번호
-	SetPacketData( pckInBlock.cts_expcode, sizeof( pckInBlock.cts_expcode), str_cts_expcode , DATA_TYPE_STRING );	// CTS_종목번호
-	SetPacketData( pckInBlock.cts_medocd , sizeof( pckInBlock.cts_medocd ), str_cts_medocd	, DATA_TYPE_STRING );	// CTS_매매구분
-	
-	//-----------------------------------------------------------
-	// 데이터 전송
-	HWND h = GetSafeHwnd();
-	int nRqID = g_iXingAPI.Request( 
-		GetSafeHwnd(),				// 데이터를 받을 윈도우, XM_RECEIVE_DATA 으로 온다.
-		szTrNo,						// TR 번호
-		&pckInBlock,				// InBlock 데이터
-		sizeof( pckInBlock ),		// InBlock 데이터 크기
-		bNext,						// 다음조회 여부 : 다음조회일 경우에 세팅한다.
-		szNextKey,					// 다음조회 Key : //		Header Type이 B 일 경우엔 이전 조회때 받은 Next Key를 넣어준다.
-		30							// Timeout(초) : 해당 시간(초)동안 데이터가 오지 않으면 Timeout에 발생한다. XM_TIMEOUT_DATA 메시지가 발생한다.
-	);
+	//// 다음 조회일경우에 다음 조회시 사용하는 Field는 데이터를 넣으면 안된다.
+	//if( bNext == FALSE )
+	//{
+	//	str_cts_expcode = "";
+	//	str_cts_medocd = "";
+	//}
+	//
+	////-----------------------------------------------------------
+	//// 데이터 초기화
+	//FillMemory( &pckInBlock, sizeof( pckInBlock ), ' ' );
+	//
+	////-----------------------------------------------------------
+	//// 데이터 입력
+	//SetPacketData( pckInBlock.accno		 , sizeof( pckInBlock.accno		 ), str_accno		, DATA_TYPE_STRING );	// 계좌번호
+	//SetPacketData( pckInBlock.passwd	 , sizeof( pckInBlock.passwd	 ), str_passwd		, DATA_TYPE_STRING );	// 비밀번호
+	//SetPacketData( pckInBlock.cts_expcode, sizeof( pckInBlock.cts_expcode), str_cts_expcode , DATA_TYPE_STRING );	// CTS_종목번호
+	//SetPacketData( pckInBlock.cts_medocd , sizeof( pckInBlock.cts_medocd ), str_cts_medocd	, DATA_TYPE_STRING );	// CTS_매매구분
+	//
+	////-----------------------------------------------------------
+	//// 데이터 전송
+	//HWND h = GetSafeHwnd();
+	//int nRqID = g_iXingAPI.Request( 
+	//	GetSafeHwnd(),				// 데이터를 받을 윈도우, XM_RECEIVE_DATA 으로 온다.
+	//	szTrNo,						// TR 번호
+	//	&pckInBlock,				// InBlock 데이터
+	//	sizeof( pckInBlock ),		// InBlock 데이터 크기
+	//	bNext,						// 다음조회 여부 : 다음조회일 경우에 세팅한다.
+	//	szNextKey,					// 다음조회 Key : //		Header Type이 B 일 경우엔 이전 조회때 받은 Next Key를 넣어준다.
+	//	30							// Timeout(초) : 해당 시간(초)동안 데이터가 오지 않으면 Timeout에 발생한다. XM_TIMEOUT_DATA 메시지가 발생한다.
+	//);
 
-	if( bNext == FALSE )
-	{
-		m_ctrlOutBlock.DeleteAllItems();
-		m_ctrlOutBlock1.DeleteAllItems();
-	}
+	//if( bNext == FALSE )
+	//{
+	//	m_ctrlOutBlock.DeleteAllItems();
+	//	m_ctrlOutBlock1.DeleteAllItems();
+	//}
 
-	//-----------------------------------------------------------
-	// Request ID가 0보다 작을 경우에는 에러이다.
-	if( nRqID < 0 )
-	{
-		MessageBox( "조회실패", "에러", MB_ICONSTOP );
-	}
+	////-----------------------------------------------------------
+	//// Request ID가 0보다 작을 경우에는 에러이다.
+	//if( nRqID < 0 )
+	//{
+	//	MessageBox( "조회실패", "에러", MB_ICONSTOP );
+	//}
 }
 
 //--------------------------------------------------------------------------------------

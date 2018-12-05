@@ -14,7 +14,7 @@
 // skeo 2011-01-17 [[
 #pragma warning (disable : 4786)
 
-#include "../../include/UtilLibInc.h"
+//#include "../../include/UtilLibInc.h"
 #include "DlgLogin.h"
 
 class CChildFrame;
@@ -53,7 +53,7 @@ public:
 // Generated message map functions
 protected:
 	CTRBar		m_wndTRBar;
-	CLog		m_logF;		// skeo 2011-01-17
+	//CLog		m_logF;		// skeo 2011-01-17
 
 	//{{AFX_MSG(CMainFrame)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);

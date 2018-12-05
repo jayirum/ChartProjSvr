@@ -4,8 +4,9 @@
 #include "stdafx.h"
 #include "xingapi_sample.h"
 #include "Dlg_t2101.h"
-#include "../../libsrc/CVT_ETK.h"
-#include "../../include/API_ETK/t2101.h"
+#include "../Inc_ETK/CVT_ETK.h"
+#include "../Inc_ETK/t2101.h"
+#include "../../IRUM_UTIL/util.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -57,34 +58,34 @@ BOOL CDlg_t2101::OnInitDialog()
 	//----------------------------------------
 	char szPath[_MAX_PATH] = {0,};
 	char szMsg[512];
-	if( !CUtil::GetLogDir(szPath, szMsg) )
-	{
-		return FALSE;
-	}
-	
-	m_logF.OpenLog(szPath, "ETK_GET_ENDPRC");
-	
-	//////////////////////////////////////////////////////////////////////////
-	//	DB OPEN 
-	if( !CUtil::DBOpen(&m_db) )
-	{
-		CUtil::PrintLog(&m_logF, FALSE, "DB OPEN ERROR(%s)", m_db.GetLastError() );
-		m_db.free();
-		return FALSE;
-	}
+	//if( !CUtil::GetLogDir(szPath, szMsg) )
+	//{
+	//	return FALSE;
+	//}
+	//
+	//m_logF.OpenLog(szPath, "ETK_GET_ENDPRC");
+	//
+	////////////////////////////////////////////////////////////////////////////
+	////	DB OPEN 
+	//if( !CUtil::DBOpen(&m_db) )
+	//{
+	//	CUtil::PrintLog(&m_logF, FALSE, "DB OPEN ERROR(%s)", m_db.GetLastError() );
+	//	m_db.free();
+	//	return FALSE;
+	//}
 
-	// 	//////////////////////////////////////////////////////////////////////////
-	//	REAL DATA 수신할 종목코드 가져오기
-	if( !GetStkCodeList_KS(GDS_CODE_KSF) ){
-	 	CUtil::PrintLog(&m_logF, FALSE, "선물 종목 가져오기 실패");
-	 	return	FALSE;
-	 }
-	if( !GetStkCodeList_KS(GDS_CODE_KSO) ){
-	 	CUtil::PrintLog(&m_logF, FALSE, "옵션 종목 가져오기 실패");
-	 	return	FALSE;
- 	}
-	
-	OnOK();
+	//// 	//////////////////////////////////////////////////////////////////////////
+	////	REAL DATA 수신할 종목코드 가져오기
+	//if( !GetStkCodeList_KS(GDS_CODE_KSF) ){
+	// 	CUtil::PrintLog(&m_logF, FALSE, "선물 종목 가져오기 실패");
+	// 	return	FALSE;
+	// }
+	//if( !GetStkCodeList_KS(GDS_CODE_KSO) ){
+	// 	CUtil::PrintLog(&m_logF, FALSE, "옵션 종목 가져오기 실패");
+	// 	return	FALSE;
+ //	}
+	//
+	//OnOK();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
@@ -97,7 +98,7 @@ void CDlg_t2101::OnOK()
 	m_nLastSendCnt_F	= 0;
 	m_nLastSendCnt_O	= 0;
 
-	list<CString>::iterator	it = m_sStkList_KSF.begin();
+	std::list<CString>::iterator	it = m_sStkList_KSF.begin();
 	if( it!=m_sStkList_KSF.end() )
 	{
 		CString sStk = *it;
@@ -159,7 +160,7 @@ void CDlg_t2101::RequestData(const char* i_psStkCode )
 		else
 			m_nLastSendCnt_O++;
 	}
-	CUtil::PrintLog(&m_logF, FALSE, m_szMsg);
+	//CUtil::PrintLog(&m_logF, FALSE, m_szMsg);
 	m_lstResult.InsertString(0, (LPCSTR)m_szMsg);
 
 }
@@ -183,7 +184,7 @@ LRESULT CDlg_t2101::OnXMReceiveData( WPARAM wParam, LPARAM lParam )
 		get_double_withdot( p->price, sizeof(p->price), 2, sizeof(p->price), szNowPrc );
 		sprintf( m_szMsg, "[%s](%s)", (LPCSTR)m_sLastSendStk, szNowPrc );
 		m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-		CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+		//CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
 
 		//	KS200지수
 		get_double_withdot( p->kospijisu, sizeof(p->kospijisu), 2, sizeof(p->kospijisu), szKS200 );
@@ -195,7 +196,7 @@ LRESULT CDlg_t2101::OnXMReceiveData( WPARAM wParam, LPARAM lParam )
 		{
 			sprintf( m_szMsg, "[%s](%s)현재가 이상", (LPCSTR)m_sLastSendStk, szNowPrc );
 			m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-			CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+			//CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
 			return 0L;
 		}
 
@@ -224,14 +225,14 @@ LRESULT CDlg_t2101::OnXMReceiveData( WPARAM wParam, LPARAM lParam )
 							, dNowPrc, (LPCSTR)m_sLastSendStk
 							);
 		}
-		if( !m_db.Cmd(szQ) || !m_db.Exec() )
-		{
-			sprintf( m_szMsg, "[%s](%s)DB 저장 실패(%s)", (LPCSTR)m_sLastSendStk, szNowPrc, m_db.GetLastError() );
-			m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-			CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
-			m_db.Close();
-		}
-		m_db.Close();
+		//if( !m_db.Cmd(szQ) || !m_db.Exec() )
+		//{
+		//	sprintf( m_szMsg, "[%s](%s)DB 저장 실패(%s)", (LPCSTR)m_sLastSendStk, szNowPrc, m_db.GetLastError() );
+		//	m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
+		//	CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+		//	m_db.Close();
+		//}
+		//m_db.Close();
 
 	}
 	
@@ -281,7 +282,7 @@ LRESULT CDlg_t2101::OnXMReceiveData( WPARAM wParam, LPARAM lParam )
 			{
 				sprintf( m_szMsg, "선물종목 완료");
 				m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-				CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+				//CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
 				Request_O();
 			}
 		}
@@ -302,18 +303,18 @@ VOID CDlg_t2101::Request_F()
 	if( m_nLastSendCnt_F==m_sStkList_KSF.size() ){
 		sprintf( m_szMsg, "선물종목 완료");
 		m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-		CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+		//CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
 		return;
 	}
 
-	list<CString>::iterator it = m_sStkList_KSF.begin();
+	//list<CString>::iterator it = m_sStkList_KSF.begin();
 
-	for( int i=0; i<m_nLastSendCnt_F; i++ )
-		it++;
+	//for( int i=0; i<m_nLastSendCnt_F; i++ )
+	//	it++;
 
-	CString sStk = *it;
+	//CString sStk = *it;
 
-	RequestData((LPCSTR)sStk);
+	//RequestData((LPCSTR)sStk);
 }
 
 
@@ -322,18 +323,18 @@ VOID CDlg_t2101::Request_O()
 	if( m_nLastSendCnt_O==m_sStkList_KSO.size() ) {
 		sprintf( m_szMsg, "옵션종목 완료");
 		m_lstResult.InsertString(0, (LPCSTR)m_szMsg );
-		CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
+		//CUtil::PrintLog(&m_logF, FALSE, m_szMsg );
 		return;
 	}
 	
-	list<CString>::iterator it = m_sStkList_KSO.begin();
-	
-	for( int i=0; i<m_nLastSendCnt_O; i++ )
-		it++;
-	
-	CString sStk = *it;
-	
-	RequestData((LPCSTR)sStk);
+	//list<CString>::iterator it = m_sStkList_KSO.begin();
+	//
+	//for( int i=0; i<m_nLastSendCnt_O; i++ )
+	//	it++;
+	//
+	//CString sStk = *it;
+	//
+	//RequestData((LPCSTR)sStk);
 }
 
 
@@ -355,44 +356,44 @@ BOOL CDlg_t2101::GetStkCodeList_KS(char* psGdsCode)
 {
 	BOOL bKSF;	// 선물, 옵션 여부
 	
-	if( strcmp(psGdsCode, GDS_CODE_KSO)==0 )
-	{
-		bKSF = FALSE;
-		
-		if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KSO" ) )
-			return FALSE;
-	}
-	if( strcmp(psGdsCode, GDS_CODE_KSF)==0 )
-	{
-		bKSF = TRUE;
-		
-		if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KSF" ) )
-			return FALSE;
-	}
-	
-	if( !m_db.Exec() )
-		return FALSE;
-	
-	char szStkList[1024]	= {0,};
-	char szStk[128]			= {0,};
-	int nRs = 0;
-	while( m_db. nextRow() )
-	{
-		strcpy( szStk, m_db.Get(1) );
-		CUtil::TrimAll( szStk, strlen(szStk) );
-		
-		CUtil::PrintDebug( &m_logF, FALSE, szStk );
-		
-		if( strlen(szStk)==0 )
-			break;
-		
-		CString sStk = szStk;
-		if(bKSF)
-			m_sStkList_KSF.push_back(sStk);
-		else
-			m_sStkList_KSO.push_back(sStk);
-	}
-	m_db.Close();
+	//if( strcmp(psGdsCode, GDS_CODE_KSO)==0 )
+	//{
+	//	bKSF = FALSE;
+	//	
+	//	if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KSO" ) )
+	//		return FALSE;
+	//}
+	//if( strcmp(psGdsCode, GDS_CODE_KSF)==0 )
+	//{
+	//	bKSF = TRUE;
+	//	
+	//	if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KSF" ) )
+	//		return FALSE;
+	//}
+	//
+	//if( !m_db.Exec() )
+	//	return FALSE;
+	//
+	//char szStkList[1024]	= {0,};
+	//char szStk[128]			= {0,};
+	//int nRs = 0;
+	//while( m_db. nextRow() )
+	//{
+	//	strcpy( szStk, m_db.Get(1) );
+	//	CUtil::TrimAll( szStk, strlen(szStk) );
+	//	
+	//	CUtil::PrintDebug( &m_logF, FALSE, szStk );
+	//	
+	//	if( strlen(szStk)==0 )
+	//		break;
+	//	
+	//	CString sStk = szStk;
+	//	if(bKSF)
+	//		m_sStkList_KSF.push_back(sStk);
+	//	else
+	//		m_sStkList_KSO.push_back(sStk);
+	//}
+	//m_db.Close();
 	
 	return TRUE;
 }
@@ -425,7 +426,7 @@ char* CDlg_t2101::get_double_withdot( char* i_psOrg, int i_nOrgLen, int i_nDotCn
 
 VOID CDlg_t2101::OnDestroy()
 {
-	m_db.Free();
+	//m_db.Free();
 	CDialog::OnDestroy();
 }
 

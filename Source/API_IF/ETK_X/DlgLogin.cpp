@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "XingAPI_Sample.h"
 #include "DlgLogin.h"
-#include "../../include/UtilLibInc.h"
+//#include "../../include/UtilLibInc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -195,43 +195,46 @@ BOOL CDlgLogin::ConnectServer()
 BOOL CDlgLogin::Login()
 {
 	char sQ[512];//, t[512];
-	ScrewDB db;
-	if( !CUtil::DBOpen(&db) ){
-		MessageBox( "DB OPEN FAIL", "로그인 실패", MB_ICONSTOP );
-		return FALSE;
-	}
 
-	sprintf( sQ, "SELECT API_USERID, CONN_PWD, CRTF_PWD, API_ACNT_NO, API_ACNT_PWD FROM HT_T_API_MASTER WHERE API_CODE='KS_ETK' ");
+	//TODO
 
-	if( !db.Cmd(sQ) || !db.Exec() ){
-		db.Close();
-		MessageBox( "USERID, PWD 가져오기 실패", "로그인 실패", MB_ICONSTOP );
-		return FALSE;
-	}
+	//ScrewDB db;
+	//if( !CUtil::DBOpen(&db) ){
+	//	MessageBox( "DB OPEN FAIL", "로그인 실패", MB_ICONSTOP );
+	//	return FALSE;
+	//}
 
-	if( !db.NextRow() )
-	{
-		db.Close();
-		MessageBox( "USERID, PWD 가져오기 실패", "로그인 실패", MB_ICONSTOP );
-		return FALSE;
-	}
+	//sprintf( sQ, "SELECT API_USERID, CONN_PWD, CRTF_PWD, API_ACNT_NO, API_ACNT_PWD FROM HT_T_API_MASTER WHERE API_CODE='KS_ETK' ");
+
+	//if( !db.Cmd(sQ) || !db.Exec() ){
+	//	db.Close();
+	//	MessageBox( "USERID, PWD 가져오기 실패", "로그인 실패", MB_ICONSTOP );
+	//	return FALSE;
+	//}
+
+	//if( !db.NextRow() )
+	//{
+	//	db.Close();
+	//	MessageBox( "USERID, PWD 가져오기 실패", "로그인 실패", MB_ICONSTOP );
+	//	return FALSE;
+	//}
 #if 1
 	//-----------------------------------------------------------------------------
 	// 아이디
-	strcpy( g_stAPI.API_USERID, db.Get("API_USERID") );
+	//TODO strcpy( g_stAPI.API_USERID, db.Get("API_USERID") );
 	//strcpy(t, db.Get("API_USERID") );
 	CString strID = CString(g_stAPI.API_USERID); //; GetDlgItemText( IDC_EDIT_ID, strID );
 
 	//-----------------------------------------------------------------------------
 	// 비밀번호
 	//strcpy(t, db.Get("CONN_PWD") );
-	strcpy( g_stAPI.API_CONN_PWD, db.Get("CONN_PWD") );
+	//TODO strcpy( g_stAPI.API_CONN_PWD, db.Get("CONN_PWD") );
 	CString strPwd = CString(g_stAPI.API_CONN_PWD); // ; GetDlgItemText( IDC_EDIT_PWD, strPwd );
 	
 	//-----------------------------------------------------------------------------
 	// 공인인증 비밀번호
 	//strcpy(t, db.Get("CRTF_PWD") );
-	strcpy( g_stAPI.API_CRTF_PWD, db.Get("CRTF_PWD") );
+	//TODO strcpy( g_stAPI.API_CRTF_PWD, db.Get("CRTF_PWD") );
 	CString strCertPwd = CString(g_stAPI.API_CRTF_PWD); //; GetDlgItemText( IDC_EDIT_CERT_PWD, strCertPwd );
 #else
 	// ++ skeo. test
@@ -256,12 +259,12 @@ BOOL CDlgLogin::Login()
 #endif
 
 	//	원화계좌
-	strcpy( g_stAPI.API_ACNT_NO, db.Get("API_ACNT_NO"));
-	strcpy( g_stAPI.API_ACNT_PWD, db.Get("API_ACNT_PWD"));
+	//TODO strcpy( g_stAPI.API_ACNT_NO, db.Get("API_ACNT_NO"));
+	//TODO strcpy( g_stAPI.API_ACNT_PWD, db.Get("API_ACNT_PWD"));
 
 	//	로그인 여부
 	g_stAPI.LOGON_YN[0] = 'N';
-	db.Close();
+	//TODO db.Close();
 
 	//-----------------------------------------------------------------------------
 	// 서버 Type

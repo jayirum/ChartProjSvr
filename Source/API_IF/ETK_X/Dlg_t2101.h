@@ -10,7 +10,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // CDlg_t2101 dialog
 
-#include "../../include/UtilLibInc.h"
+//#include "../../include/UtilLibInc.h"
+#include <list>
 
 class CDlg_t2101 : public CDialog
 {
@@ -34,10 +35,10 @@ public:
 	//}}AFX_VIRTUAL
 
 private:
-	CLog	m_logF;
-	list<CString>		m_sStkList_KSF;
-	list<CString>		m_sStkList_KSO;
-	ScrewDB				m_db;
+	//CLog	m_logF;
+	std::list<CString>		m_sStkList_KSF;
+	std::list<CString>		m_sStkList_KSO;
+	//ScrewDB				m_db;
 
 	CString				m_sLastSendStk;
 	int					m_nLastSendCnt_F, m_nLastSendCnt_O;

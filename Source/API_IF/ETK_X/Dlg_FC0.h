@@ -21,13 +21,13 @@
 
 ***************************************************************************/
 
-#include "../../include/common.h"
-#include "../../include/Packet.h"
-#include "../../include/UtilLibInc.h"
+#include "../Inc_ETK/COMMON.H"
+#include "../Inc_ETK/Packet.h"
+//#include "../../include/UtilLibInc.h"
 
-
-//시세중계
-#include "../../libsrc/SiseClntSend.h"
+#include <set>
+#include <list>
+#include <map>
 
 
 #define ETK_REAL_SISE_F			"FC0"
@@ -76,7 +76,7 @@ public:
 	int			m_nUdpPortLC	;
 	int			m_nUdpPortReal	;
 
-	list<CString>		m_lstData;
+	std::list<CString>		m_lstData;
 	CRITICAL_SECTION	m_cs;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -103,12 +103,12 @@ public:
 // Implementation
 private:
 	
-	CLog	m_logF, m_logInner;
+	//TODO CLog	m_logF, m_logInner;
 
-	CUdpSend	*m_sockFront;	//	FRONT SERVER 에게 전송할 UDP SOCKET
-	CUdpSend	*m_sockLosscut;	//	LOSSCUT 에게 전송할 UDP SOCKET
+	//TODO CUdpSend	*m_sockFront;	//	FRONT SERVER 에게 전송할 UDP SOCKET
+	//TODO CUdpSend	*m_sockLosscut;	//	LOSSCUT 에게 전송할 UDP SOCKET
 
-	ScrewDB		m_db;
+	//TODO ScrewDB		m_db;
 	
 	char szPath[_MAX_PATH];
 	char		m_szMcastIP[32];
@@ -117,12 +117,12 @@ private:
 	int			m_nPortFront_O;
 	int			m_nPortSHM;
 	int			m_nPortMT;
-	list<CString>		m_sStkList_KSF;
-	list<CString>		m_sStkList_KSO;
-	map<CString, CString>	m_mapNowPrc;	//	종목별 현재가 저장
+	std::list<CString>		m_sStkList_KSF;
+	std::list<CString>		m_sStkList_KSO;
+	std::map<CString, CString>	m_mapNowPrc;	//	종목별 현재가 저장
 
 	
-	CSharedMem		m_shm;
+	//CSharedMem		m_shm;
 
 	HANDLE					m_hThdDummySise;				// skeo 2011-01-17
 	static DWORD WINAPI		ProcDummySiseTest(LPVOID lp);	// skeo 2011-01-17
@@ -147,13 +147,13 @@ private:
 	SOCKADDR_IN	m_localsin;
 	WSAEVENT	m_wsaAccept;				//	accept event
 	WSAEVENT	m_wsaSend;
-	set<SOCKET>	m_setRelaySock;
+	std::set<SOCKET>	m_setRelaySock;
 	CRITICAL_SECTION	m_csRelaySock;
 	BOOL				m_bRelayContinue;
 	HANDLE				m_hRelayThread;
 	DWORD				m_dwRelayThread;
 
-	list<CString>		m_lstRelayData;
+	std::list<CString>		m_lstRelayData;
 	CRITICAL_SECTION	m_csRelayData;
 	//////////////////////////////////////////////////////////////////////////////
 

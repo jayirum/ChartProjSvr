@@ -5,16 +5,16 @@
 #include "XingAPI_Sample.h"
 #include "Dlg_FC0.h"
 
-#include "../../include/API_ETK/FC0.h"
-#include "../../include/API_ETK/FH0.h"
-#include "../../include/API_ETK/OC0.h"
-#include "../../include/API_ETK/OH0.h"
+#include "../Inc_ETK/FC0.h"
+#include "../Inc_ETK/FH0.h"
+#include "../Inc_ETK/OC0.h"
+#include "../Inc_ETK/OH0.h"
 
 //CME
-#include "../../include/API_ETK/NC0.h"
-#include "../../include/API_ETK/NH0.h"
+//#include "../../include/API_ETK/NC0.h"
+//#include "../../include/API_ETK/NH0.h"
 
-#include "../../libsrc/CVT_ETK.h"
+#include "../Inc_ETK/CVT_ETK.h"
 #include <assert.h>
 
 #ifdef _DEBUG
@@ -59,8 +59,8 @@ CDlg_FC0::CDlg_FC0(CWnd* pParent /*=NULL*/)	: CDialog(CDlg_FC0::IDD, pParent)
 	//{{AFX_DATA_INIT(CDlg_FC0)
 	//}}AFX_DATA_INIT
 
-	m_sockFront		= NULL;
-	m_sockLosscut	= NULL;
+	//m_sockFront		= NULL;
+	//m_sockLosscut	= NULL;
 	m_dwThreadID = 0;
 	m_hDie			= NULL;
 	m_hThread		= NULL;
@@ -108,46 +108,47 @@ BOOL CDlg_FC0::OnInitDialog()
 	//-----------------------------------------------------------------------------------------
 	
 	char szMsg[512];
-	if( !CUtil::GetLogDirCnfg(szPath, szMsg) )
-	{
-		return FALSE;
-	}
-	
-	m_logF.OpenLog(szPath, "ETK_KS_X_v2.0");
-	//m_logInner.OpenLog(szPath, "ETK_INNER_SISE");
+	//TODO
+	//if( !CUtil::GetLogDirCnfg(szPath, szMsg) )
+	//{
+	//	return FALSE;
+	//}
+	//
+	//m_logF.OpenLog(szPath, "ETK_KS_X_v2.0");
+	////m_logInner.OpenLog(szPath, "ETK_INNER_SISE");
 
-	CUtil::LogEx('I', &m_logF, NULL, FALSE, "서비스 시작");
+	//CUtil::LogEx('I', &m_logF, NULL, FALSE, "서비스 시작");
 
 	//////////////////////////////////////////////////////////////////////////
 	//	SISE SHM OPEN
 	char szSHMName[128], szMutexName[128];
-	if( !CUtil::GetCnfgFile( "common", "SHM", "SHM_SISE_KS", szSHMName) ||
-		!CUtil::GetCnfgFile( "common", "SHM", "MUTEX_SISE_KS", szMutexName) )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "KS200 SHM/MUTEX NAME 가져오기 에러 [SHM:%s][MUTEX:%s]", szSHMName, szMutexName );
-		return FALSE;
-	}
-	if ( !m_shm.Open( szSHMName, szMutexName ) )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM_NAME OPEN 에러(%s)", szSHMName);
-		return FALSE;
-	}
-	CUtil::LogEx('I', &m_logF,  NULL, FALSE, "CSHMUpdate_KS : SHM OPEN 성공(%s)(%s)", szSHMName, szMutexName);
+	//if( !CUtil::GetCnfgFile( "common", "SHM", "SHM_SISE_KS", szSHMName) ||
+	//	!CUtil::GetCnfgFile( "common", "SHM", "MUTEX_SISE_KS", szMutexName) )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "KS200 SHM/MUTEX NAME 가져오기 에러 [SHM:%s][MUTEX:%s]", szSHMName, szMutexName );
+	//	return FALSE;
+	//}
+	//if ( !m_shm.Open( szSHMName, szMutexName ) )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM_NAME OPEN 에러(%s)", szSHMName);
+	//	return FALSE;
+	//}
+	//CUtil::LogEx('I', &m_logF,  NULL, FALSE, "CSHMUpdate_KS : SHM OPEN 성공(%s)(%s)", szSHMName, szMutexName);
 
 
-	//////////////////////////////////////////////////////////////////////////
-	//	DB OPEN 
-	if( !CUtil::DBOpen(&m_db) )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "DB OPEN ERROR(%s)", m_db.GetLastError() );
-		m_db.free();
-		return FALSE;
-	}
+	////////////////////////////////////////////////////////////////////////////
+	////	DB OPEN 
+	//if( !CUtil::DBOpen(&m_db) )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "DB OPEN ERROR(%s)", m_db.GetLastError() );
+	//	m_db.free();
+	//	return FALSE;
+	//}
 
 	//////////////////////////////////////////////////////////////////////////
 	//	UDP SOCKET INIT
 	if( !SockInit() ){
-		m_db.free();
+		//m_db.free();
 		return FALSE;
 	}
 	
@@ -179,11 +180,12 @@ BOOL CDlg_FC0::OnInitDialog()
 
 	//////////////////////////////////////////////////////////////////////////
 	//	종목정보 가져오기
-	if( !GetStkCodeList_KS(GDS_CODE_KSF) ){
-		CUtil::LogEx(  'E', &m_logF, NULL, FALSE, "선물 종목 가져오기 실패");
-		m_db.free();
-		return	FALSE;
-	}
+	//TODO
+	//if( !GetStkCodeList_KS(GDS_CODE_KSF) ){
+	//	CUtil::LogEx(  'E', &m_logF, NULL, FALSE, "선물 종목 가져오기 실패");
+	//	m_db.free();
+	//	return	FALSE;
+	//}
 
 	//	현재가 저장한다.
 	list<CString>::iterator it;
@@ -206,18 +208,19 @@ BOOL CDlg_FC0::OnInitDialog()
 
 	//////////////////////////////////////////////////////////////////////////
 	//	호가를 1초에 보낼 MAX COUNT 를 가져온다.
-	CUtil::GetCNFG("MAX_CNT", "HOGA_SEND_F", szMsg );
-	g_nMaxCnt_F = atoi(szMsg);
+	//TODO
+	//CUtil::GetCNFG("MAX_CNT", "HOGA_SEND_F", szMsg );
+	//g_nMaxCnt_F = atoi(szMsg);
 
-	CUtil::GetCNFG("MAX_CNT", "HOGA_SEND_O", szMsg );
-	g_nMaxCnt_O = atoi(szMsg);
+	//CUtil::GetCNFG("MAX_CNT", "HOGA_SEND_O", szMsg );
+	//g_nMaxCnt_O = atoi(szMsg);
 
-	OnButtonRequest();
+	//OnButtonRequest();
 
-	//prop.SetBaseKey(HKEY_LOCAL_MACHINE, REG_ROOT);
+	////prop.SetBaseKey(HKEY_LOCAL_MACHINE, REG_ROOT);
 
-	sprintf( szMsg, "국내선물버전_TCPRELAY_v2.0(%s)", __DATE__ );
-	CUtil::LogEx('I', &m_logF, NULL, FALSE, szMsg);
+	//sprintf( szMsg, "국내선물버전_TCPRELAY_v2.0(%s)", __DATE__ );
+	//CUtil::LogEx('I', &m_logF, NULL, FALSE, szMsg);
 	m_lstMsg.InsertString(0, szMsg);
 	
 
@@ -268,30 +271,31 @@ BOOL CDlg_FC0::GetStkCodeList_KS(char* psGdsCode)
 // 	}
 // 	
 
-	if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KS_TRADABLE_SVR" ) )
- 			return FALSE;
-	if( !m_db.Exec() )
-		return FALSE;
-	
-	char szStkList[1024]	= {0,};
-	char szStk[128]			= {0,};
-	int nRs = 0;
-	while( m_db. nextRow() )
-	{
-		strcpy( szStk, m_db.Get(1) );
+//TODO
+	//if( !m_db.Cmd("EXEC HT_P_GET_STK_INFO_KS_TRADABLE_SVR" ) )
+ //			return FALSE;
+	//if( !m_db.Exec() )
+	//	return FALSE;
+	//
+	//char szStkList[1024]	= {0,};
+	//char szStk[128]			= {0,};
+	//int nRs = 0;
+	//while( m_db. nextRow() )
+	//{
+	//	strcpy( szStk, m_db.Get(1) );
 
-		CUtil::TrimAll( szStk, strlen(szStk) );
-		
-		if( strlen(szStk)==0 )
-			break;
-		
-		CString sStk = szStk;
-		if(szStk[0]=='1')
-			m_sStkList_KSF.push_back(sStk);
-		else
-			m_sStkList_KSO.push_back(sStk);
-	}
-	m_db.Close();
+	//	CUtil::TrimAll( szStk, strlen(szStk) );
+	//	
+	//	if( strlen(szStk)==0 )
+	//		break;
+	//	
+	//	CString sStk = szStk;
+	//	if(szStk[0]=='1')
+	//		m_sStkList_KSF.push_back(sStk);
+	//	else
+	//		m_sStkList_KSO.push_back(sStk);
+	//}
+	//m_db.Close();
 	
 	return TRUE;
 }
@@ -305,8 +309,9 @@ VOID CDlg_FC0::SockClose()
 	char msg[128];
 	sprintf(msg, "[FRONT_F_CLEAR:%d]\n", m_lstData.size());
 
-	SAFE_DELETE(m_sockFront);
-	SAFE_DELETE(m_sockLosscut);
+	//TODO
+	//SAFE_DELETE(m_sockFront);
+	//SAFE_DELETE(m_sockLosscut);
 }
 
 /*********************************
@@ -316,34 +321,34 @@ BOOL CDlg_FC0::SockInit()
 {
 	//SockClose(i_nTarget);
 	char szTemp[512] = {0,};
+	//TODO
+	//CUtil::GetCnfgFile( "common", "IP", "PUBLIC_IP", m_szLocalIP );
+	//CUtil::GetCnfgFile( "common", "D_REAL_X.exe", "UDPPORT_KSF", szTemp);
+	//m_nUdpPortReal = atoi(szTemp);
 
-	CUtil::GetCnfgFile( "common", "IP", "PUBLIC_IP", m_szLocalIP );
-	CUtil::GetCnfgFile( "common", "D_REAL_X.exe", "UDPPORT_KSF", szTemp);
-	m_nUdpPortReal = atoi(szTemp);
+	//CUtil::GetCnfgFile( "common", "D_LC_X.exe", "UDPPORT_KSF", szTemp);
+	//m_nUdpPortLC = atoi(szTemp);
+ //
+	/////////////////////////////////////////////////////////////////////////////
+	////	UDP SOCKET 생성
+	//if(!m_sockFront)	m_sockFront = new CUdpSend;
+	//if( !m_sockFront->Init_Sock(m_szLocalIP, m_nUdpPortReal) )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE,"UDP SOCKET INIT ERROR");
+	//	return FALSE;
+	//}
+	//	
+	//CUtil::LogEx('I', &m_logF, NULL, FALSE, "[REAL UDP SOCKET INIT OK](%s)(%d)", m_szLocalIP, m_nUdpPortReal);
+	//
+	////lable:LOSSCUT_SISE
+	//if(!m_sockLosscut)	m_sockLosscut = new CUdpSend;
+	//if( !m_sockLosscut->Init_Sock(m_szLocalIP, m_nUdpPortLC) )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE,"UDP SOCKET INIT ERROR");
+	//	return FALSE;
+	//}
 
-	CUtil::GetCnfgFile( "common", "D_LC_X.exe", "UDPPORT_KSF", szTemp);
-	m_nUdpPortLC = atoi(szTemp);
- 
-	///////////////////////////////////////////////////////////////////////////
-	//	UDP SOCKET 생성
-	if(!m_sockFront)	m_sockFront = new CUdpSend;
-	if( !m_sockFront->Init_Sock(m_szLocalIP, m_nUdpPortReal) )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE,"UDP SOCKET INIT ERROR");
-		return FALSE;
-	}
-		
-	CUtil::LogEx('I', &m_logF, NULL, FALSE, "[REAL UDP SOCKET INIT OK](%s)(%d)", m_szLocalIP, m_nUdpPortReal);
-	
-	//lable:LOSSCUT_SISE
-	if(!m_sockLosscut)	m_sockLosscut = new CUdpSend;
-	if( !m_sockLosscut->Init_Sock(m_szLocalIP, m_nUdpPortLC) )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE,"UDP SOCKET INIT ERROR");
-		return FALSE;
-	}
-
-	CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "[LOSSCUT UDP SOCKET INIT OK](%s)(%d)", m_szLocalIP, m_nUdpPortLC);
+	//CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "[LOSSCUT UDP SOCKET INIT OK](%s)(%d)", m_szLocalIP, m_nUdpPortLC);
 
 	return TRUE;
 }
@@ -368,10 +373,10 @@ void CDlg_FC0::OnDestroy()
 	SockClose();
 	DeleteCriticalSection(&m_cs);
 	DeleteCriticalSection(&m_csSise);
-
-	m_db.Free();
-	
-	m_shm.Close();
+	//TODO
+	//m_db.Free();
+	//
+	//m_shm.Close();
 
 	// skeo 2011-01-17 [[
 	if(WaitForSingleObject(m_hThdDummySise, 1000) != WAIT_OBJECT_0)
@@ -533,14 +538,14 @@ void CDlg_FC0::AdviseData(char i_cSiseYN, CString sStk, char* i_psGDS_CODE)
 				/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
 				nSize = sizeof( FC0_InBlock );
 			}
-			else
-			{
-				strcpy( szTrCode, ETK_REAL_SISE_F_CME);
-				/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
-				nSize = sizeof( NC0_InBlock );
-				strcpy( Exch, "CME");
+			//else
+			//{
+			//	strcpy( szTrCode, ETK_REAL_SISE_F_CME);
+			//	/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
+			//	nSize = sizeof( NC0_InBlock );
+			//	strcpy( Exch, "CME");
 
-			}
+			//}
 		}
 		else
 		{
@@ -560,13 +565,13 @@ void CDlg_FC0::AdviseData(char i_cSiseYN, CString sStk, char* i_psGDS_CODE)
 				/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
 				nSize = sizeof( FH0_InBlock );
 			}
-			else
-			{
-				strcpy( szTrCode, ETK_REAL_HOGA_F_CME);
-				/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
-				nSize = sizeof( NH0_InBlock );
-				strcpy( Exch, "CME");
-			}
+			//else
+			//{
+			//	strcpy( szTrCode, ETK_REAL_HOGA_F_CME);
+			//	/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
+			//	nSize = sizeof( NH0_InBlock );
+			//	strcpy( Exch, "CME");
+			//}
 		}
 		else
 		{
@@ -621,12 +626,12 @@ void CDlg_FC0::UnadviseData(char i_cSiseYN, CString sStk, char* i_psGDS_CODE)
 				/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
 				nSize = sizeof( FC0_InBlock );
 			}
-			else{
-				strcpy( szTrCode, ETK_REAL_SISE_F_CME);
-				/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
-				nSize = sizeof( NC0_InBlock );
-				strcpy( Exch, "CME");
-			}
+			//else{
+			//	strcpy( szTrCode, ETK_REAL_SISE_F_CME);
+			//	/*GetDlgItemText( IDC_EDIT_CODE, strCode );*/
+			//	nSize = sizeof( NC0_InBlock );
+			//	strcpy( Exch, "CME");
+			//}
 		}
 		else
 		{
@@ -645,13 +650,13 @@ void CDlg_FC0::UnadviseData(char i_cSiseYN, CString sStk, char* i_psGDS_CODE)
 				/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
 				nSize = sizeof( FH0_InBlock );
 			}
-			else
-			{
-				strcpy( szTrCode, ETK_REAL_HOGA_F_CME);
-				/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
-				nSize = sizeof( NH0_InBlock );
-				strcpy( Exch, "CME");
-			}
+			//else
+			//{
+			//	strcpy( szTrCode, ETK_REAL_HOGA_F_CME);
+			//	/*GetDlgItemText( IDC_EDIT_CODE_H, strCode );*/
+			//	nSize = sizeof( NH0_InBlock );
+			//	strcpy( Exch, "CME");
+			//}
 		}
 		else
 		{
@@ -683,7 +688,7 @@ void CDlg_FC0::UnadviseData(char i_cSiseYN, CString sStk, char* i_psGDS_CODE)
 		if(i_cSiseYN=='Y')	sprintf(msg,  "[%s](%s)시세 중지 요청 성공", Exch, (LPCSTR)sStk );
 		if(i_cSiseYN=='N')	sprintf(msg,  "[%s](%s)호가 중지 요청 성공", Exch, (LPCSTR)sStk );
 	}
-	CUtil::LogEx('I', &m_logF, NULL, FALSE, msg );
+	//CUtil::LogEx('I', &m_logF, NULL, FALSE, msg );
 	m_lstMsg.InsertString(0, msg);
 }
 
@@ -936,9 +941,9 @@ LRESULT CDlg_FC0::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 		{
 			SYSTEMTIME st; GetLocalTime(&st);
 			char szTime[32]; sprintf(szTime, "%02d:%02d", st.wHour, st.wMinute);
-			if( strcmp(szTime, "10:00")>0 ){
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "현재가이상!!!(%f)", dErrSise );
-			}
+			//if( strcmp(szTime, "10:00")>0 ){
+			//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "현재가이상!!!(%f)", dErrSise );
+			//}
 			return 0L;
 		}
 	}
@@ -958,10 +963,10 @@ LRESULT CDlg_FC0::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 		{
 			SYSTEMTIME st; GetLocalTime(&st);
 			char szTime[32]; sprintf(szTime, "%02d:%02d", st.wHour, st.wMinute);
-			if( strcmp(szTime, "10:00")>0 ){
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세이상처리!!!(%.*s)"
-								, sizeof(FH0_OutBlock), pRealPacket->pszData );
-			}
+			//if( strcmp(szTime, "10:00")>0 ){
+			//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세이상처리!!!(%.*s)"
+			//					, sizeof(FH0_OutBlock), pRealPacket->pszData );
+			//}
 			return 0L;
 		}
 		//strcpy( szSendBuf_toFRONT, szSendBuf );
@@ -994,10 +999,10 @@ LRESULT CDlg_FC0::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 		{
 			SYSTEMTIME st; GetLocalTime(&st);
 			char szTime[32]; sprintf(szTime, "%02d:%02d", st.wHour, st.wMinute);
-			if( strcmp(szTime, "10:00")>0 ){
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세이상처리!!!(%.*s)"
-					, sizeof(FH0_OutBlock), pRealPacket->pszData );
-			}
+			//if( strcmp(szTime, "10:00")>0 ){
+			//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세이상처리!!!(%.*s)"
+			//		, sizeof(FH0_OutBlock), pRealPacket->pszData );
+			//}
 			return 0L;
 		}
 		//strcpy( szSendBuf_toFRONT, szSendBuf );
@@ -1044,24 +1049,24 @@ LRESULT CDlg_FC0::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 		int nRet;
 		if( bHoga ){
 			nLen = strlen(szSendBuf);
-			nRet = m_sockFront->Send_Data( szSendBuf,  nLen);
+			//TODO nRet = m_sockFront->Send_Data( szSendBuf,  nLen);
 		}
 		else
 		{
 			nLen = strlen(szSendBuf_toFRONT);
-			nRet = m_sockFront->Send_Data( szSendBuf_toFRONT,  nLen);
-			if( nRet<=0 )
-			{
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세전송이상!!!(%s)", szSendBuf_toFRONT );
-				//ASSERT(nRet>0);
-			}
+			//nRet = m_sockFront->Send_Data( szSendBuf_toFRONT,  nLen);
+			//if( nRet<=0 )
+			//{
+			//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세전송이상!!!(%s)", szSendBuf_toFRONT );
+			//	//ASSERT(nRet>0);
+			//}
 
-			nRet = m_sockLosscut->Send_Data( szSendBuf_toFRONT,  nLen);
-			if( nRet<=0 )
-			{
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "LOSSCUT현재가전송이상!!!(%s)", szSendBuf_toFRONT );
-				//ASSERT(nRet>0);
-			}
+			//nRet = m_sockLosscut->Send_Data( szSendBuf_toFRONT,  nLen);
+			//if( nRet<=0 )
+			//{
+			//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "LOSSCUT현재가전송이상!!!(%s)", szSendBuf_toFRONT );
+			//	//ASSERT(nRet>0);
+			//}
 		}
 	}
 
@@ -1097,213 +1102,213 @@ LRESULT CDlg_FC0::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 
 VOID CDlg_FC0::SaveSHM( char* pSise )
 {
-	REAL_SISE_KS* pSiseKS = (REAL_SISE_KS*)pSise;
-	REAL_HOGA_KS* pHogaKS = (REAL_HOGA_KS*)pSise;
-	
-	int		nRet			= 0;
-	char	szStkCode[MAX_GDS_CODE+MAX_STK_CODE+1] = {0,};
-	char	szMsgCode[5+1] = {0,};
+	//REAL_SISE_KS* pSiseKS = (REAL_SISE_KS*)pSise;
+	//REAL_HOGA_KS* pHogaKS = (REAL_HOGA_KS*)pSise;
+	//
+	//int		nRet			= 0;
+	//char	szStkCode[MAX_GDS_CODE+MAX_STK_CODE+1] = {0,};
+	//char	szMsgCode[5+1] = {0,};
 
-	memset( szStkCode, 0x20, MAX_GDS_CODE+MAX_STK_CODE );
-
-
-	// key value;
-	CopyMemory( szStkCode,				pSiseKS->stk_code, MAX_STK_CODE );	// STK_CODE
-	CopyMemory( szStkCode+MAX_STK_CODE,	pSiseKS->gds_code, MAX_GDS_CODE );	// GDS_CODE
-	
-	// msg code
-	CopyMemory( szMsgCode, pSiseKS->Header.Code, sizeof(pSiseKS->Header.Code) );
-
-	//////////////////////////////////////////////////////////////////////////
-	//	GROUP 이 없으면 GROUP INSERT
-	if ( m_shm.FindGroup( szStkCode ) == FALSE )
-	{
-		if ( !m_shm.InsertGroup( szStkCode ) )
-		{
-			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM InsertGroup error (%s)\n", szStkCode );
-			return;
-		}
-		
-		if ( (strcmp(szMsgCode, CODE_REAL_SISE_KS_S)==0) ) //시세인 경우만
-		{
-			if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
-			{
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE InsertData error-1 (%s)\n", szStkCode );
-				return;
-			}
-		}
-		else
-		{
-			// 호가지만 시세패킷으로 업데이트
-			REAL_SISE_KS stSiseKS;
-			memset( &stSiseKS, 0x20, sizeof(REAL_SISE_KS) );
-			CopyMemory( &(stSiseKS.stk_code), szStkCode, MAX_GDS_CODE+MAX_STK_CODE );
-			
-			if ( !m_shm.InsertData( szStkCode, (char*)&(stSiseKS.stk_code) ) )
-			{
-				CUtil::LogEx('E', &m_logF, NULL, FALSE, "SHM SISE(HOGA) InsertData error (%s)\n", szStkCode );
-				return;
-			}
-		}
-		return;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// 호가 저장
-	if ( (strcmp(szMsgCode, CODE_REAL_HOGA_KS_S)==0) ) // ||	(strcmp(szMsgCode, "82103")==0) || (strcmp(szMsgCode, "83103")==0) )
-	{
-		if ( m_shm.FindData( szStkCode, szStkCode ) != TRUE )
-		{
-			CUtil::LogEx('E', &m_logF, NULL, FALSE, "SHM에 호가 종목이 없음-2(%s)", szStkCode);
-			return;
-		}
-		// SharedMemory is Sise Structure
-		int nSellStartPos =
-			sizeof(pSiseKS->stk_code) +
-			sizeof(pSiseKS->gds_code) +
-			sizeof(pSiseKS->tm) +
-			sizeof(pSiseKS->now_prc) +
-			sizeof(pSiseKS->open) +
-			sizeof(pSiseKS->high) +
-			sizeof(pSiseKS->low) +
-			sizeof(pSiseKS->acml_cntr_qty) +
-			sizeof(pSiseKS->acml_buy_cntr_qty) +
-			sizeof(pSiseKS->acml_amt) +
-			sizeof(pSiseKS->daebi_sign) +
-			sizeof(pSiseKS->chg) +
-			sizeof(pSiseKS->chg_rate) +
-			sizeof(pSiseKS->cntr_qty);
-		int nLen =
-			sizeof(pSiseKS->o_hoga_1) +
-			sizeof(pSiseKS->o_hoga_2) +
-			sizeof(pSiseKS->o_hoga_3) +
-			sizeof(pSiseKS->o_hoga_4) +
-			sizeof(pSiseKS->o_hoga_5) +
-			sizeof(pSiseKS->o_rmnq_1) +
-			sizeof(pSiseKS->o_rmnq_2) +
-			sizeof(pSiseKS->o_rmnq_3) +
-			sizeof(pSiseKS->o_rmnq_4) +
-			sizeof(pSiseKS->o_rmnq_5) +
-			sizeof(pSiseKS->b_trmnq) +
-			sizeof(pSiseKS->o_cnt_1) +
-			sizeof(pSiseKS->o_cnt_2) +
-			sizeof(pSiseKS->o_cnt_3) +
-			sizeof(pSiseKS->o_cnt_4) +
-			sizeof(pSiseKS->o_cnt_5) +
-			sizeof(pSiseKS->o_tot_cnt);
-		int nBuyStartPos =
-			nSellStartPos + nLen +
-			sizeof(pSiseKS->o_hoga_cnt_chg_1) +
-			sizeof(pSiseKS->o_hoga_cnt_chg_2) +
-			sizeof(pSiseKS->o_hoga_cnt_chg_3) +
-			sizeof(pSiseKS->o_hoga_cnt_chg_4) +
-			sizeof(pSiseKS->o_hoga_cnt_chg_5);
-		int nTimeStartPos = sizeof(pSiseKS->stk_code) + sizeof(pSiseKS->gds_code);
-
-		//m_shm.Lock();		// LOCK
-		if ( !m_shm.UpdateData( szStkCode, szStkCode, nSellStartPos, nLen, (char*)pHogaKS->o_hoga_1 ) )
-			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData-1 error (%s)\n", szStkCode );
-
-		if ( !m_shm.UpdateData( szStkCode, szStkCode, nBuyStartPos, nLen-1, (char*)pHogaKS->b_hoga_1 ) )
-			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData-2 error (%s)\n", szStkCode );
-
-		if ( !m_shm.UpdateData( szStkCode, szStkCode, nTimeStartPos, sizeof(pHogaKS->tm), (char*)pHogaKS->tm ) )
-			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData error-3 (%s)\n", szStkCode );
-
-		//m_shm.Unlock();	// UNLOCK
-	
-	}	//	if ( (strcmp(szMsgCode, CODE_REAL_HOGA_KS_S)==0) ) 호가
+	//memset( szStkCode, 0x20, MAX_GDS_CODE+MAX_STK_CODE );
 
 
-	//////////////////////////////////////////////////////////////////////////
-	// 시세
-	if ( (strcmp(szMsgCode, CODE_REAL_SISE_KS_S)==0) )
-	{
-		//m_shm.Lock();		// LOCK
-		if ( !m_shm.FindData( szStkCode, szStkCode ) )
-		{
-			if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE InsertData error (%s)\n", szStkCode );
-			
-			return;
-		}
+	//// key value;
+	//CopyMemory( szStkCode,				pSiseKS->stk_code, MAX_STK_CODE );	// STK_CODE
+	//CopyMemory( szStkCode+MAX_STK_CODE,	pSiseKS->gds_code, MAX_GDS_CODE );	// GDS_CODE
+	//
+	//// msg code
+	//CopyMemory( szMsgCode, pSiseKS->Header.Code, sizeof(pSiseKS->Header.Code) );
 
-		int nDataCnt = m_shm.GetCurrStructCnt( szStkCode );
-		if ( nDataCnt == 0 )
-		{
-			if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
-			{
-				CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세를 SHM INSERT ERROR (%s)\n", szStkCode );
-				return;
-			}
-		}
-		else
-		{
-			//int nDataCnt = m_shm.GetCurrStructCnt( szStkCode );
-			//if ( nDataCnt == 0 )
-			//{
-			//	if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
-			//		CUtil::LogEx(&m_logF,&g_logEvent, FALSE, "SHM SISE InsertData error (%s)\n", szStkCode );
-			//}
-			//else
-			//{
-				//	시세 시작점
-				int nSiseStartPos = sizeof(pSiseKS->stk_code) + sizeof(pSiseKS->gds_code) + sizeof(pSiseKS->tm);
-				int nSiseLen =	sizeof(pSiseKS->now_prc) +
-								sizeof(pSiseKS->open) +
-								sizeof(pSiseKS->high) +
-								sizeof(pSiseKS->low) +
-								sizeof(pSiseKS->acml_cntr_qty) +
-								sizeof(pSiseKS->acml_buy_cntr_qty) +
-								sizeof(pSiseKS->acml_amt) +
-								sizeof(pSiseKS->daebi_sign) +
-								sizeof(pSiseKS->chg) +
-								sizeof(pSiseKS->chg_rate) +
-								sizeof(pSiseKS->cntr_qty)+1;
-				//	시고저종,체결량 등 저장
-				if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, nSiseLen, pSiseKS->now_prc ) )
-					CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE UpdateData error (%s)\n", szStkCode );
-				else
-				{
-					char msg[512];
-					sprintf(msg, "SISE UPD[prc:%.*s][QTY:%.*s]\n", 
-								sizeof(pSiseKS->now_prc), pSiseKS->now_prc, 
-								sizeof(pSiseKS->cntr_qty), pSiseKS->cntr_qty);
-					OutputDebugString(msg);
-				}
+	////////////////////////////////////////////////////////////////////////////
+	////	GROUP 이 없으면 GROUP INSERT
+	////if ( m_shm.FindGroup( szStkCode ) == FALSE )
+	////{
+	////	if ( !m_shm.InsertGroup( szStkCode ) )
+	////	{
+	////		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM InsertGroup error (%s)\n", szStkCode );
+	////		return;
+	////	}
+	////	
+	////	if ( (strcmp(szMsgCode, CODE_REAL_SISE_KS_S)==0) ) //시세인 경우만
+	////	{
+	////		if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
+	////		{
+	////			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE InsertData error-1 (%s)\n", szStkCode );
+	////			return;
+	////		}
+	////	}
+	////	else
+	////	{
+	////		// 호가지만 시세패킷으로 업데이트
+	////		REAL_SISE_KS stSiseKS;
+	////		memset( &stSiseKS, 0x20, sizeof(REAL_SISE_KS) );
+	////		CopyMemory( &(stSiseKS.stk_code), szStkCode, MAX_GDS_CODE+MAX_STK_CODE );
+	////		
+	////		if ( !m_shm.InsertData( szStkCode, (char*)&(stSiseKS.stk_code) ) )
+	////		{
+	////			CUtil::LogEx('E', &m_logF, NULL, FALSE, "SHM SISE(HOGA) InsertData error (%s)\n", szStkCode );
+	////			return;
+	////		}
+	////	}
+	////	return;
+	////}
 
-				//	KS200 저장
-				int nHogaLen =	(sizeof(pSiseKS->o_hoga_1)	* 5)	+ 
-								(sizeof(pSiseKS->o_rmnq_1)	* 6)	+	//	o_trmnq 포함
-								(sizeof(pSiseKS->o_cnt_1)	* 5)	+
-								(sizeof(pSiseKS->o_tot_cnt)	)		+
-								(sizeof(pSiseKS->o_hoga_cnt_chg_1)) * 5;
-				
-				nHogaLen *=2;	//	매도매수 고려
-				
-				nSiseStartPos = nSiseStartPos + nSiseLen + nHogaLen;
+	////////////////////////////////////////////////////////////////////////////
+	//// 호가 저장
+	//if ( (strcmp(szMsgCode, CODE_REAL_HOGA_KS_S)==0) ) // ||	(strcmp(szMsgCode, "82103")==0) || (strcmp(szMsgCode, "83103")==0) )
+	//{
+	//	//if ( m_shm.FindData( szStkCode, szStkCode ) != TRUE )
+	//	//{
+	//	//	CUtil::LogEx('E', &m_logF, NULL, FALSE, "SHM에 호가 종목이 없음-2(%s)", szStkCode);
+	//	//	return;
+	//	//}
+	//	// SharedMemory is Sise Structure
+	//	int nSellStartPos =
+	//		sizeof(pSiseKS->stk_code) +
+	//		sizeof(pSiseKS->gds_code) +
+	//		sizeof(pSiseKS->tm) +
+	//		sizeof(pSiseKS->now_prc) +
+	//		sizeof(pSiseKS->open) +
+	//		sizeof(pSiseKS->high) +
+	//		sizeof(pSiseKS->low) +
+	//		sizeof(pSiseKS->acml_cntr_qty) +
+	//		sizeof(pSiseKS->acml_buy_cntr_qty) +
+	//		sizeof(pSiseKS->acml_amt) +
+	//		sizeof(pSiseKS->daebi_sign) +
+	//		sizeof(pSiseKS->chg) +
+	//		sizeof(pSiseKS->chg_rate) +
+	//		sizeof(pSiseKS->cntr_qty);
+	//	int nLen =
+	//		sizeof(pSiseKS->o_hoga_1) +
+	//		sizeof(pSiseKS->o_hoga_2) +
+	//		sizeof(pSiseKS->o_hoga_3) +
+	//		sizeof(pSiseKS->o_hoga_4) +
+	//		sizeof(pSiseKS->o_hoga_5) +
+	//		sizeof(pSiseKS->o_rmnq_1) +
+	//		sizeof(pSiseKS->o_rmnq_2) +
+	//		sizeof(pSiseKS->o_rmnq_3) +
+	//		sizeof(pSiseKS->o_rmnq_4) +
+	//		sizeof(pSiseKS->o_rmnq_5) +
+	//		sizeof(pSiseKS->b_trmnq) +
+	//		sizeof(pSiseKS->o_cnt_1) +
+	//		sizeof(pSiseKS->o_cnt_2) +
+	//		sizeof(pSiseKS->o_cnt_3) +
+	//		sizeof(pSiseKS->o_cnt_4) +
+	//		sizeof(pSiseKS->o_cnt_5) +
+	//		sizeof(pSiseKS->o_tot_cnt);
+	//	int nBuyStartPos =
+	//		nSellStartPos + nLen +
+	//		sizeof(pSiseKS->o_hoga_cnt_chg_1) +
+	//		sizeof(pSiseKS->o_hoga_cnt_chg_2) +
+	//		sizeof(pSiseKS->o_hoga_cnt_chg_3) +
+	//		sizeof(pSiseKS->o_hoga_cnt_chg_4) +
+	//		sizeof(pSiseKS->o_hoga_cnt_chg_5);
+	//	int nTimeStartPos = sizeof(pSiseKS->stk_code) + sizeof(pSiseKS->gds_code);
 
-				nSiseLen =	sizeof(pSiseKS->ks200) +
-							sizeof(pSiseKS->hoga_trmnq_chg) +
-							sizeof(pSiseKS->qty_chg) +
-							sizeof(pSiseKS->amt_chg) +
-							sizeof(pSiseKS->theory_prc) +
-							sizeof(pSiseKS->open_yak) +
-							sizeof(pSiseKS->open_yak_chg) +
-							sizeof(pSiseKS->gyuri_rate) +
-							sizeof(pSiseKS->basis) ;
-							
-				//char* p = pSise + nSiseStartPos;
+	//	//m_shm.Lock();		// LOCK
+	//	//if ( !m_shm.UpdateData( szStkCode, szStkCode, nSellStartPos, nLen, (char*)pHogaKS->o_hoga_1 ) )
+	//	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData-1 error (%s)\n", szStkCode );
 
-				//if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, sizeof(pSiseKS->ks200), pSiseKS->ks200 ) )4
-				if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, nSiseLen, pSiseKS->ks200 ) )
-					CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM KS200 UpdateData error (%s)\n", szStkCode );
+	//	//if ( !m_shm.UpdateData( szStkCode, szStkCode, nBuyStartPos, nLen-1, (char*)pHogaKS->b_hoga_1 ) )
+	//	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData-2 error (%s)\n", szStkCode );
 
-				//else
-				//	CUtil::LogEx(&m_logF, FALSE, "[SHM SISE](%s)", pSiseKS->now_prc );
-			//}
-		}
-	}
+	//	//if ( !m_shm.UpdateData( szStkCode, szStkCode, nTimeStartPos, sizeof(pHogaKS->tm), (char*)pHogaKS->tm ) )
+	//	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM HOGA UpdateData error-3 (%s)\n", szStkCode );
+
+	//	//m_shm.Unlock();	// UNLOCK
+	//
+	//}	//	if ( (strcmp(szMsgCode, CODE_REAL_HOGA_KS_S)==0) ) 호가
+
+
+	////////////////////////////////////////////////////////////////////////////
+	//// 시세
+	//if ( (strcmp(szMsgCode, CODE_REAL_SISE_KS_S)==0) )
+	//{
+	//	//m_shm.Lock();		// LOCK
+	//	//if ( !m_shm.FindData( szStkCode, szStkCode ) )
+	//	//{
+	//	//	if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
+	//	//		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE InsertData error (%s)\n", szStkCode );
+	//	//	
+	//	//	return;
+	//	//}
+
+	//	//int nDataCnt = m_shm.GetCurrStructCnt( szStkCode );
+	//	//if ( nDataCnt == 0 )
+	//	//{
+	//	//	if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
+	//	//	{
+	//	//		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "시세를 SHM INSERT ERROR (%s)\n", szStkCode );
+	//	//		return;
+	//	//	}
+	//	//}
+	//	//else
+	//	//{
+	//	//	//int nDataCnt = m_shm.GetCurrStructCnt( szStkCode );
+	//	//	//if ( nDataCnt == 0 )
+	//	//	//{
+	//	//	//	if ( !m_shm.InsertData( szStkCode, (char*)pSiseKS->stk_code ) )
+	//	//	//		CUtil::LogEx(&m_logF,&g_logEvent, FALSE, "SHM SISE InsertData error (%s)\n", szStkCode );
+	//	//	//}
+	//	//	//else
+	//	//	//{
+	//	//		//	시세 시작점
+	//	//		int nSiseStartPos = sizeof(pSiseKS->stk_code) + sizeof(pSiseKS->gds_code) + sizeof(pSiseKS->tm);
+	//	//		int nSiseLen =	sizeof(pSiseKS->now_prc) +
+	//	//						sizeof(pSiseKS->open) +
+	//	//						sizeof(pSiseKS->high) +
+	//	//						sizeof(pSiseKS->low) +
+	//	//						sizeof(pSiseKS->acml_cntr_qty) +
+	//	//						sizeof(pSiseKS->acml_buy_cntr_qty) +
+	//	//						sizeof(pSiseKS->acml_amt) +
+	//	//						sizeof(pSiseKS->daebi_sign) +
+	//	//						sizeof(pSiseKS->chg) +
+	//	//						sizeof(pSiseKS->chg_rate) +
+	//	//						sizeof(pSiseKS->cntr_qty)+1;
+	//	//		//	시고저종,체결량 등 저장
+	//	//		if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, nSiseLen, pSiseKS->now_prc ) )
+	//	//			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM SISE UpdateData error (%s)\n", szStkCode );
+	//	//		else
+	//	//		{
+	//	//			char msg[512];
+	//	//			sprintf(msg, "SISE UPD[prc:%.*s][QTY:%.*s]\n", 
+	//	//						sizeof(pSiseKS->now_prc), pSiseKS->now_prc, 
+	//	//						sizeof(pSiseKS->cntr_qty), pSiseKS->cntr_qty);
+	//	//			OutputDebugString(msg);
+	//	//		}
+
+	//	//		//	KS200 저장
+	//	//		int nHogaLen =	(sizeof(pSiseKS->o_hoga_1)	* 5)	+ 
+	//	//						(sizeof(pSiseKS->o_rmnq_1)	* 6)	+	//	o_trmnq 포함
+	//	//						(sizeof(pSiseKS->o_cnt_1)	* 5)	+
+	//	//						(sizeof(pSiseKS->o_tot_cnt)	)		+
+	//	//						(sizeof(pSiseKS->o_hoga_cnt_chg_1)) * 5;
+	//	//		
+	//	//		nHogaLen *=2;	//	매도매수 고려
+	//	//		
+	//	//		nSiseStartPos = nSiseStartPos + nSiseLen + nHogaLen;
+
+	//	//		nSiseLen =	sizeof(pSiseKS->ks200) +
+	//	//					sizeof(pSiseKS->hoga_trmnq_chg) +
+	//	//					sizeof(pSiseKS->qty_chg) +
+	//	//					sizeof(pSiseKS->amt_chg) +
+	//	//					sizeof(pSiseKS->theory_prc) +
+	//	//					sizeof(pSiseKS->open_yak) +
+	//	//					sizeof(pSiseKS->open_yak_chg) +
+	//	//					sizeof(pSiseKS->gyuri_rate) +
+	//	//					sizeof(pSiseKS->basis) ;
+	//	//					
+	//	//		//char* p = pSise + nSiseStartPos;
+
+	//	//		//if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, sizeof(pSiseKS->ks200), pSiseKS->ks200 ) )4
+	//	//		if ( !m_shm.UpdateData( szStkCode, szStkCode, nSiseStartPos, nSiseLen, pSiseKS->ks200 ) )
+	//	//			CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "SHM KS200 UpdateData error (%s)\n", szStkCode );
+
+	//			//else
+	//			//	CUtil::LogEx(&m_logF, FALSE, "[SHM SISE](%s)", pSiseKS->now_prc );
+	//		//}
+	//	}
+	//}
 		//m_shm.Unlock();	// UNLOCK
 }
 
@@ -1641,9 +1646,9 @@ DWORD WINAPI CDlg_FC0::ProcDummySiseTest(LPVOID lp)
 // 				}
 //			}
 
-			pT->m_sockFront->Send_Data(szSendBuf_toFRONT, strlen(szSendBuf_toFRONT) );
-			//lable:LOSSCUT_SISE
-			pT->m_sockLosscut->Send_Data(szSendBuf_toFRONT, strlen(szSendBuf_toFRONT) );
+			//pT->m_sockFront->Send_Data(szSendBuf_toFRONT, strlen(szSendBuf_toFRONT) );
+			////lable:LOSSCUT_SISE
+			//pT->m_sockLosscut->Send_Data(szSendBuf_toFRONT, strlen(szSendBuf_toFRONT) );
 		}
 		
 		//	SHM 에게 전송
@@ -1719,67 +1724,67 @@ BOOL CDlg_FC0::Relay_Begin()
 {
 	/////////////////////////////////////////////////////////////
 	//	SOCKET INIT
-	m_sockListen = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	if(m_sockListen == INVALID_SOCKET)
-	{
-		shutdown(m_sockListen,SD_SEND);
-		closesocket(m_sockListen);
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay ACCEPT SOCKET CRETAE Error.ErrCode:%d", GetLastError() );
-		return FALSE;
-	}
-	
-	INT nTcpPort;
-	char szTemp[128];
-	CUtil::GetCnfgFile("api_if", "ETK_KS", "LISTEN_PORT", szTemp);
-	nTcpPort = atoi(szTemp);
+	//m_sockListen = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	//if(m_sockListen == INVALID_SOCKET)
+	//{
+	//	shutdown(m_sockListen,SD_SEND);
+	//	closesocket(m_sockListen);
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay ACCEPT SOCKET CRETAE Error.ErrCode:%d", GetLastError() );
+	//	return FALSE;
+	//}
+	//
+	//INT nTcpPort;
+	//char szTemp[128];
+	//CUtil::GetCnfgFile("api_if", "ETK_KS", "LISTEN_PORT", szTemp);
+	//nTcpPort = atoi(szTemp);
 
-	////	local address
-	m_localsin.sin_family      = AF_INET;
-    m_localsin.sin_port        = htons(nTcpPort);
-    m_localsin.sin_addr.s_addr = inet_addr(m_szLocalIP);
-	
-	BOOL opt = TRUE;
-	int optlen = sizeof(opt);
-	//	setsockopt(m_sockListen,SOL_SOCKET,SO_REUSEADDR,(const char far *)&opt,optlen);
-	
-	if (::bind(m_sockListen, (LPSOCKADDR) &m_localsin, sizeof(m_localsin)) == SOCKET_ERROR)
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay bind Error.ErrCode:%d", GetLastError() );
-		return FALSE;
-	}
-	CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "relay BIND OK : %s , %d", m_szLocalIP, nTcpPort);
-	
-	if(listen(m_sockListen, SOMAXCONN) == SOCKET_ERROR)
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay listen Error.ErrCode:%d", GetLastError() );
-		return FALSE;
-	}
-	
-	m_wsaAccept = WSACreateEvent();
-	if(WSAEventSelect(m_sockListen, m_wsaAccept, FD_ACCEPT))
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay listen socket WSAEventSelect Error.ErrCode:%d", GetLastError() );
-		return FALSE;
-	}
+	//////	local address
+	//m_localsin.sin_family      = AF_INET;
+ //   m_localsin.sin_port        = htons(nTcpPort);
+ //   m_localsin.sin_addr.s_addr = inet_addr(m_szLocalIP);
+	//
+	//BOOL opt = TRUE;
+	//int optlen = sizeof(opt);
+	////	setsockopt(m_sockListen,SOL_SOCKET,SO_REUSEADDR,(const char far *)&opt,optlen);
+	//
+	//if (::bind(m_sockListen, (LPSOCKADDR) &m_localsin, sizeof(m_localsin)) == SOCKET_ERROR)
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay bind Error.ErrCode:%d", GetLastError() );
+	//	return FALSE;
+	//}
+	//CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "relay BIND OK : %s , %d", m_szLocalIP, nTcpPort);
+	//
+	//if(listen(m_sockListen, SOMAXCONN) == SOCKET_ERROR)
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay listen Error.ErrCode:%d", GetLastError() );
+	//	return FALSE;
+	//}
+	//
+	//m_wsaAccept = WSACreateEvent();
+	//if(WSAEventSelect(m_sockListen, m_wsaAccept, FD_ACCEPT))
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "relay listen socket WSAEventSelect Error.ErrCode:%d", GetLastError() );
+	//	return FALSE;
+	//}
 
-	//	OVERLAPPED 를 위한 event
-	m_wsaSend = WSACreateEvent();	
+	////	OVERLAPPED 를 위한 event
+	//m_wsaSend = WSACreateEvent();	
 
-	InitializeCriticalSection(&m_csRelaySock);
-	InitializeCriticalSection(&m_csRelayData);
+	//InitializeCriticalSection(&m_csRelaySock);
+	//InitializeCriticalSection(&m_csRelayData);
 
-	// CREATE THREAD
-	if( (m_hRelayThread = CreateThread(NULL,0,Relay_SendDThread,this,0,&m_dwRelayThread)) == NULL )
-	//if( (m_hRelayThread = CreateThread(NULL,0,Relay_SendDThread,this,CREATE_SUSPENDED,&m_dwRelayThread)) == NULL )
-	{
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "RELAY THREAD 생성 실패.ErrCode:%d", GetLastError() );
-		return FALSE;
-	}	
+	//// CREATE THREAD
+	//if( (m_hRelayThread = CreateThread(NULL,0,Relay_SendDThread,this,0,&m_dwRelayThread)) == NULL )
+	////if( (m_hRelayThread = CreateThread(NULL,0,Relay_SendDThread,this,CREATE_SUSPENDED,&m_dwRelayThread)) == NULL )
+	//{
+	//	CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "RELAY THREAD 생성 실패.ErrCode:%d", GetLastError() );
+	//	return FALSE;
+	//}	
 
 
-	m_bRelayContinue = TRUE;
-	
-	CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "TCP RELAY 초기화 성공" );
+	//m_bRelayContinue = TRUE;
+	//
+	//CUtil::LogEx( 'I', &m_logF, NULL, FALSE, "TCP RELAY 초기화 성공" );
 
 	return TRUE;
 }
@@ -1792,10 +1797,10 @@ VOID CDlg_FC0::Relay_End()
 	if( WaitForSingleObject(m_hRelayThread, 3000) != WAIT_OBJECT_0 )
 		TerminateThread(m_hRelayThread,0);
 	
-	SAFE_CLOSEHANDLE(m_hRelayThread);
-	SAFE_CLOSEHANDLE(m_wsaAccept);
-	SAFE_CLOSEHANDLE(m_wsaSend);
-	SAFE_CLOSESOCKET(m_sockListen);
+	//SAFE_CLOSEHANDLE(m_hRelayThread);
+	//SAFE_CLOSEHANDLE(m_wsaAccept);
+	//SAFE_CLOSEHANDLE(m_wsaSend);
+	//SAFE_CLOSESOCKET(m_sockListen);
 
 	DeleteCriticalSection(&m_csRelaySock);
 	DeleteCriticalSection(&m_csRelayData);
@@ -1813,67 +1818,67 @@ DWORD WINAPI  CDlg_FC0::Relay_SendDThread(LPVOID lp)
 //	int		nLen;
 	SOCKADDR_IN			sinClient;
 	int	sinSize = sizeof(sinClient);
-	while(p->m_bRelayContinue)
-	{
-		DWORD dw = WSAWaitForMultipleEvents(1, &p->m_wsaAccept, TRUE, 1, FALSE);
-		if( dw== WSA_WAIT_EVENT_0)
-		{
-			WSAResetEvent(p->m_wsaAccept);
-			
-			SOCKET client = accept(p->m_sockListen, (LPSOCKADDR)&sinClient, &sinSize);
-			if( client == INVALID_SOCKET)
-			{
-				CUtil::LogEx( 'E', &p->m_logF, NULL, FALSE, "RELAY accept error(%d)", WSAGetLastError());
-			}
-			else
-			{
-				
-				//	client public ip 추출
-				SOCKADDR_IN peer_addr;
-				int			peer_addr_len = sizeof(peer_addr);
+	//while(p->m_bRelayContinue)
+	//{
+	//	DWORD dw = WSAWaitForMultipleEvents(1, &p->m_wsaAccept, TRUE, 1, FALSE);
+	//	if( dw== WSA_WAIT_EVENT_0)
+	//	{
+	//		WSAResetEvent(p->m_wsaAccept);
+	//		
+	//		SOCKET client = accept(p->m_sockListen, (LPSOCKADDR)&sinClient, &sinSize);
+	//		if( client == INVALID_SOCKET)
+	//		{
+	//			CUtil::LogEx( 'E', &p->m_logF, NULL, FALSE, "RELAY accept error(%d)", WSAGetLastError());
+	//		}
+	//		else
+	//		{
+	//			
+	//			//	client public ip 추출
+	//			SOCKADDR_IN peer_addr;
+	//			int			peer_addr_len = sizeof(peer_addr);
 
-				if (getpeername( client, (sockaddr*)&peer_addr, &peer_addr_len) == 0 )
-				{
-					char* pIP	= inet_ntoa(peer_addr.sin_addr);
-					CUtil::LogEx( 'I', &p->m_logF, NULL, FALSE, "accept[%s]", pIP);
-				}
-				EnterCriticalSection(&p->m_csRelaySock);
-				p->m_setRelaySock.insert(client);
-				LeaveCriticalSection(&p->m_csRelaySock);
-				
-			}
-		}
-		
-		/*
-		while( PeekMessage(&msg, NULL, 0,0, PM_REMOVE) )
-		{
-			switch(msg.message)
-			{
-			case WM_SISE_DATA:
-				
-				nLen  = (int) msg.wParam;
-				pData = (char*) msg.lParam;
-				//sprintf(szData, "%.*s", nLen, pData );
-				sprintf(szData, "%.10s", pData );
-				delete[] pData;
-				//p->m_lstMsg.InsertString(0, szData);
-				//CUtil::LogEx( 'I', &p->m_logF, NULL, FALSE, "SEND[%s]", szData);
-				p->SendRelay(szData, nLen);
-	
-				break;
-			default:
-				break;
-			}
-		}
-		*/
-		EnterCriticalSection(&p->m_csRelayData);
-		if( !p->m_lstRelayData.empty() ){
-			CString data = *p->m_lstRelayData.begin();
-			p->m_lstRelayData.pop_front();
-			p->SendRelay((LPSTR)data.GetBuffer(), data.GetLength());
-		}
-		LeaveCriticalSection(&p->m_csRelayData);
-	}
+	//			if (getpeername( client, (sockaddr*)&peer_addr, &peer_addr_len) == 0 )
+	//			{
+	//				char* pIP	= inet_ntoa(peer_addr.sin_addr);
+	//				CUtil::LogEx( 'I', &p->m_logF, NULL, FALSE, "accept[%s]", pIP);
+	//			}
+	//			EnterCriticalSection(&p->m_csRelaySock);
+	//			p->m_setRelaySock.insert(client);
+	//			LeaveCriticalSection(&p->m_csRelaySock);
+	//			
+	//		}
+	//	}
+	//	
+	//	/*
+	//	while( PeekMessage(&msg, NULL, 0,0, PM_REMOVE) )
+	//	{
+	//		switch(msg.message)
+	//		{
+	//		case WM_SISE_DATA:
+	//			
+	//			nLen  = (int) msg.wParam;
+	//			pData = (char*) msg.lParam;
+	//			//sprintf(szData, "%.*s", nLen, pData );
+	//			sprintf(szData, "%.10s", pData );
+	//			delete[] pData;
+	//			//p->m_lstMsg.InsertString(0, szData);
+	//			//CUtil::LogEx( 'I', &p->m_logF, NULL, FALSE, "SEND[%s]", szData);
+	//			p->SendRelay(szData, nLen);
+	//
+	//			break;
+	//		default:
+	//			break;
+	//		}
+	//	}
+	//	*/
+	//	EnterCriticalSection(&p->m_csRelayData);
+	//	if( !p->m_lstRelayData.empty() ){
+	//		CString data = *p->m_lstRelayData.begin();
+	//		p->m_lstRelayData.pop_front();
+	//		p->SendRelay((LPSTR)data.GetBuffer(), data.GetLength());
+	//	}
+	//	LeaveCriticalSection(&p->m_csRelayData);
+	//}
 	return 0;
 }
 
@@ -1921,7 +1926,7 @@ VOID CDlg_FC0::SendRelay(LPSTR lpData, INT nLen)
 	catch(...)
 	{
 		LeaveCriticalSection(&m_csRelaySock);
-		CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "RELAY SEND EXCEPTION-2");
+		//CUtil::LogEx( 'E', &m_logF, NULL, FALSE, "RELAY SEND EXCEPTION-2");
 	}
 }
 

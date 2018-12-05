@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Relase_NA|Win32">
       <Configuration>Relase_NA</Configuration>
@@ -18,17 +18,24 @@
     <SccProjectName />
     <SccLocalPath />
     <Keyword>MFCProj</Keyword>
+    <ProjectGuid>{0ABDF97C-7982-03FD-761B-83EDBDC9502E}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Relase_NA|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release_NARAE|Win32'">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -67,7 +74,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_SITE_BLASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <AssemblerListingLocation>.\ETK_DLL_SHM___Win32_Release_BLASH\</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
       <PrecompiledHeaderOutputFile>.\ETK_DLL_SHM___Win32_Release_BLASH\ETK_DLL_SHM.pch</PrecompiledHeaderOutputFile>
@@ -151,18 +158,15 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LIBSRC\Log.cpp" />
-    <ClCompile Include="..\..\LIBSRC\LOGDEBUG.CPP" />
-    <ClCompile Include="..\..\LIBSRC\MQBase.cpp" />
-    <ClCompile Include="..\..\LIBSRC\Screwdb.cpp" />
-    <ClCompile Include="..\..\LIBSRC\SharedMem.cpp" />
-    <ClCompile Include="..\..\LIBSRC\TcpClnt.cpp" />
-    <ClCompile Include="..\..\LIBSRC\UdpSend.cpp" />
-    <ClCompile Include="..\..\LIBSRC\Util.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="DlgTRBar.cpp" />
-    <ClCompile Include="Dlg_FC0_1.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="scbarg.cpp" />
     <ClCompile Include="sizecbar.cpp" />
@@ -182,39 +186,24 @@
     <ClCompile Include="Dlg_t9905.cpp" />
     <ClCompile Include="Dlg_H1_.cpp" />
     <ClCompile Include="Dlg_H2_.cpp" />
-    <ClCompile Include="Real_OrdCntr.cpp" />
-    <ClCompile Include="Dlg_FC0.cpp" />
-    <ClCompile Include="Dlg_t2101.cpp" />
-    <ClCompile Include="..\..\LIBSRC\SiseClntSend.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Relase_NA|Win32'">
-      </PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="Dlg_t5511.cpp" />
-    <ClCompile Include="..\..\LIBSRC\CVT_ETK.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Relase_NA|Win32'">
-      </PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="XingAPI_Sample.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LIBSRC\Log.h" />
-    <ClInclude Include="..\..\LIBSRC\LOGDEBUG.H" />
-    <ClInclude Include="..\..\LIBSRC\MQBase.h" />
-    <ClInclude Include="..\..\LIBSRC\Screwdb.h" />
-    <ClInclude Include="..\..\LIBSRC\SharedMem.h" />
-    <ClInclude Include="..\..\LIBSRC\TcpClnt.h" />
-    <ClInclude Include="..\..\LIBSRC\UdpSend.h" />
-    <ClInclude Include="..\..\LIBSRC\Util.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\util.h" />
+    <ClInclude Include="..\Inc_ETK\t2101.h" />
+    <ClInclude Include="..\Inc_ETK\t5512.h" />
+    <ClInclude Include="..\Inc_ETK\t5513.h" />
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="ChildView.h" />
     <ClInclude Include="DlgTRBar.h" />
-    <ClInclude Include="Dlg_FC0_1.h" />
     <ClInclude Include="IXingAPI.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Resource.h" />
@@ -231,27 +220,17 @@
     <ClInclude Include="Dlg_t9905.h" />
     <ClInclude Include="Dlg_H1_.h" />
     <ClInclude Include="Dlg_H2_.h" />
-    <ClInclude Include="Real_OrdCntr.h" />
-    <ClInclude Include="Dlg_FC0.h" />
-    <ClInclude Include="Dlg_t2101.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\FC0.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\FH0.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\NC0.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\NH0.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\OC0.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\OH0.h" />
-    <ClInclude Include="..\..\LIBSRC\SiseClntSend.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t2101.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\C01.h" />
     <ClInclude Include="Dlg_t5511.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\H01.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\O01.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\t5511.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t5512.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t5513.h" />
-    <ClInclude Include="..\..\INCLUDE\COMMON.H" />
-    <ClInclude Include="..\..\LIBSRC\CVT_ETK.h" />
-    <ClInclude Include="..\..\INCLUDE\Packet.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="res\cursor1.cur" />

@@ -21,7 +21,7 @@
 
 ****************************************************************************/
 
-#include "../../include/UtilLibInc.h"
+//#include "../../include/UtilLibInc.h"
 
 
 #define ETK_TR_ORD_NEW		"t5511"
@@ -37,13 +37,13 @@
 #include <map>
 #include <list>
 using namespace std;
-
-typedef struct _MAP_ORD_INFO
-{
-	char		TRCode[32];
-	char		GDS_CODE[2];
-	char		CLORD_NO[MAX_ORD_NO+1];
-}MAP_ORD_INFO;
+//
+//typedef struct _MAP_ORD_INFO
+//{
+//	char		TRCode[32];
+//	char		GDS_CODE[2];
+//	char		CLORD_NO[MAX_ORD_NO+1];
+//}MAP_ORD_INFO;
 
 /////////////////////////////////////////////////////////////////////////////
 // CDlg_t5511 dialog
@@ -89,7 +89,7 @@ private:
 	BOOL	RegistRealData(BOOL bAdvise, char* i_psTRCode);
 
 private:
-	CLog	m_logF;
+	//CLog	m_logF;
 
 	HANDLE		m_hDie;
 	HANDLE		m_hThread;
@@ -98,12 +98,12 @@ private:
 // 	CMQBase		m_MQRslt_Ord;	//	주문결과 전송할 MQ
 // 	CMQBase		m_MQRslt_Cntr;	//	체결결과 전송할 MQ
 
-	map<int, MAP_ORD_INFO>	m_mapRqID;	//	RqID, TR CODE
+	//map<int, MAP_ORD_INFO>	m_mapRqID;	//	RqID, TR CODE
 
 	/*-------------------------------------------------
 		주문체결결과 REAL 수신 및 전달을 위한 멤버
 	--------------------------------------------------*/	
-	ScrewDB		m_db;
+	//ScrewDB		m_db;
 	
 	list<CString>		m_sStkList_KSF;
 	list<CString>		m_sStkList_KSO;

@@ -5,7 +5,7 @@
 #include "XingAPI_Sample.h"
 #include "Dlg_H2_.h"
 
-#include "../../include/API_ETK/H2_.h"
+#include "../Inc_ETK/H2_.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

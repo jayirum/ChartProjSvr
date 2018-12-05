@@ -6,7 +6,7 @@
 
 #include "MainFrm.h"
 #include "ChildFrm.h"
-
+#include "../../IRUM_UTIL/util.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -160,11 +160,13 @@ LRESULT CMainFrame::OnDisconnect( WPARAM wParam, LPARAM lParam )
 	//----------------------------------------
 	char szPath[_MAX_PATH] = {0,};
 	char szMsg[256];
-	if( !CUtil::GetLogDir(szPath, szMsg) ){
-		return FALSE;	
-	}
-	m_logF.OpenLog(szPath, "ETK_DISCONNECT");
-	CUtil::PrintLogEx(&m_logF, FALSE, " 서버와의 연결이 종료되었습니다!!");
+
+	//TODO
+	//if( !CUtil::GetLogDir(szPath, szMsg) ){
+	//	return FALSE;	
+	//}
+	//m_logF.OpenLog(szPath, "ETK_DISCONNECT");
+	//CUtil::PrintLogEx(&m_logF, FALSE, " 서버와의 연결이 종료되었습니다!!");
 	
 	SetTimer(1000, 15*1000, NULL);	// skeo. 재연결시도 타이머 생성
 	// ]]

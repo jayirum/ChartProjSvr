@@ -24,13 +24,13 @@
 #include "Dlg_SC3.h"
 #include "Dlg_SC4.h"
 #include "Dlg_FC0.h"
-#include "Dlg_FC0_1.h"
+//#include "Dlg_FC0_1.h"
 #include "Dlg_OC0.h"
 #include "Dlg_BMT.h"
 #include "Dlg_BM_.h"
 #include "Dlg_t9907.h"
 #include "Dlg_t9905.h"
-#include "Dlg_t2101.h"
+//#include "Dlg_t2101.h"
 
 typedef struct
 {
@@ -69,7 +69,7 @@ static TR_WINDOW_TABLE s_tblTrWindow[] =
 // 	{ "t5012", RUNTIME_CLASS(CDlg_t5012), IDD_t5012, "거래소 선물대용매도(t5012)" },
 // 	{ "t5024", RUNTIME_CLASS(CDlg_t5024), IDD_t5024, "장외단주매도주문(t5024)" },
 // 	{ "t5101", RUNTIME_CLASS(CDlg_t5101), IDD_t5101, "현물복수정상주문" },
- 	{ "t5511", RUNTIME_CLASS(CDlg_t5511), IDD_t5511, "선옵정상주문(t5511)" },
+//TODO 	{ "t5511", RUNTIME_CLASS(CDlg_t5511), IDD_t5511, "선옵정상주문(t5511)" },
 // 	{ "t5502", RUNTIME_CLASS(CDlg_t5502), IDD_t5502, "현물정정주문(t5502)" },
 // 	{ "t5503", RUNTIME_CLASS(CDlg_t5503), IDD_t5503, "현물취소주문(t5503)" },
 // 	{ "t0424", RUNTIME_CLASS(CDlg_t0424), IDD_t0424, "주식잔고2(t0424)" },
@@ -78,7 +78,7 @@ static TR_WINDOW_TABLE s_tblTrWindow[] =
  	{ "t6011", RUNTIME_CLASS(CDlg_t6011), IDD_t6011, "계좌별예수금조회(t6011)" },
  	{ "t6024", RUNTIME_CLASS(CDlg_t6024), IDD_t6024, "주문가능수량/증거금(t6024)" },
 // 	{ "t5026", RUNTIME_CLASS(CDlg_t5026), IDD_t5026, "일괄청산주문/가능여부조회(t5026)" },
- 	{ "t2101", RUNTIME_CLASS(CDlg_t2101), IDD_t2101, "선물/옵션현재가(시세)조회(t2101)" },
+//TODO 	{ "t2101", RUNTIME_CLASS(CDlg_t2101), IDD_t2101, "선물/옵션현재가(시세)조회(t2101)" },
 // 	{ "t2105", RUNTIME_CLASS(CDlg_t2105), IDD_t2105, "선물/옵션현재가호가조회(t2105)" },
 // 	{ "t2106", RUNTIME_CLASS(CDlg_t2106), IDD_t2106, "선물/옵션현재가시세메모(t2106)" },
 // 	{ "t2201", RUNTIME_CLASS(CDlg_t2201), IDD_t2201, "선물옵션시간대별체결조회(t2201)" },
@@ -146,8 +146,8 @@ static TR_WINDOW_TABLE s_tblTrWindow[] =
 // 	{ "SC2"  , RUNTIME_CLASS(CDlg_SC2), IDD_SC2, "주식주문정정" },
 // 	{ "SC3"  , RUNTIME_CLASS(CDlg_SC3), IDD_SC3, "주식주문취소" },
 // 	{ "SC4"  , RUNTIME_CLASS(CDlg_SC4), IDD_SC4, "주식주문거부" },
-	{ "FC0"  , RUNTIME_CLASS(CDlg_FC0), IDD_FC0, "선물체결(시세)/호가" },
-	{ "FC0_1", RUNTIME_CLASS(CDlg_FC0_1), IDD_FC0_1, "선물체결(해외시세)/호가" },
+//TODO	{ "FC0"  , RUNTIME_CLASS(CDlg_FC0), IDD_FC0, "선물체결(시세)/호가" },
+//	{ "FC0_1", RUNTIME_CLASS(CDlg_FC0_1), IDD_FC0_1, "선물체결(해외시세)/호가" },
 // 	{ "FH0"  , RUNTIME_CLASS(CDlg_FH0), IDD_FH0, "선물호가" },
 // 	{ "OC0"  , RUNTIME_CLASS(CDlg_OC0), IDD_OC0, "옵션체결" },
 // 	{ "OH0"  , RUNTIME_CLASS(CDlg_OH0), IDD_OH0, "옵션호가" },

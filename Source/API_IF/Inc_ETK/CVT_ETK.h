@@ -1,5 +1,5 @@
 /************************************************************************
-	eBest API 와의 CONVERTING 을 위한 클래스
+	동부증권 API 와의 CONVERTING 을 위한 클래스
 ************************************************************************/
 
 #if !defined(AFX_CVT_ETK_H__B4A61FF7_9929_4BE2_A216_B742A83110D3__INCLUDED_)
@@ -10,13 +10,13 @@
 #endif // _MSC_VER > 1000
 
 #include <Windows.h>
-//#include "../IRUM_INC/Packet.h"
-#include "../IRUM_INC/eBest/O01.h"	//	주문접수 실시간
-#include "../IRUM_INC/eBest/H01.h"	//	정정취소 실시간
-#include "../IRUM_INC/eBest/C01.h"	//	체결 실시간
-#include "../IRUM_INC/eBest/t5511.h"	//	주문 요청
-#include "../IRUM_INC/eBest/t5512.h"	//	정정 요청
-#include "../IRUM_INC/eBest/t5513.h"	//	취소 요청
+#include "Packet.h"
+#include "../Inc_ETK/O01.h"	//	주문접수 실시간
+#include "../Inc_ETK/H01.h"	//	정정취소 실시간
+#include "../Inc_ETK/C01.h"	//	체결 실시간
+#include "../Inc_ETK/t5511.h"	//	주문 요청
+#include "../Inc_ETK/t5512.h"	//	정정 요청
+#include "../Inc_ETK/t5513.h"	//	취소 요청
 
 
 

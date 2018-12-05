@@ -5,7 +5,7 @@
 #include "XingAPI_Sample.h"
 #include "Dlg_t0433.h"
 
-#include "../../include/API_ETK/t0433.h"
+#include "../Inc_ETK/t0433.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

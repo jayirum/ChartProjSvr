@@ -1,22 +1,23 @@
 
 #include <afxwin.h>         // MFC core and standard components
 #include "CVT_ETK.h"
-#include "../include/UtilLibInc.h"
+//#include "../include/UtilLibInc.h"
 
-#include "../include/API_ETK/FC0.h"
-#include "../include/API_ETK/FH0.h"
-#include "../include/API_ETK/OC0.h"
-#include "../include/API_ETK/OH0.h"
+#include "../Inc_ETK/FC0.h"
+#include "../Inc_ETK/FH0.h"
+#include "../Inc_ETK/OC0.h"
+#include "../Inc_ETK/OH0.h"
 
 
 //CME
-#include "../include/API_ETK/NC0.h"
-#include "../include/API_ETK/NH0.h"
+#include "../Inc_ETK/NC0.h"
+#include "../Inc_ETK/NH0.h"
 
 //해외선물
-#include "../include/API_ETK/OVH.h"
-#include "../include/API_ETK/OVC.h"
+#include "../Inc_ETK/OVH.h"
+#include "../Inc_ETK/OVC.h"
 
+#include "../../IRUM_UTIL/util.h"
 
 //	DEFINE IN StdAfx.h
 enum
@@ -609,7 +610,7 @@ VOID CCVT_ETK::de_KS_TR_Order_Cncl( char* i_etkData, char* i_szGDS_CODE, char* i
 
 VOID CCVT_ETK::de_KS_F_Sise(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
 
 	FC0_OutBlock*	org	= (FC0_OutBlock*) psOrgData;		//	DrdsSC0.h
@@ -726,7 +727,7 @@ BOOL CCVT_ETK::de_KS_F_SiseEx(	char* psOrgData
 							  , double* pErrSise		//	시세오류인경우 해당 시세 반환
 							  )
 {
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
 
 	FC0_OutBlock*	org		= (FC0_OutBlock*) psOrgData;	//	DrdsSC0.h
@@ -926,7 +927,7 @@ VOID CCVT_ETK::de_KS_F_SiseEx_CME(	char* psOrgData
 								, char* pOutForClient		//	FRONT 를 위한 패킷
 								)
 {
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
 
 	NC0_OutBlock*	org		= (NC0_OutBlock*) psOrgData;	//	DrdsSC0.h
@@ -1110,7 +1111,7 @@ VOID CCVT_ETK::de_KS_F_SiseEx_CME(	char* psOrgData
 //SMILOR.VOID CCVT_ETK::de_KS_F_Hoga(char* psOrgData, char* pOut)
 BOOL CCVT_ETK::de_KS_F_Hoga(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[32], t[128];
+	char	szLen[32], szCode[128], t[128];
 
 	FH0_OutBlock*	org	= (FH0_OutBlock*) psOrgData;	//	FH0.h
 	REAL_HOGA_KS*	p	= (REAL_HOGA_KS*)pOut;			//	PacketDef.h
@@ -1271,7 +1272,7 @@ BOOL CCVT_ETK::de_KS_F_Hoga(char* psOrgData, char* pOut)
 */
 BOOL CCVT_ETK::de_KS_F_HogaDongsi(char* psOrgData, char* pOut, BOOL *o_bDongsi/*동시호가여부*/)
 {
-	char	szLen[32], szCode[32], t[128];
+	char	szLen[32], szCode[128], t[128];
 
 	*o_bDongsi = FALSE;
 
@@ -1305,7 +1306,7 @@ BOOL CCVT_ETK::de_KS_F_HogaDongsi(char* psOrgData, char* pOut, BOOL *o_bDongsi/*
 		SYSTEMTIME st; GetLocalTime(&st);
 		char szTime[32]; sprintf(szTime, "%02d:%02d", st.wHour, st.wMinute);
 	
-		if( strcmp(szTime, "09:00")<0 )
+		if( strcmp(szTime, "10:00")<0 )
 			*o_bDongsi = TRUE;
 		else
 			return FALSE;
@@ -1376,7 +1377,7 @@ BOOL CCVT_ETK::de_KS_F_HogaDongsi(char* psOrgData, char* pOut, BOOL *o_bDongsi/*
 		SYSTEMTIME st; GetLocalTime(&st);
 		char szTime[32]; sprintf(szTime, "%02d:%02d", st.wHour, st.wMinute);
 		
-		if( strcmp(szTime, "09:00")<0 )
+		if( strcmp(szTime, "10:00")<0 )
 			*o_bDongsi = TRUE;
 		else
 			return FALSE;
@@ -1452,7 +1453,7 @@ BOOL CCVT_ETK::de_KS_F_HogaDongsi(char* psOrgData, char* pOut, BOOL *o_bDongsi/*
 
 BOOL CCVT_ETK::de_KS_F_Hoga_CME(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[32], t[128];
+	char	szLen[32], szCode[128], t[128];
 
 	NH0_OutBlock*	org	= (NH0_OutBlock*) psOrgData;	//	FH0.h
 	REAL_HOGA_KS*	p	= (REAL_HOGA_KS*)pOut;			//	PacketDef.h
@@ -1607,7 +1608,7 @@ BOOL CCVT_ETK::de_KS_F_Hoga_CME(char* psOrgData, char* pOut)
 
 VOID CCVT_ETK::de_KS_O_Sise(char* psOrgData, char* pOut)
 {	
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
 
 	OC0_OutBlock*	org	= (OC0_OutBlock*) psOrgData;	//	FC0.h
@@ -1702,7 +1703,7 @@ VOID CCVT_ETK::de_KS_O_Sise(char* psOrgData, char* pOut)
 
 VOID CCVT_ETK::de_KS_O_SiseEx(char* psOrgData, char* pOut, char* pOutForClient)
 {	
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
 	
 	OC0_OutBlock*	org	= (OC0_OutBlock*) psOrgData;	//	FC0.h
@@ -1874,7 +1875,7 @@ VOID CCVT_ETK::de_KS_O_SiseEx(char* psOrgData, char* pOut, char* pOutForClient)
 
 VOID CCVT_ETK::de_KS_O_Hoga(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[32], t[128];
+	char	szLen[32], szCode[128], t[128];
 	
 	OH0_OutBlock*	org	= (OH0_OutBlock*) psOrgData;		//	DrdsSC0.h
 	REAL_HOGA_KS*	p	= (REAL_HOGA_KS*)pOut;			//	PacketDef.h
@@ -2085,7 +2086,7 @@ void CCVT_ETK::ETK_SetPacketData( char* psData, int nSize, LPCTSTR pszSrc, int n
 		// 원데이터의 정수부의 길이와 소수부의 길이를 구한다.
 		int nSrcIntLen;
 		int nSrcDotLen;
-		LPTSTR psz = _tcschr( pszSrc, '.' );
+		LPCSTR psz = _tcschr( pszSrc, '.' );
 		if( psz == NULL )		// 소수부가 없다.
 		{
 			nSrcIntLen = strlen( pszSrc );
@@ -2130,7 +2131,7 @@ void CCVT_ETK::ETK_SetPacketData( char* psData, int nSize, LPCTSTR pszSrc, int n
 		// 원데이터의 정수부의 길이와 소수부의 길이를 구한다.
 		int nSrcIntLen;
 		int nSrcDotLen;
-		LPTSTR psz = _tcschr( pszSrc, '.' );
+		LPCSTR psz = _tcschr( pszSrc, '.' );
 		if( psz == NULL )		// 소수부가 없다.
 		{
 			nSrcIntLen = strlen( pszSrc );
@@ -2202,22 +2203,36 @@ char* CCVT_ETK::get_double_withdot2( char* i_psStkCode, char* i_psOrg, int i_nOr
 
 	switch(i_psStkCode[1]) 
 	{
+	case 'E':	//6E
+		nDotCnt = 5;
+		break;
 	case 'A':	//6A	
 	case 'B':	//6B
-	case 'E':	//6E
-		nDotCnt = 4;
+    case 'D':	
+		if( i_psStkCode[0]=='F')
+			nDotCnt = 1;	//FDAX
+		if( i_psStkCode[0]=='A')
+			nDotCnt = 4;	//AD
+		if( i_psStkCode[0]=='C')
+			nDotCnt = 4;	//CD
+		if( i_psStkCode[0]=='6')
+			nDotCnt = 4;	//CD
 		break;
 	case 'J':	//6J
-		nDotCnt = 2;
+		nDotCnt = 1;
 		break;
 	case 'L':	//CL
 		nDotCnt = 2;	//CL
 		break;
-	case 'S':	//ES
-		nDotCnt = 2;	//ES
+	case 'S':
+		if( i_psStkCode[0]=='E' )	nDotCnt = 2;	//ES
+		if( i_psStkCode[0]=='H' )	nDotCnt = 0;	//HSI(항생지수)
 		break;
-	case 'C':	//GC
-		nDotCnt = 1;	//GC
+	case 'C':
+		if( i_psStkCode[0]=='G')
+			nDotCnt = 1;	//GC
+		if( i_psStkCode[0]=='S')
+			nDotCnt = 1;	//SCN (CHINA A50 )
 		break;
 	case 'Q':	
 		nDotCnt = 2;	//NASDAQ
@@ -2227,6 +2242,12 @@ char* CCVT_ETK::get_double_withdot2( char* i_psStkCode, char* i_psOrg, int i_nOr
 		break;
 	case 'I':	
 		nDotCnt = 3;	//SIU (SILVER)
+		break;
+	case 'M':
+		nDotCnt	= 0;	//YM(DOW)
+		break;
+	case 'Y':
+		nDotCnt	= 1;	//JY
 		break;
 	}
 	
@@ -2447,14 +2468,15 @@ BOOL CCVT_ETK::de_FU_SiseEx(	char* psOrgData
 							  , double* pErrSise		//	시세오류인경우 해당 시세 반환
 							  )
 {
-	char	szLen[32], szCode[32];
+	char	szLen[32], szCode[128];
 	char	t[128];
-	char	szStkCode[32];
+	char	szStkCode[128];
 
 	OVC_OutBlock*	org		= (OVC_OutBlock*)psOrgData;	//	DrdsSC0.h
 	REAL_SISE_FU*	p		= (REAL_SISE_FU*)pOut;			//	PacketDef.h
 	//REAL_SISE_KS_84003*	pFront	= (REAL_SISE_KS_84003*)pOutForClient;	//	PacketDef.h
 
+	
 	
 	//////////////////////////////////////////////////////////////////////////
 	//	SHM 용 패킷 구성
@@ -2473,8 +2495,15 @@ BOOL CCVT_ETK::de_FU_SiseEx(	char* psOrgData
 		sprintf( szStkCode, "6E%.3s", t+3);
 	else if( strncmp(t,"BP",2)==0)
 		sprintf( szStkCode, "6B%.3s", t+2);
+	else if( strncmp(t,"JY",2)==0)
+		sprintf( szStkCode, "6J%.3s", t+2);
 	else
 		sprintf( szStkCode, "%s", t);
+
+#ifdef _DEF_NA	// 나래는 엔화종목코드가 6J 가 아니라 JY 이다.
+	if( strncmp(t,"JY",2)==0)
+		sprintf( szStkCode, "%s", t);
+#endif
 
  	memcpy(p->stk_code,		szStkCode,		min(strlen(szStkCode), sizeof(org->symbol)) );
  	memcpy(p->tm,			org->kortm,		min(sizeof(p->tm), 	sizeof(org->kortm)) );
@@ -2522,7 +2551,11 @@ BOOL CCVT_ETK::de_FU_SiseEx(	char* psOrgData
 	get_double_withdot2( szStkCode, org->chgrate, sizeof(org->chgrate), sizeof(p->chg_rate), t );
 	memcpy(p->chg_rate,			t, sizeof(p->chg_rate) );
 	
-	sprintf( t, "%*d", sizeof(p->cntr_qty), S2N(org->trdq,sizeof(org->trdq)) );
+	//1-018-009-007-004.
+	if (org->cgubun[0]=='-')
+		sprintf( t, "%*d", sizeof(p->cntr_qty), -1*S2N(org->trdq,sizeof(org->trdq)) );
+	else
+		sprintf( t, "%*d", sizeof(p->cntr_qty), S2N(org->trdq,sizeof(org->trdq)) );
 	memcpy(p->cntr_qty, 		t, sizeof(p->cntr_qty) );
 	
 	/*
@@ -2564,8 +2597,8 @@ BOOL CCVT_ETK::de_FU_SiseEx(	char* psOrgData
 
 BOOL CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[32], t[128];
-	char	szStkCode[32];
+	char	szLen[32], szCode[128], t[128];
+	char	szStkCode[128];
 
 	OVH_OutBlock*	org	= (OVH_OutBlock*) psOrgData;	//	FH0.h
 	REAL_HOGA_FU*	p	= (REAL_HOGA_FU*)pOut;			//	PacketDef.h
@@ -2587,9 +2620,17 @@ BOOL CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 	// BP==>6B
 	else if( strncmp(t,"BP",2)==0)
 		sprintf( szStkCode, "6B%.3s", t+2);
+	// JY==>6J
+	else if( strncmp(t,"JY",2)==0)
+		sprintf( szStkCode, "6J%.3s", t+2);
 	else
 		sprintf( szStkCode, "%s", t);
-	
+
+#ifdef _DEF_NA
+	if( strncmp(t,"JY",2)==0)
+		sprintf( szStkCode, "%s", t);
+#endif
+
  	memcpy(p->stk_code,		szStkCode,		min(strlen(szStkCode), sizeof(org->symbol)) );
 
 	//	시각
@@ -2652,7 +2693,7 @@ BOOL CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 
 	sprintf( t, "%*d", sizeof(p->o_tot_cnt), S2N( org->totoffercnt,sizeof(org->totoffercnt) ) );
 	memcpy(p->o_tot_cnt, 		t, sizeof(p->o_tot_cnt) );
-
+	
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//	매수호가 1
@@ -2714,7 +2755,7 @@ BOOL CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 	
 	p->ETX[0] = 0x03;
 	p->ETX[1] = 0x00;
-
+	
 	//SMILOR0803
 	return TRUE;
 

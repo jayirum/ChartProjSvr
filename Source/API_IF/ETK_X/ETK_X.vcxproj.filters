@@ -1,35 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\LIBSRC\SiseClntSend.cpp" />
-    <ClCompile Include="Dlg_t5511.cpp" />
-    <ClCompile Include="..\..\LIBSRC\CVT_ETK.cpp">
-      <Filter>CONVERT</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\TcpClnt.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\Log.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\LOGDEBUG.CPP">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\MQBase.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\SharedMem.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\Screwdb.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\UdpSend.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\LIBSRC\Util.cpp">
-      <Filter>LIBSRC</Filter>
-    </ClCompile>
     <ClCompile Include="DlgLogin.cpp">
       <Filter>Login</Filter>
     </ClCompile>
@@ -60,19 +31,10 @@
     <ClCompile Include="XingAPI_Sample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Dlg_FC0.cpp">
-      <Filter>시세호가</Filter>
-    </ClCompile>
-    <ClCompile Include="Dlg_t2101.cpp">
-      <Filter>시세호가</Filter>
-    </ClCompile>
     <ClCompile Include="Dlg_H1_.cpp">
       <Filter>실시간TR</Filter>
     </ClCompile>
     <ClCompile Include="Dlg_H2_.cpp">
-      <Filter>실시간TR</Filter>
-    </ClCompile>
-    <ClCompile Include="Real_OrdCntr.cpp">
       <Filter>실시간TR</Filter>
     </ClCompile>
     <ClCompile Include="Dlg_t0431.cpp">
@@ -90,27 +52,31 @@
     <ClCompile Include="Dlg_t9905.cpp">
       <Filter>조회TR</Filter>
     </ClCompile>
-    <ClCompile Include="Dlg_FC0_1.cpp">
-      <Filter>시세호가</Filter>
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\Log.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Dlg_t5511.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LIBSRC\SiseClntSend.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t2101.h" />
     <ClInclude Include="..\..\INCLUDE\API_ETK\C01.h" />
     <ClInclude Include="Dlg_t5511.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t5511.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t5512.h" />
-    <ClInclude Include="..\..\INCLUDE\API_ETK\t5513.h" />
-    <ClInclude Include="..\..\INCLUDE\COMMON.H">
-      <Filter>CONVERT</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\CVT_ETK.h">
-      <Filter>CONVERT</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\INCLUDE\Packet.h">
-      <Filter>CONVERT</Filter>
-    </ClInclude>
     <ClInclude Include="ChildFrm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -144,38 +110,8 @@
     <ClInclude Include="XingAPI_Sample.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\TcpClnt.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\Log.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\LOGDEBUG.H">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\MQBase.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\SharedMem.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\Screwdb.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\UdpSend.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\LIBSRC\Util.h">
-      <Filter>LIBSRC</Filter>
-    </ClInclude>
     <ClInclude Include="DlgLogin.h">
       <Filter>Login</Filter>
-    </ClInclude>
-    <ClInclude Include="Dlg_FC0.h">
-      <Filter>시세호가</Filter>
-    </ClInclude>
-    <ClInclude Include="Dlg_t2101.h">
-      <Filter>시세호가</Filter>
     </ClInclude>
     <ClInclude Include="..\..\INCLUDE\API_ETK\FC0.h">
       <Filter>시세호가</Filter>
@@ -207,9 +143,6 @@
     <ClInclude Include="Dlg_H2_.h">
       <Filter>실시간TR</Filter>
     </ClInclude>
-    <ClInclude Include="Real_OrdCntr.h">
-      <Filter>실시간TR</Filter>
-    </ClInclude>
     <ClInclude Include="Dlg_t0433.h">
       <Filter>조회TR</Filter>
     </ClInclude>
@@ -225,8 +158,35 @@
     <ClInclude Include="Dlg_t6024.h">
       <Filter>조회TR</Filter>
     </ClInclude>
-    <ClInclude Include="Dlg_FC0_1.h">
-      <Filter>시세호가</Filter>
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\Log.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\util.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\INCLUDE\API_ETK\t5511.h">
+      <Filter>ETK_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc_ETK\t2101.h">
+      <Filter>ETK_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc_ETK\t5512.h">
+      <Filter>ETK_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Inc_ETK\t5513.h">
+      <Filter>ETK_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -244,14 +204,8 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="CONVERT">
-      <UniqueIdentifier>{04624d57-aa5a-45ee-ba37-6631666870af}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{faa48461-e2c7-4787-9647-439262951fb6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="LIBSRC">
-      <UniqueIdentifier>{9df9d963-174a-47b3-a282-6f2b13fefa60}</UniqueIdentifier>
     </Filter>
     <Filter Include="Login">
       <UniqueIdentifier>{ceb8d778-63ea-442d-b1a4-6a67922ac2d7}</UniqueIdentifier>
@@ -271,8 +225,11 @@
     <Filter Include="조회TR">
       <UniqueIdentifier>{338a2d57-09b0-46cb-a1c1-003dd8e4bf9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="주문TR_REAL">
-      <UniqueIdentifier>{04eca25e-d62d-49db-a7ee-ecc536b2c942}</UniqueIdentifier>
+    <Filter Include="Common">
+      <UniqueIdentifier>{c04e04d9-6af6-4860-9498-fcdcbc078194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ETK_Headers">
+      <UniqueIdentifier>{98d88150-b2e0-4035-8f98-680e186a4bb6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

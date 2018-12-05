@@ -115,7 +115,7 @@ BOOL CTcpSrv::Begin(int Port, char* IP, BOOL bWinsockStart)
 	m_sock_addr.sin_port = htons(m_nPort);
 	m_sock_addr.sin_addr.s_addr = inet_addr(m_zIP);
 
-	if (bind(m_sockListen, (struct sockaddr*)&m_sock_addr, sizeof(m_sock_addr)) == SOCKET_ERROR)
+	if (::bind(m_sockListen, (struct sockaddr*)&m_sock_addr, sizeof(m_sock_addr)) == SOCKET_ERROR)
 	{
 		SetSockErrMsg("bind");
 		return FALSE;
