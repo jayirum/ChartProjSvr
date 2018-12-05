@@ -5,7 +5,7 @@
 #include "LogMsg.h"
 #include <stdio.h>
 #include <share.h>
-#include "../Util.h" //todo after completion - remove ../
+#include "Util.h" //todo after completion - remove ../
 #include "TcpClient.h"
 
 #pragma warning(disable:4996)
@@ -189,8 +189,8 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 #endif // !_DEBUG
 
 	}
-	char buff[DEF_LOG_LEN];
-	char tmpbuff[DEF_LOG_LEN];
+	char buff[DEF_LOG_LEN] = { 0, };
+	//char tmpbuff[DEF_LOG_LEN] = { 0, };
 	int nNotify(0);
 	SYSTEMTIME	st;
 
@@ -404,7 +404,7 @@ VOID CLogMsg::Close()
 
 VOID CLogMsg::GetComputerNameIntoString()
 {
-	TCHAR infoBuf[INFO_BUFFER_SIZE];
+	//TCHAR infoBuf[INFO_BUFFER_SIZE] = { 0, };
 	DWORD bufCharCount = INFO_BUFFER_SIZE;
 
 	//Get the name of the computer.

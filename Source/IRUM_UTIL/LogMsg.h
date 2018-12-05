@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
-#include "../BaseThread.h" //todo after completion - remove ../
+#include "BaseThread.h" //todo after completion - remove ../
 #include <list>
 #include "TcpClient.h"
 

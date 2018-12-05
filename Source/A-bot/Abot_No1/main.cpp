@@ -62,9 +62,13 @@ int  _Start()
 		return 0;
 	}
 
+	char szNotificationServer[32], szNotificationPort[32];
 	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
-	g_log.OpenLog(szDir, EXENAME);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
+
+	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "¹öÀü[%s] %s", __DATE__, __APP_VERSION);

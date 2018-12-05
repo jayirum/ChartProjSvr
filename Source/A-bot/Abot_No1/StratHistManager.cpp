@@ -455,17 +455,22 @@ void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 
 	if (IsLong())
 	{
+		// 현재가 : 1.2720,  시가:1.2718  0.1%:1.2731  0.5%:1.2781   
 		dTouchPrc = dOpenPrc * (1.0 + dTouchPoint);
 		nComp = CUtil::CompPrc(atof(pzCurrPrc), dTouchPrc, m_symbol.dotcnt(), LEN_PRC);
+		if (nComp < 0)
+			return;
 	}
 	if (IsShort())
 	{
+		// 현재가 : 1.2707,  시가:1.2718  0.1%:1.2705  0.5%:1.2667  
 		dTouchPrc = dOpenPrc * (1.0 - dTouchPoint);
 		nComp = CUtil::CompPrc(dTouchPrc, atof(pzCurrPrc), m_symbol.dotcnt(), LEN_PRC);
+		if (nComp > 0)
+			return;
 	}
 
-	if (nComp > 0)
-		return;
+	
 	
 	if (nLevel == 1)	m_pos.bPT50Touched = TRUE;
 	if (nLevel == 2)	m_pos.bPT80Touched = TRUE;

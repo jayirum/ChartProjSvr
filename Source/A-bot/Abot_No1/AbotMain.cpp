@@ -72,13 +72,15 @@ BOOL CAbotMain::Initialize()
 		if (!m_pDBPool->Init(atoi(cnt)))
 		{
 			showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			g_log.log(NOTIFY, "DB Connect Error. Terminate Application");
 			return FALSE;
 		}
 	}
 
-	if (!LoadSymbolInfo(TRUE))
+	if (!LoadSymbolInfo(TRUE)) {
+		g_log.log(NOTIFY, "LoadSymbolInfo Error. Terminate Application");
 		return FALSE;
-
+	}
 	InitApiSocket(API_ORD);
 	InitApiSocket(API_TICK);
 	//TODO InitMonitorSocket();
@@ -189,6 +191,7 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 	if (!p->m_pApiClient[API_TICK]->Begin((LPSTR)p->m_sApiIP[API_TICK].c_str(), p->m_nApiPort[API_TICK], 10))
 	{
 		p->showMsg(FALSE, "API DataFeed Socket Error[%s][%d]", p->m_sApiIP[API_TICK].c_str(), p->m_nApiPort[API_TICK]);
+		g_log.log(NOTIFY, "API DataFeed Socket Error[%s][%d]", p->m_sApiIP[API_TICK].c_str(), p->m_nApiPort[API_TICK]);
 		Sleep(5000);
 	}
 	else
@@ -206,6 +209,7 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 		if (interval.isPassed(MODE_MIN, 30))
 		{
 			p->showMsg(FALSE, "30 mins passed without receiving any market data");
+			g_log.log(NOTIFY, "30 mins passed without receiving any market data");
 			Sleep(1000);
 		}
 
@@ -296,6 +300,8 @@ unsigned WINAPI CAbotMain::Thread_ApiOrd(LPVOID lp)
 	if (!p->m_pApiClient[API_ORD]->Begin((LPSTR)p->m_sApiIP[API_ORD].c_str(), p->m_nApiPort[API_ORD], 10))
 	{
 		p->showMsg(FALSE, "API API_ORD Socket Error[%s][%d](%s)",
+			p->m_sApiIP[API_ORD].c_str(), p->m_nApiPort[API_ORD], p->m_pApiClient[API_ORD]->GetMsg());
+		g_log.log(NOTIFY, "API API_ORD Socket Error[%s][%d](%s)",
 			p->m_sApiIP[API_ORD].c_str(), p->m_nApiPort[API_ORD], p->m_pApiClient[API_ORD]->GetMsg());
 		Sleep(5000);
 	}
