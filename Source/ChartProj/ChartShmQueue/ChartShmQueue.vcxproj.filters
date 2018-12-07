@@ -6,9 +6,6 @@
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_INC\IRUM_Common.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -24,6 +21,15 @@
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CreateSaveShm.h" />
@@ -32,9 +38,6 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Log.h">
@@ -50,6 +53,15 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

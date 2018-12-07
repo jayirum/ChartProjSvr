@@ -14,7 +14,7 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 //#include "../../IRUM_UTIL/NanoPubSub.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
 #include <list>
 #include <map>
 #include <string>
@@ -77,6 +77,7 @@ int  _Start()
 {
 	char	msg[512] = { 0, };
 	CHAR	szDir[_MAX_PATH];
+	char szNotificationServer[32], szNotificationPort[32];
 
 	//	GET LOG DIR
 	CProp prop;
@@ -85,7 +86,10 @@ int  _Start()
 
 	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
-	g_log.OpenLog(szDir, EXENAME);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
+
+	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "Version[%s]%s", __DATE__, __APP_VERSION);
@@ -112,10 +116,19 @@ int  _Start()
 	}
 
 	if (!DBOpen())
+	{
+		g_log.log(NOTIFY, "Failed to connect to DB");
 		return 0;
+	}
+		
 
 
-	InitApiClient();
+	while (!InitApiClient())
+	{
+		g_log.log(NOTIFY, "Failed to connect to API server");
+		Sleep(10000);
+		continue;
+	}
 
 	// 차트 저장 스레드
 	g_hRecvThread = (HANDLE)_beginthreadex(NULL, 0, &RecvMDThread, NULL, 0, &g_unRecvThread);
@@ -123,7 +136,10 @@ int  _Start()
 
 
 	if (!LoadSymbol())
+	{
+		g_log.log(NOTIFY, "Failed to LoadSymbol");
 		return 0;
+	}
 	
 
 	DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);
@@ -267,8 +283,8 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 					"'%.*s', "	//@I_CNTR_QTY	VARCHAR(20)
 					"'%.*s', "	//@I_DOT_CNT		VARCHAR(20)
 					"'%.*s', "	//@I_SMA_SHORT	VARCHAR(20)
-					"'%.*s' "	//@I_SMA_LONG	VARCHAR(20)
-					//"'%.*s' "
+					"'%.*s', "	//@I_SMA_LONG	VARCHAR(20)
+					"'%.*s' "	//@I_SMA_SHORT_5	VARCHAR(20)
 					,
 					LEN_GROUP_KEY, zGroupKey,
 					sizeof(p->Nm), p->Nm,
@@ -281,8 +297,8 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 					sizeof(p->cntr_qty), p->cntr_qty,
 					sizeof(p->dotcnt), p->dotcnt,
 					sizeof(p->sma_short), p->sma_short,
-					sizeof(p->sma_long), p->sma_long
-					//sizeof(p->seq), p->seq
+					sizeof(p->sma_long), p->sma_long,
+					sizeof(p->sma_shortest), p->sma_shortest
 				);
 				if (FALSE == db->ExecQuery(zQ))
 				{
@@ -397,6 +413,7 @@ BOOL	InitApiClient()
 	if (!g_pApiRecv->Begin(zIP, atoi(port), 10))
 	{
 		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());
+		return FALSE;
 	}
 	else
 		g_log.log(LOGTP_SUCC, "TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP,  port);

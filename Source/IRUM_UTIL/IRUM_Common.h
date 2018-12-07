@@ -181,8 +181,9 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 }
 
 //DEF-SMA
-#define	SMA_SHORT_CNT	2	// 단기 SMA 갯수
-#define	SMA_LONG_CNT	5	// 장기 SMA 갯수
+#define	SMA_SHORTEST_CNT	5	// 단기 SMA 갯수
+#define	SMA_SHORT_CNT	10	// 단기 SMA 갯수
+#define	SMA_LONG_CNT	20	// 장기 SMA 갯수
 
 #define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 #define	FORMAT_PRC(prc,dotcnt,out) { sprintf(out, "%0*.*f", LEN_PRC, dotcnt, prc); } // 000000012.12
@@ -299,7 +300,7 @@ typedef struct _ST_SHM_CHART_UNIT
 									//char	seq[LEN_SEQNO];			//10,110 시간저장한다.
 	char	sma_short[LEN_PRC];		//20,130 단기short term SMA(Simple Moving Average). 10
 	char	sma_long[LEN_PRC];		//20,150 장기long term SMA(Simple Moving Average). 20
-
+	char	sma_shortest[LEN_PRC];	//20,170 단기short term SMA(Simple Moving Average). 5
 	char	Reserved[50];
 	
 }ST_SHM_CHART_UNIT;	// 

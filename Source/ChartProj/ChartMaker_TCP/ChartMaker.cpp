@@ -1,6 +1,6 @@
 
 #include "ChartMaker.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_util/IRUM_Common.h"
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "../../IRUM_UTIL/Util.h"
 #include "../../IRUM_UTIL/LogMsg.h"
@@ -217,8 +217,6 @@ VOID CChartMaker::ThreadFunc()
 		return;
 	}
 
-	
-
 	//char zMarketDataBuff[1024] = { 0, };
 	int nSymbolLen = strlen(m_zSymbol);
 
@@ -293,7 +291,6 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 
 VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 {
-
 	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pIn;
 	char temp[32];
 	BOOL bRet;
@@ -356,13 +353,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			g_log.log(LOGTP_ERR, "GroupInsert ERROR!!!(%s)(%s)", m_zSymbol, szGroupKey);
 			return;
 		}
-		//printf("GroupInsert(%s)(%s)\n", m_zSymbol, szGroupKey);
+		printf("GroupInsert(%s)(%s)\n", m_zSymbol, szGroupKey);
 		if(!m_shmQ.DataInsert(szGroupKey, (char*)&recvUnit))
 		{
 			g_log.log(LOGTP_ERR, "DataInsert ERROR-1!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
 			return;
 		}
-		//printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
+		printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		//if (strcmp(m_zSymbol, "6BZ7") == 0) {
 		//	g_log.log(LOGTP_SUCC, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 		//		szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
@@ -478,7 +475,7 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 	ST_SHM_CHART_UNIT chartShm;//, stLastChartShm;
 	memcpy(&chartShm, pNowChart, sizeof(chartShm));
 
-	CMA	 ma(SMA_SHORT_CNT, SMA_LONG_CNT, FALSE);
+	CMA	 ma(SMA_SHORTEST_CNT, SMA_SHORT_CNT, SMA_LONG_CNT, FALSE);
 
 	for (int i = 0; i <SMA_LONG_CNT; i++)
 	{
@@ -494,8 +491,8 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 		ma.setClose(atof(chartShm.close));
 	}
 
-	double dShortMA, dLongMA;
-	ma.getMA(&dShortMA, &dLongMA);
+	double dShortestMA, dShortMA, dLongMA;
+	ma.getMAEx(&dShortestMA, &dShortMA, &dLongMA);
 
 	char zPrc[32];
 	FORMAT_PRC(dLongMA, m_nDotCnt, zPrc);
@@ -503,6 +500,9 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 
 	FORMAT_PRC(dShortMA, m_nDotCnt, zPrc);
 	memcpy(pNowChart->sma_short, zPrc, strlen(zPrc));
+
+	FORMAT_PRC(dShortestMA, m_nDotCnt, zPrc);
+	memcpy(pNowChart->sma_shortest, zPrc, strlen(zPrc));
 
 	//g_log.log(LOGTP_SUCC, "[Chart_SMA][LMA:%.*s][SMA:%.*s]", LEN_PRC, stLastChartShm.sma_long, LEN_PRC, stLastChartShm.sma_short);
 

@@ -11,7 +11,7 @@
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/LogMsg.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
 #include <list>
 
 // service main function

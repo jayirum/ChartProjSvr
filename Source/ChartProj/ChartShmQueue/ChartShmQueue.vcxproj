@@ -149,18 +149,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\IRUM_INC\IRUM_Common.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -169,13 +171,15 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h" />
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="CreateSaveShm.h" />
     <ClInclude Include="Main.h" />
