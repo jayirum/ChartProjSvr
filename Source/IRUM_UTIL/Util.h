@@ -25,6 +25,8 @@
 DWORD	ReportException(DWORD dExitCode, const char* psPos, _Out_ char* pzMsgBuff);
 VOID	DumpErr(char* pzSrc, int nErr, char* pzMsg);
 char*	GetCnfgValue(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+BOOL	DBOpen(void* pScrew);
+VOID	getGMTtime(char* pOut);	//yyyymmdd-hhmmss
 
 //#define	CNFG_PATH	"D:\\cnfg"
 #define property(DATATYPE, READ, WRITE) __declspec(property(get=READ, put=WRITE)) DATATYPE

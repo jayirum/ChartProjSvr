@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Util.h"
 #include "Prop.h"
+#include "Screwdb.h"
 //#include "../INCLUDE/COMMON.H"
 //#include "MQBase.h"
 
@@ -1411,4 +1412,15 @@ char* GetCnfgValue(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, c
 	if (pComment)
 		*(pComment) = 0x00;
 	return o_psValue;
+}
+
+// //yyyymmdd-hhmmss
+VOID	getGMTtime(char* pOut)
+{
+	time_t rawtime;
+	time(&rawtime);
+	struct tm *ltime = gmtime(&rawtime);
+
+	sprintf(pOut, "%04d%02d%02d-%02d%02d%02d",
+		1900 + ltime->tm_year, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
