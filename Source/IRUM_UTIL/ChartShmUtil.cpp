@@ -155,3 +155,48 @@ CROSS_TP CChartShmUtil::GetCross(ST_SHM_CHART_UNIT* chart, int nDotCnt, char* pz
 
 	return tp;
 }
+
+
+CROSS_TP CChartShmUtil::GetCross20_10(ST_SHM_CHART_UNIT* chart, int nDotCnt, char* pzCross)
+{
+	return GetCross(chart, nDotCnt, pzCross);
+}
+
+
+CROSS_TP CChartShmUtil::GetCross20_5(ST_SHM_CHART_UNIT* chart, int nDotCnt, char* pzCross)
+{
+	int nRet = CUtil::CompPrc(
+		chart->sma_shortest, sizeof(chart->sma_shortest),
+		chart->sma_long,	sizeof(chart->sma_long),
+		nDotCnt, LEN_PRC
+	);
+
+	CROSS_TP tp;
+
+	double dShort = S2D((char*)chart->sma_shortest, sizeof(chart->sma_shortest));
+	double dLong = S2D((char*)chart->sma_long, sizeof(chart->sma_long));
+	if (dShort <= 0 || dLong <= 0)
+	{
+		sprintf(m_zMsg, "[GetCross]<NONE_CROSS-데이터이상> (short:%10.5f)(long:%10.5f) ", dShort, dLong);
+		tp = NONE_CROSS;
+		if (pzCross)	sprintf(pzCross, "NONE(SHORT:%.5f)(LONG:%.5f)", dShort, dLong);
+	}
+
+	if (nRet == 0) {
+		tp = NONE_CROSS;
+		sprintf(m_zMsg, "[GetCross]<NONE_CROSS> (short:%10.5f)(long:%10.5f) ", dShort, dLong);
+		if (pzCross)	sprintf(pzCross, "NONE(SHORT:%.5f)(LONG:%.5f)", dShort, dLong);
+	}
+	else if (nRet > 0) {
+		tp = GOLDEN_CROSS;
+		sprintf(m_zMsg, "[GetCross]<GOLDEN_CROSS> (short:%10.5f)(long:%10.5f) ", dShort, dLong);
+		if (pzCross)	sprintf(pzCross, "GOLDEN(SHORT:%.5f)(LONG:%.5f)", dShort, dLong);
+	}
+	else {
+		tp = DEAD_CROSS;
+		sprintf(m_zMsg, "[GetCross]<DEAD_CROSS> (short:%10.5f)(long:%10.5f) ", dShort, dLong);
+		if (pzCross)	sprintf(pzCross, "DEAD(SHORT:%.5f)(LONG:%.5f)", dShort, dLong);
+	}
+
+	return tp;
+}

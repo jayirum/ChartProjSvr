@@ -18,6 +18,8 @@ public:
 	BOOL	PrevChart(char *pzSymbol, CHART_TP ChartTp, _In_ ST_SHM_CHART_UNIT& currChart, _Out_ ST_SHM_CHART_UNIT& prevChart);
 
 	CROSS_TP GetCross(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross=NULL);
+	CROSS_TP GetCross20_10(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross = NULL);
+	CROSS_TP GetCross20_5(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross = NULL);
 
 	char*	getmsg() { return m_zMsg; }
 private:

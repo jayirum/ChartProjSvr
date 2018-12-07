@@ -112,3 +112,11 @@
 		OVH_OutBlock etkQuote;
 		char ETX[1];
 	}ETK_CME_QUOTE;
+
+	typedef struct _ETK_CME_TICK
+	{
+		char STX[1];
+		ALGO_HEADER Header;
+		OVC_OutBlock etkTick;
+		char ETX[1];
+	}ETK_CME_TICK;

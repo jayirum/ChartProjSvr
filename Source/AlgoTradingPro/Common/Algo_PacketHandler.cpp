@@ -1,5 +1,5 @@
 #include "Algo_PacketHandler.h"
-#include "../../IRUM_UTIL/Irum_Common.h"
+#include "../Common/Algo_Common.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 
 extern CLogMsg	g_log;
@@ -52,35 +52,38 @@ int CPacketHandler::getonepacket(_Out_ char* pzOutBuf)
 
 
 /*
-	패킷상 len 에는 EOL 은 포함하지 않는다.
+	STX
+	ALGO_HEADER
+	BODY
+	ETX
 */
 int CPacketHandler::getpack(_Out_ char* pzOutBuf)
 {
 	if (m_buf.size() ==0 )
 		return 0;
 
-	//제일 마지막은 EOL 이다. EOL 이 없으면 나간다.
-	int eol = m_buf.find_first_of(DEF_EOL);
-	if (eol == m_buf.npos)
+	//제일 마지막은 ETX 이다. ETX 이 없으면 나간다.
+	int etx = m_buf.find_first_of(CD_ETX);
+	if (etx == m_buf.npos)
 		return 0;
 
-	// 첫 3바이트는 패킷 길이이다.
+	// 패킷 길이.
 	char zLen[4] = { 0, };
-	sprintf(zLen, "%.3s", m_buf.c_str());
+	sprintf(zLen, "%.*s",SIZE_PACKET_LEN, m_buf.c_str()+1);
 	int nPackLen = atoi(zLen);
 
 	// 길이 이상. 패킷 버린다.
 	if (nPackLen <= 1) {
-		g_log.log(LOGTP_ERR, "[getpack]길이이상.버린다.(%.*s)", eol + 1, m_buf.c_str());
-		m_buf.erase(0, eol);
+		g_log.log(LOGTP_ERR, "[getpack]길이이상.버린다.(%s)", m_buf.c_str());
+		m_buf.erase(0, etx);
 		return 0;
 	}
 
-	// 패킷상 길이와 eol 이 일치하면 OK
-	if (m_buf[nPackLen] == DEF_EOL)
+	// 패킷상 길이와 ETX 이 일치하면 OK
+	if (m_buf[nPackLen-1] == CD_ETX)
 	{
 		strncpy(pzOutBuf, m_buf.c_str(), nPackLen);
-		m_buf.erase(0, nPackLen+1);	//EOL 까지 지운다.
+		m_buf.erase(0, nPackLen);	//etx 까지 지운다.
 		return nPackLen;
 	}
 
