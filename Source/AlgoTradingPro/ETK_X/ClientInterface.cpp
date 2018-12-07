@@ -312,6 +312,7 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 	DWORD                dwFlags = 0;
 	LPOVERLAPPED		 pOverlap = NULL;
 	BOOL bRet;
+	int nDataCnt = 0;
 	
 	while (pThis->m_bRun)
 	{
@@ -369,14 +370,16 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 			int nBufLen = 0;
 			while ((nBufLen = pThis->m_pack->getonepacket(pIoContext->buf)) > 0)
 			{
-				g_log.log(LOGTP_SUCC, "[%d][RECV](%.*s)", GetCurrentThreadId(), nBufLen, pIoContext->buf);
-
-				if (pCKey->clientTp != CTX_RQST_INNER_TICK && pCKey->clientTp != CTX_RQST_INNER_QUOTE)
+				if (nDataCnt++ > 1000) {
+					g_log.log(LOGTP_SUCC, "[%d][RECV](%.*s)", GetCurrentThreadId(), nBufLen, pIoContext->buf);
+					nDataCnt = 0;
+				}
+				if (pIoContext->context != CTX_RQST_INNER_TICK && pIoContext->context != CTX_RQST_INNER_QUOTE)
 				{
 					if (!pThis->CheckLogin(pCKey, pIoContext))
 						continue;
 				}
-				//TOO pThis->SendDataFeed(pIoContext);
+				pThis->SendDataFeed(pIoContext);
 			}
 			if(pCKey->clientTp == CTX_RQST_RECV)
 				pThis->RequestRecvIO(pCKey);
@@ -504,17 +507,21 @@ VOID CClientInterface::SendDataFeed(IO_CONTEXT* pCtx)
 	if (pCtx->context== CTX_RQST_INNER_TICK)
 	{
 		double dErrSise = 0;
-		nSendLen = cvt.de_FU_SiseEx(pCtx->buf, szSendBuf, &dErrSise);
+		ETK_CME_TICK* pRecv = (ETK_CME_TICK*)pCtx->buf;
+		nSendLen = cvt.de_FU_SiseEx((char*)&pRecv->etkTick, szSendBuf, &dErrSise);
+		//g_log.log(INFO, "[SEND TICK](%.*s)", nSendLen, szSendBuf);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
 	//	QUOTE DATA
 	if (pCtx->context == CTX_RQST_INNER_QUOTE)
 	{
-		nSendLen = cvt.de_FU_Hoga(pCtx->buf, szSendBuf);
+		ETK_CME_QUOTE* pRecv = (ETK_CME_QUOTE*)pCtx->buf;
+		nSendLen = cvt.de_FU_Hoga((CHAR*)&pRecv->etkQuote, szSendBuf);
+		//g_log.log(INFO, "[SEND QUOTE](%.*s)", nSendLen, szSendBuf);
 	}
 
-	SendToClients(szSendBuf, nSendLen);
+	//TODO SendToClients(szSendBuf, nSendLen);
 }
 
 /*

@@ -27,6 +27,8 @@
 extern CLogMsg g_log;
 extern char	g_zConfig[_MAX_PATH];
 
+char g_EtkBuffer[4096];
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -391,21 +393,28 @@ LRESULT CDlg_FC0_1::OnXMReceiveRealData( WPARAM wParam, LPARAM lParam )
 	//	TICK DATA
 	if( strcmp( pRealPacket->szTrCode, ETK_REAL_SISE_FU ) == 0 )
 	{
-		m_pClientIF->Inner_PostData(pRealPacket->pszData, sizeof(OVC_OutBlock), TRUE);
+		ETK_CME_TICK *p = (ETK_CME_TICK*)g_EtkBuffer;
+		memset(p, 0x20, sizeof(ETK_CME_TICK));
+		p->STX[0] = 0x02;
+		p->ETX[0] = 0x03;
+		SET_LEN(sizeof(ETK_CME_TICK), p->Header.Len);
+		memcpy(p->Header.Code, CD_PACKET_DATAFEED_ETK_CME_TICK, sizeof(p->Header.Code));
+		memcpy(&p->etkTick, pRealPacket->pszData, sizeof(OVC_OutBlock));
+		m_pClientIF->Inner_PostData((char*)p, sizeof(ETK_CME_TICK), TRUE);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
 	//	해외선물호가
-	//TODO
 	if( strcmp( pRealPacket->szTrCode, ETK_REAL_HOGA_FU ) == 0 )
 	{
-		ETK_CME_QUOTE quote;
-		quote.STX[0] = 0x02;
-		quote.ETX[0] = 0x03;
-		SET_LEN(sizeof(ETK_CME_QUOTE), quote.Header.Len);
-		memcpy(quote.Header.Code, CD_PACKET_DATAFEED_ETK_CME_QOUTE, sizeof(quote.Header.Code));
-		memcpy(&quote.etkQuote, pRealPacket->pszData, sizeof(OVH_OutBlock));
-		m_pClientIF->Inner_PostData((char*)&quote, sizeof(ETK_CME_QUOTE), FALSE);
+		ETK_CME_QUOTE *quote = (ETK_CME_QUOTE*)g_EtkBuffer;
+		memset(quote, 0x20, sizeof(ETK_CME_QUOTE));
+		quote->STX[0] = 0x02;
+		quote->ETX[0] = 0x03;
+		SET_LEN(sizeof(ETK_CME_QUOTE), quote->Header.Len);
+		memcpy(quote->Header.Code, CD_PACKET_DATAFEED_ETK_CME_QOUTE, sizeof(quote->Header.Code));
+		memcpy(&quote->etkQuote, pRealPacket->pszData, sizeof(OVH_OutBlock));
+		m_pClientIF->Inner_PostData((char*)quote, sizeof(ETK_CME_QUOTE), FALSE);
 	}
 
 	return 0L;

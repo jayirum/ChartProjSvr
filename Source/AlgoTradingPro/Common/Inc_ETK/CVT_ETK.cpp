@@ -133,7 +133,7 @@ int CCVT_ETK::de_FU_SiseEx(char* psOrgData
 
 int CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 {
-	char	szLen[32], szCode[128], t[128];
+	char	szLen[32], t[128];
 	char	szStkCode[128];
 
 	OVH_OutBlock*	org = (OVH_OutBlock*)psOrgData;	//	FH0.h
@@ -141,12 +141,9 @@ int CCVT_ETK::de_FU_Hoga(char* psOrgData, char* pOut)
 	memset(p, 0x20, sizeof(DF_CME_QUOTE_OUT));
 	*(pOut + sizeof(DF_CME_QUOTE_OUT)) = 0x00;
 
-	SET_LEN(sizeof(DF_CME_QUOTE_OUT), szLen);
-	memcpy(p->Header.Code, CD_PACKET_DATAFEED_CME_QOUTE_OUT, sizeof(p->Header.Code));
-
 	p->STX[0] = 0x02;
-	memcpy(p->Header.Len, szLen, sizeof(p->Header.Len));
-	memcpy(p->Header.Code, szCode, sizeof(p->Header.Code));
+	SET_LEN(sizeof(DF_CME_QUOTE_OUT), p->Header.Len);
+	memcpy(p->Header.Code, CD_PACKET_DATAFEED_CME_QOUTE_OUT, sizeof(p->Header.Code));
 	getGMTtime(t);
 	memcpy(p->Header.GMTTime, t, sizeof(p->Header.GMTTime));
 
