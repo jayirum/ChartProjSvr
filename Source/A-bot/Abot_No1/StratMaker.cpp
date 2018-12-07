@@ -371,7 +371,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		{
 			if (m_chart->CurrChart(m_zSymbol, TP_1MIN, pzApiDT, pzApiTm, chart))
 			{
-				cross1 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_1min);
+				cross1 = m_chart->GetCross20_5(&chart, m_h->dotcnt(), dblog.zCross_1min);
 				nFindChart++;
 			}
 		}
@@ -380,7 +380,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		{
 			if (m_chart->CurrChart(m_zSymbol, TP_3MIN, pzApiDT, pzApiTm, chart))
 			{
-				cross3 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_3min);
+				cross3 = m_chart->GetCross20_5(&chart, m_h->dotcnt(), dblog.zCross_3min);
 				nFindChart++;
 			}
 		}
@@ -389,7 +389,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		{
 			if (m_chart->CurrChart(m_zSymbol, TP_5MIN, pzApiDT, pzApiTm, chart))
 			{
-				cross5 = m_chart->GetCross(&chart, m_h->dotcnt(), dblog.zCross_5min);
+				cross5 = m_chart->GetCross20_5(&chart, m_h->dotcnt(), dblog.zCross_5min);
 				nFindChart++;
 			}
 		}
@@ -442,10 +442,12 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			if (!bFire)
 			{
 				dblog.FireYN[0] = 'N';
-				sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
-					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
-				sprintf(dblog.zMsg, zMsg1);
-				m_h->SetInitialPrc(pzCurrPrc);
+
+				//JAY. 크로스가 맞을 때까지 기다린다. 손익절을 진입가 기준으로 하므로 오픈가를 재조정할 필요 없다.
+				//sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
+				//	,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
+				//sprintf(dblog.zMsg, zMsg1);
+				//m_h->SetInitialPrc(pzCurrPrc);
 			}
 		}
 	}
@@ -476,18 +478,21 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			if (!bFire)
 			{
 				dblog.FireYN[0] = 'N';
-				sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
-					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
-				sprintf(dblog.zMsg, zMsg1);
-				m_h->SetInitialPrc(pzCurrPrc);
+				//JAY. 크로스가 맞을 때까지 기다린다. 손익절을 진입가 기준으로 하므로 오픈가를 재조정할 필요 없다.
+				//sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
+				//	, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
+				//sprintf(dblog.zMsg, zMsg1);
+				//m_h->SetInitialPrc(pzCurrPrc);
 			}
 		}
 	}
 	
 	dblog.FireYN[0] = (bFire) ? 'Y' : 'N';
-	SaveDBLog(&dblog);
+	//SaveDBLog(&dblog);
 	if (bFire)
 	{
+		SaveDBLog(&dblog);
+
 		g_log.log(INFO, zMsg1);
 
 		char tmp[128];
