@@ -8,7 +8,7 @@
 	0000 0010	// strat02 exist	STRATID_SELL_OPEN
 	
 */
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_util/IRUM_Common.h"
 #include "../../IRUM_UTIL/SymbolUtils.h"
 #include "StratID.h"
 #include <windows.h>
@@ -42,7 +42,8 @@ typedef enum _EN_CNTR_FLAG
 
 typedef struct _ST_STRAT_PARAM
 {
-	char zOpenPrc[32];
+	//char zOpenPrc[32];
+	char zInitialPrc[32];	//최초 시가
 	int nMaxCntSL;	//당일 누적 sl 제한횟수
 	int nMaxCntPT;	//당일 누적 pt 제한횟수
 	char zStartTM[6];
@@ -64,7 +65,7 @@ public:
 	void IncSLCnt();
 	void IncPTCnt();
 	
-	char zEntryPrc[32];
+	char zEntryPrc[32];	//진입가
 	char zClrPrc[32];
 	char zPL[32];
 	char cBsTp[1];
@@ -108,7 +109,10 @@ public:
 	void	SetMaxPLPrc(char* pzCurrPrc);
 	BOOL	IsOpenSrategyExist() { return (m_pos.Status != FLAG_NONE); }
 	VOID	SetOrderSent(double dSentQty);
-	VOID	SetOpenPrc(char *pzOpenPrc);
+	//VOID	SetOpenPrc(char *pzOpenPrc);
+	VOID	SetInitialPrc(char *pzInitialPrc);
+
+
 	//VOID	SetConfigInfo(LPCSTR pzOpenPRc, LPCSTR pzOrdQty, LPCSTR pzEndTM, LPCSTR sMaxSL,
 	//	LPCSTR sMaxPT, LPCSTR sEntrySpread, LPCSTR sClrSpread, LPCSTR sPtPoint);
 
@@ -127,8 +131,10 @@ public:
 	void	lock() { EnterCriticalSection(&m_cs); }
 	void	unlock() { LeaveCriticalSection(&m_cs); }
 public:
-	double	openprc_d() { return atof(m_param.zOpenPrc); }
-	char*	openprc() { return m_param.zOpenPrc; }
+	//double	openprc_d() { return atof(m_param.zOpenPrc); }
+	//char*	openprc() { return m_param.zOpenPrc; }
+	double	initialprc_d() { return atof(m_param.zInitialPrc); }
+	char*	initialprc() { return m_param.zInitialPrc; }
 	char*	endtm() { return m_param.zEndTM; }
 	char*	starttm() { return m_param.zStartTM; }
 	EN_STATUS_FLAG	status() { return m_pos.Status; }
@@ -137,6 +143,8 @@ public:
 	double	entryspread() { return m_param.dEntryTouchPoint; }
 	int		ordqty() { return m_param.nOrdQty; }
 	int		entryqty() { return (int)m_pos.dQty; }
+	double	entryprc() {return atof(m_pos.zEntryPrc);}
+	char*	entryprc_s() { return (m_pos.zEntryPrc); }
 	int		dotcnt() { return m_symbol.dotcnt(); }
 
 private:

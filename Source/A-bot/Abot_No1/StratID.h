@@ -1,5 +1,5 @@
 #pragma once
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_util/IRUM_Common.h"
 
 #define STRAT_OPEN			"STRAT_OPEN"
 #define STRATID_NONE		"STRAT_NONE"

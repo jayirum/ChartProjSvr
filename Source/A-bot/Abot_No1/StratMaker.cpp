@@ -3,7 +3,7 @@
 #include "StratMaker.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/util.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_util/IRUM_Common.h"
 
 extern CLogMsg g_log;
 extern char	g_zConfig[_MAX_PATH];
@@ -332,8 +332,8 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 {
 	char zBasePrc[128];
 	char zUpperPrc[32], zLowerPrc[32];
-	sprintf(zUpperPrc, "%.*f",m_h->dotcnt(), m_h->openprc_d() * (1 + m_h->entryspread()));
-	sprintf(zLowerPrc, "%.*f", m_h->dotcnt(), m_h->openprc_d() * (1 - m_h->entryspread()));
+	sprintf(zUpperPrc, "%.*f",m_h->dotcnt(), m_h->initialprc_d() * (1 + m_h->entryspread()));
+	sprintf(zLowerPrc, "%.*f", m_h->dotcnt(), m_h->initialprc_d() * (1 - m_h->entryspread()));
 
 	int nCondition = 0;
 
@@ -408,7 +408,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	dblog.OpenClose[0] = 'O';	//O, C
 	sprintf(dblog.zOrdQty, "%d", m_h->ordqty());
 	strcpy(dblog.zCurrPrc, pzCurrPrc);
-	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zOpenPrc, m_h->initialprc());
 	sprintf(dblog.zEntryPercent, "%.2f", m_h->entryspread()*100);
 	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
 	sprintf(dblog.zApiTM, pzApiTm);
@@ -421,7 +421,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		strcpy(zBasePrc, zUpperPrc);
 
 		sprintf(zMsg1, "[전략발동][매수진입][%s][Curr:%s >= BasePrc:%s] (BasePrc = Open(%s)+(%.2f Percent)[API TM:%s]"
-			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->openprc(),m_h->entryspread(), pzApiTm);
+			, m_zSymbol, pzCurrPrc, zUpperPrc, m_h->initialprc(),m_h->entryspread()*100, pzApiTm);
 		
 		//DB LOG		
 		strcpy(dblog.zStratID, zStratID);
@@ -443,9 +443,9 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			{
 				dblog.FireYN[0] = 'N';
 				sprintf(zMsg1, "[매수진입조건이나 골든(%d분차트)이 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
-					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
+					,m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
 				sprintf(dblog.zMsg, zMsg1);
-				m_h->SetOpenPrc(pzCurrPrc);
+				m_h->SetInitialPrc(pzCurrPrc);
 			}
 		}
 	}
@@ -456,7 +456,7 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 		strcpy(zBasePrc, zLowerPrc);
 
 		sprintf(zMsg1, "[전략발동][매도진입][%s][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
-			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
+			,m_zSymbol, pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
 
 		//DB LOG
 		strcpy(dblog.zStratID, zStratID);
@@ -477,9 +477,9 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 			{
 				dblog.FireYN[0] = 'N';
 				sprintf(zMsg1, "[매도진입조건이나 데드(%d분차트)가 아니므로 오픈가를 현재가로 재조정][Curr:%s <= BasePrc:%s] (BasePrc = Open(%s)-(%.2f Percent)[API TM:%s]"
-					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->openprc(), m_h->entryspread(), pzApiTm);
+					, m_option->cross()->GetCandleMin(), pzCurrPrc, zLowerPrc, m_h->initialprc(), m_h->entryspread()*100, pzApiTm);
 				sprintf(dblog.zMsg, zMsg1);
-				m_h->SetOpenPrc(pzCurrPrc);
+				m_h->SetInitialPrc(pzCurrPrc);
 			}
 		}
 	}
@@ -525,7 +525,6 @@ VOID CStratMaker::StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg, _Out_ ABOTLOG_NO1 *dblog)
 {
-	double dOpenPrc = atof(m_h->openprc());
 	strcpy(pzStratID, STRATID_NONE);
 	char zBasePrc[32];
 
@@ -535,13 +534,21 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	if (m_h->IsLong())
 	{
 		// 손절조건 점검.SL SELL : CurrPrc <= Open Prc
-		strcpy(zBasePrc, m_h->openprc());
+		// 20181207. 손절조건을 진입의 0.1% 손실로 변경한다.
+		//strcpy(zBasePrc, m_h->initialprc());
+		sprintf(zBasePrc, "%.*f", m_h->dotcnt(), m_h->entryprc() * (1 - m_h->entryspread()));
+
 		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp <= 0)
 		{
 			strcpy(pzStratID, STRATID_SELL_SL);
-			sprintf(pzClrMsg, "[전략발동][LONG손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) <= 현재가(%s). 참조로 진입가(%s)"
-				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+			sprintf(pzClrMsg, "[전략발동][%s][LONG손절][진입가(%s) 대비 %.2f Percent 손실(%s)] <= 현재가(%s)"
+				, m_zSymbol
+				, m_h->entryprc_s()
+				, m_h->entryspread()*100
+				, zBasePrc
+				, pzCurrPrc
+			);
 			g_log.log(INFO, pzClrMsg);
 
 			// DB LOG
@@ -557,12 +564,21 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	if (m_h->IsShort())
 	{
 		// SL BUY : CurrPrc >= Open Prc
-		strcpy(zBasePrc, m_h->openprc());
+		// 20181207. 손절조건을 진입의 0.1% 손실로 변경한다.
+		//strcpy(zBasePrc, m_h->initialprc());
+		sprintf(zBasePrc, "%.*f", m_h->dotcnt(), m_h->entryprc() * (1 + m_h->entryspread()));
+
 		int nComp = CUtil::CompPrc(pzCurrPrc, LEN_PRC, zBasePrc, LEN_PRC, m_h->dotcnt(), LEN_PRC);
 		if (nComp >= 0) {
 			strcpy(pzStratID, STRATID_BUY_SL);
-			sprintf(pzClrMsg, "[전략발동][SHORT손절](진입가에서 다시 오픈가로 복귀) 오픈가(%s) >= 현재가(%s). 참조로 진입가(%s)"
-				, m_h->openprc(), pzCurrPrc, m_h->GetEntryPrc());
+			sprintf(pzClrMsg, "[전략발동][%s][SHORT손절][진입가(%s) 대비 %.2f Percent 손실(%s)] >= 현재가(%s)"
+				, m_zSymbol
+				, m_h->entryprc_s()
+				, m_h->entryspread() * 100
+				, zBasePrc
+				, pzCurrPrc
+			);
+
 			g_log.log(INFO, pzClrMsg);
 
 			// DB LOG
@@ -583,7 +599,7 @@ char* CStratMaker::GetCloseOrdType(char* pzCurrPrc,
 	{
 		// DB LOG
 		dblog->PLTp[0] = 'P';
-		dblog->BsTp[0] = (m_h->IsLong()) ? CD_BUY : CD_SELL;
+		dblog->BsTp[0] = (m_h->IsLong()) ? CD_SELL : CD_BUY;
 		dblog->FireYN[0] = 'Y';
 		sprintf(dblog->zCurrPrc, pzCurrPrc);
 	}
@@ -618,7 +634,7 @@ VOID CStratMaker::StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm)
 	dblog.OpenClose[0] = 'C';	//O, C
 	sprintf(dblog.zOrdQty, "%d", m_h->entryqty());
 	sprintf(dblog.zCurrPrc, pzCurrPrc);
-	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zOpenPrc, m_h->initialprc());
 	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
 	sprintf(dblog.zApiTM, pzApiTm);
 	sprintf(dblog.zMsg, zClrMsg);
@@ -778,7 +794,7 @@ VOID CStratMaker::MarketCloseClr()
 	dblog.OpenClose[0] = 'C';	//O, C
 	sprintf(dblog.zOrdQty, "%d", m_h->entryqty());
 	strcpy(dblog.zCurrPrc, m_zLastCurrPrc);
-	sprintf(dblog.zOpenPrc, m_h->openprc());
+	sprintf(dblog.zOpenPrc, m_h->initialprc());
 	sprintf(dblog.zEntryPercent, "%.2f", m_h->entryspread() * 100);
 	sprintf(dblog.zEntryPrc, m_h->GetEntryPrc());
 	sprintf(dblog.zApiTM, zTM);

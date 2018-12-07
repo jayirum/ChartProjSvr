@@ -10,7 +10,7 @@
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/LogMsg.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_util/IRUM_Common.h"
 
 // service main function
 void __stdcall ServiceStart(DWORD argc, LPTSTR* argv);

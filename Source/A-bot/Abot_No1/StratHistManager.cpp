@@ -24,9 +24,10 @@ CStratHistManager::~CStratHistManager()
 	DeleteCriticalSection(&m_cs);
 }
 
-VOID CStratHistManager::SetOpenPrc(char *pzOpenPrc)
+//VOID CStratHistManager::SetOpenPrc(char *pzOpenPrc)
+VOID CStratHistManager::SetInitialPrc(char *pzInitialPrc)
 {
-	strcpy(m_param.zOpenPrc, pzOpenPrc);
+	strcpy(m_param.zInitialPrc, pzInitialPrc);
 }
 
 BOOL CStratHistManager::LoadStratInfo()
@@ -234,7 +235,7 @@ void CStratHistManager::AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCST
 	//1. 전부체결
 	if (m_pos.dQty == dCntrQty)
 	{
-		g_log.log(INFO, "[체결처리]전부청산시작[%s]", m_symbol.symbol());
+		g_log.log(INFO, "[체결처리][%s]전부청산시작.", m_symbol.symbol());
 
 		dPLQty = dCntrQty;
 
@@ -245,27 +246,27 @@ void CStratHistManager::AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCST
 		else if (dPrcGap > 0)
 		{
 			m_pos.IncPTCnt();
-			g_log.log(INFO, "[체결처리]익절전부청산.익절카운트증가(%d)[%s]", m_pos.nTotPTCnt, m_symbol.symbol());
+			g_log.log(INFO, "[체결처리][%s]익절전부청산.익절카운트증가(%d)", m_symbol.symbol(), m_pos.nTotPTCnt);
 
 			// 익절인 경우 open 가를 변경한다.
-			sprintf(m_param.zOpenPrc, lpCntrPrc);
+			sprintf(m_param.zInitialPrc, lpCntrPrc);
 
-			g_log.log(INFO, "[체결처리]전부청산이 익절.Open Price를 현재가(%s)로 변경[%s]", lpCntrPrc, m_symbol.symbol());
+			g_log.log(INFO, "[체결처리][%s]전부청산이 익절.Open Price를 현재가(%s)로 변경", m_symbol.symbol(), lpCntrPrc);
 		}
 		else if (dPrcGap < 0) {
 			m_pos.IncSLCnt();
-			g_log.log(INFO, "[체결처리]손절전부청산.손절카운트증가(%d)[%s]", m_pos.nTotSLCnt, m_symbol.symbol());
+			g_log.log(INFO, "[체결처리][%s]손절전부청산.손절카운트증가(%d)", m_symbol.symbol(), m_pos.nTotSLCnt);
 		}
 
 		if (m_pos.nTotPTCnt >= m_param.nMaxCntPT)
 		{
 			m_pos.bFinish = TRUE;
-			g_log.log(INFO, "[체결처리]전부청산.익절(%d)회 수행으로 거래중단[%s]", m_pos.nTotPTCnt, m_symbol.symbol());
+			g_log.log(INFO, "[체결처리][%s]전부청산.익절(%d)회 수행으로 거래중단", m_symbol.symbol(), m_pos.nTotPTCnt);
 		}
 		if (m_pos.nTotSLCnt >= m_param.nMaxCntSL)
 		{
 			m_pos.bFinish = TRUE;
-			g_log.log(INFO, "[체결처리]전부청산.손절(%d)회 수행으로 거래중단[%s]", m_pos.nTotSLCnt, m_symbol.symbol());
+			g_log.log(INFO, "[체결처리][%s]전부청산.손절(%d)회 수행으로 거래중단", m_symbol.symbol(), m_pos.nTotSLCnt);
 		}
 
 		// 초기화
@@ -274,7 +275,7 @@ void CStratHistManager::AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCST
 	//2. 일부체결
 	else if (m_pos.dQty > dCntrQty)
 	{
-		g_log.log(INFO, "[체결처리]일부청산[%s]", m_symbol.symbol());
+		g_log.log(INFO, "[체결처리][%s]일부청산", m_symbol.symbol());
 		dPLQty = dCntrQty;
 		m_pos.dQty -= dCntrQty;
 
@@ -289,7 +290,7 @@ void CStratHistManager::AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCST
 		m_pos.cBsTp[0] = lpCntrBsTp[0];
 		m_pos.Status = (m_pos.cBsTp[0] == CD_BUY) ? FLAG_OPEN_BUY : FLAG_OPEN_SELL;
 
-		g_log.log(INFO, "[체결처리] 포지션역전 발생.기존수량(%f) 체결수량(%f)[%s]",
+		g_log.log(INFO, "[체결처리][%s]포지션역전 발생.기존수량(%f) 체결수량(%f)",
 			m_symbol.symbol(), m_pos.dQty, dCntrQty);
 
 		// 주문전송한 수량 차감
@@ -297,7 +298,7 @@ void CStratHistManager::AcptCloseProc(LPCSTR lpCntrBsTp, LPCSTR lpCntrPrc, LPCST
 	}
 
 	dPlMoney = dPlTick * m_symbol.tickval() * dPLQty;
-	g_log.log(INFO, "[체결처리]체결손익 계산[%s]: 가격차(%f) 손익수량(%f) 손익TICK(%f) 손익(%f)",
+	g_log.log(INFO, "[체결처리][%s]체결손익 계산: 가격차(%f) 손익수량(%f) 손익TICK(%f) 손익(%f)",
 		m_symbol.symbol(), dPrcGap, dPLQty, dPlTick, dPlMoney);
 }
 
@@ -346,6 +347,8 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 		dPrcGap = (dPrcMax - dPrcEntry) * dPTRate;
 		dPrcFire = dPrcEntry + dPrcGap;
 		nComp = CUtil::CompPrc(dPrcCurr, dPrcFire, m_symbol.dotcnt(), LEN_PRC);
+		if (nComp <= 0)
+			bResult = TRUE;
 	}
 
 	// SHORT 일때, 현재가 > FIRE PRC 이면 익절
@@ -353,18 +356,22 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	{
 		dPrcGap = (dPrcEntry - dPrcMax) * dPTRate;
 		dPrcFire = dPrcEntry - dPrcGap;
-		nComp = CUtil::CompPrc(dPrcFire, dPrcCurr, m_symbol.dotcnt(), LEN_PRC);
+		nComp = CUtil::CompPrc(dPrcCurr, dPrcFire, m_symbol.dotcnt(), LEN_PRC);
+		if (nComp >= 0)
+			bResult = TRUE;
 	}
-	if (nComp <= 0)
+	if (bResult)
 	{
 		if (IsLong())	strcpy(pzStratID, STRATID_SELL_PT);
 		else			strcpy(pzStratID, STRATID_BUY_PT);
 
-		bResult = TRUE;
-		sprintf(pMsg, "[전략발동][익절조건]"
-			"(최고대비 %.2f Percent = %.*f) >= 현재가(%.*f)"
-			,
-			dPTRate*100., m_symbol.dotcnt(), dPrcFire, m_symbol.dotcnt(), dPrcCurr
+		sprintf(pMsg, "[전략발동][%s][익절조건](최고가:%.*f - 진입가:%.*f = Gap:%.*f)(최고대비 %.2f Percent = %.*f) >= 현재가(%.*f)"
+			, m_symbol.symbol()
+			, m_symbol.dotcnt(), dPrcMax
+			, m_symbol.dotcnt(), dPrcEntry
+			, m_symbol.dotcnt(), dPrcMax - dPrcEntry
+			, dPTRate*100., m_symbol.dotcnt()
+			, dPrcFire, m_symbol.dotcnt(), dPrcCurr
 		);
 
 		g_log.log(INFO, pMsg);
@@ -430,54 +437,76 @@ void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 	// save Max Price
 	strcpy(m_pos.zMaxPLPrc, pzCurrPrc);
 
-	double dTouchPrc = 0;
-	double dOpenPrc = atof(m_param.zOpenPrc);
-	double dTouchPoint = 0;
-	int nLevel = 0;
-	if (!m_pos.bPT50Touched)
-	{
-		dTouchPoint = m_param.dPT50_TouchPoint;
-		nLevel = 1;
-	}
-	else
-	{
-		if (!m_pos.bPT80Touched)
-		{
-			dTouchPoint = m_param.dPT80_TouchPoint;
-			nLevel = 2;
-		}
-		else if (!m_pos.bPT90Touched)
-		{
-			dTouchPoint = m_param.dPT90_TouchPoint;
-			nLevel = 3;
-		}
-	}
+	double dTouchPrc50 = 0, dTouchPrc80 = 0, dTouchPrc90 = 0;
+	//double dOpenPrc = atof(m_param.zOpenPrc);
+	
+	//익절기준을 시가에서 진입가로 변경한다.20181207
+	//double dInitialPrc = atof(m_param.zInitialPrc);
+	double dEntryPrc = entryprc();
+
+	double dCurrPrc = atof(pzCurrPrc);
+
+	double dTouchedPoint = 0, dTouchedPrc=0;
 
 	if (IsLong())
 	{
-		// 현재가 : 1.2720,  시가:1.2718  0.1%:1.2731  0.5%:1.2781   
-		dTouchPrc = dOpenPrc * (1.0 + dTouchPoint);
-		nComp = CUtil::CompPrc(atof(pzCurrPrc), dTouchPrc, m_symbol.dotcnt(), LEN_PRC);
-		if (nComp < 0)
+		// 현재가 : 1.2720,  진입가:1.2718  0.1%:1.2731  0.5%:1.2781   
+		dTouchPrc50 = dEntryPrc * (1.0 + m_param.dPT50_TouchPoint);
+		dTouchPrc80 = dEntryPrc * (1.0 + m_param.dPT80_TouchPoint);
+		dTouchPrc90 = dEntryPrc * (1.0 + m_param.dPT90_TouchPoint);
+
+		if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) >= 0)
+		{
+			m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc90;
+			dTouchedPrc = dTouchPrc90;
+		}
+		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) >= 0)
+		{
+			m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc80;
+			dTouchedPrc = dTouchPrc80;
+		}
+		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) >= 0)
+		{
+			m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc50;
+			dTouchedPrc = dTouchPrc50;
+		}
+		else
 			return;
 	}
 	if (IsShort())
 	{
-		// 현재가 : 1.2707,  시가:1.2718  0.1%:1.2705  0.5%:1.2667  
-		dTouchPrc = dOpenPrc * (1.0 - dTouchPoint);
-		nComp = CUtil::CompPrc(atof(pzCurrPrc), dTouchPrc, m_symbol.dotcnt(), LEN_PRC);
-		if (nComp > 0)
+		// 현재가 : 1.2707,  진입가:1.2718  0.1%:1.2705  0.5%:1.2667  
+		dTouchPrc50 = dEntryPrc * (1.0 - m_param.dPT50_TouchPoint);
+		dTouchPrc80 = dEntryPrc * (1.0 - m_param.dPT80_TouchPoint);
+		dTouchPrc90 = dEntryPrc * (1.0 - m_param.dPT90_TouchPoint);
+
+		if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) <= 0)
+		{
+			m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc90;
+			dTouchedPrc = dTouchPrc90;
+		}
+		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) <= 0)
+		{
+			m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc80;
+			dTouchedPrc = dTouchPrc80;
+		}
+		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) <= 0)
+		{
+			m_pos.bPT50Touched = TRUE;
+			dTouchedPoint = dTouchPrc50;
+			dTouchedPrc = dTouchPrc50;
+		}
+		else
 			return;
 	}
 
-	
-	
-	if (nLevel == 1)	m_pos.bPT50Touched = TRUE;
-	if (nLevel == 2)	m_pos.bPT80Touched = TRUE;
-	if (nLevel == 3)	m_pos.bPT90Touched = TRUE;
-
 	g_log.log(INFO, "[전략발동]오픈가대비 %.*f Percent 터치.지금부터 익절조건 점검(현재가:%s)(기준가:%.*f)(오픈가:%s)[%s]",
-			m_symbol.dotcnt(),dTouchPoint*100., pzCurrPrc, m_symbol.dotcnt(), dTouchPrc, m_param.zOpenPrc, m_symbol.symbol());
+			m_symbol.dotcnt(), dTouchedPoint*100., pzCurrPrc, m_symbol.dotcnt(), dTouchedPrc, m_param.zInitialPrc, m_symbol.symbol());
 
 	return;
 }

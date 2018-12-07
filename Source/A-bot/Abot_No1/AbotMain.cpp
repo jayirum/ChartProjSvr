@@ -7,7 +7,7 @@
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/LogMsg.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
 #include "../../IRUM_UTIL/TimeInterval.h"
 #include "Main.h"
 
@@ -275,7 +275,7 @@ unsigned WINAPI CAbotMain::Thread_ApiTick(LPVOID lp)
 			// strat class ПЁ РќДо
 			
 			if (!pStrat->bFirstFeed) {
-				pStrat->h->SetOpenPrc(zCurrPrc);
+				pStrat->h->SetInitialPrc(zCurrPrc);
 				pStrat->bFirstFeed = TRUE;
 				p->m_mapStrat[sSymbol] = pStrat;
 			}
@@ -659,7 +659,7 @@ void CAbotMain::SetOpenPrc(char* pzSymbol, char* pzOpePrc)
 	if (it != m_mapStrat.end())
 	{
 		ST_STRAT* s = (*it).second;
-		s->h->SetOpenPrc(pzOpePrc);
+		s->h->SetInitialPrc(pzOpePrc);
 	}
 	unlock();
 }
