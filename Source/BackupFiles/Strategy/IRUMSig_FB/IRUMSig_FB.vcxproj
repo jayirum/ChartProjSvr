@@ -164,10 +164,7 @@
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\TcpSrv.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
-    <ClInclude Include="ESApiDllDlg.h" />
-    <ClInclude Include="ESApiDllDlgDlg.h" />
     <ClInclude Include="FBSigCommon.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="SignalCrossMA.h" />
@@ -189,10 +186,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TcpSrv.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
-    <ClCompile Include="ESApiDllDlg.cpp" />
-    <ClCompile Include="ESApiDllDlgDlg.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SignalCrossMA.cpp" />
     <ClCompile Include="SignalOpenPrc.cpp" />
@@ -203,9 +197,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="IRUMSig_FB.ini" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ESApiDllDlg.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
