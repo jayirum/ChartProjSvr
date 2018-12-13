@@ -99,6 +99,11 @@ BOOL CStratHistManager::LoadStratInfoInner()
 			m_param.dPT80_TouchPoint = db->GetDouble("PT80_CHK_TOUCHPOINT_PCT")/100.;	//0.8%
 			m_param.dPT90_TouchPoint = db->GetDouble("PT90_CHK_TOUCHPOINT_PCT")/100.;	//0.9%
 
+			g_log.log(INFO, "[%s]Init Info(50PT:%f)(80PT:%f)(90PT:%f)",
+				m_symbol.symbol(),
+				m_param.dPT50_TouchPoint,
+				m_param.dPT80_TouchPoint,
+				m_param.dPT90_TouchPoint);
 			db->Next();
 		}
 		db->Close();
@@ -334,7 +339,8 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 		return FALSE;
 
 	double dPrcMax = atof(m_pos.zMaxPLPrc);
-	double dPrcEntry = atof(m_pos.zEntryPrc);
+	//double dPrcEntry = atof(m_pos.zEntryPrc);
+	double dInitPrc = atof(m_param.zInitialPrc);
 	double dPrcCurr = atof(pzCurrPrc);
 	double dPrcFire = 0;
 	double dPrcGap = 0;
@@ -344,8 +350,10 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	// LONG 일때, 현재가 < FIRE PRC 이면 익절
 	if (IsLong())
 	{
-		dPrcGap = (dPrcMax - dPrcEntry) * dPTRate;
-		dPrcFire = dPrcEntry + dPrcGap;
+		//dPrcGap = (dPrcMax - dPrcEntry) * dPTRate;
+		//dPrcFire = dPrcEntry + dPrcGap;
+		dPrcGap = (dPrcMax - dInitPrc) * dPTRate;
+		dPrcFire = dInitPrc + dPrcGap;
 		nComp = CUtil::CompPrc(dPrcCurr, dPrcFire, m_symbol.dotcnt(), LEN_PRC);
 		if (nComp <= 0)
 			bResult = TRUE;
@@ -354,8 +362,10 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 	// SHORT 일때, 현재가 > FIRE PRC 이면 익절
 	if (IsShort())
 	{
-		dPrcGap = (dPrcEntry - dPrcMax) * dPTRate;
-		dPrcFire = dPrcEntry - dPrcGap;
+		//dPrcGap = (dPrcEntry - dPrcMax) * dPTRate;
+		//dPrcFire = dPrcEntry - dPrcGap;
+		dPrcGap = (dInitPrc - dPrcMax) * dPTRate;
+		dPrcFire = dInitPrc - dPrcGap;
 		nComp = CUtil::CompPrc(dPrcCurr, dPrcFire, m_symbol.dotcnt(), LEN_PRC);
 		if (nComp >= 0)
 			bResult = TRUE;
@@ -368,10 +378,11 @@ BOOL CStratHistManager::IsProfitTakingCondition(
 		sprintf(pMsg, "[전략발동][%s][익절조건](최고가:%.*f - 진입가:%.*f = Gap:%.*f)(최고대비 %.2f Percent = %.*f) >= 현재가(%.*f)"
 			, m_symbol.symbol()
 			, m_symbol.dotcnt(), dPrcMax
-			, m_symbol.dotcnt(), dPrcEntry
-			, m_symbol.dotcnt(), dPrcMax - dPrcEntry
-			, dPTRate*100., m_symbol.dotcnt()
-			, dPrcFire, m_symbol.dotcnt(), dPrcCurr
+			, m_symbol.dotcnt(), dInitPrc	//dPrcEntry
+			, m_symbol.dotcnt(), dPrcMax - dInitPrc	//dPrcEntry
+			, dPTRate*100.
+			, m_symbol.dotcnt(), dPrcFire
+			, m_symbol.dotcnt(), dPrcCurr
 		);
 
 		g_log.log(INFO, pMsg);
@@ -441,73 +452,114 @@ void CStratHistManager::SetMaxPLPrc(char* pzCurrPrc)
 	//double dOpenPrc = atof(m_param.zOpenPrc);
 	
 	//익절기준을 시가에서 진입가로 변경한다.20181207
-	//double dInitialPrc = atof(m_param.zInitialPrc);
-	double dEntryPrc = entryprc();
+	double dInitialPrc = atof(m_param.zInitialPrc);
+	//double dEntryPrc = entryprc();
 
 	double dCurrPrc = atof(pzCurrPrc);
 
 	double dTouchedPoint = 0, dTouchedPrc=0;
 
+	BOOL bUpdated = FALSE;
+
 	if (IsLong())
 	{
 		// 현재가 : 1.2720,  진입가:1.2718  0.1%:1.2731  0.5%:1.2781   
-		dTouchPrc50 = dEntryPrc * (1.0 + m_param.dPT50_TouchPoint);
-		dTouchPrc80 = dEntryPrc * (1.0 + m_param.dPT80_TouchPoint);
-		dTouchPrc90 = dEntryPrc * (1.0 + m_param.dPT90_TouchPoint);
+		//dTouchPrc50 = dEntryPrc * (1.0 + m_param.dPT50_TouchPoint);
+		//dTouchPrc80 = dEntryPrc * (1.0 + m_param.dPT80_TouchPoint);
+		//dTouchPrc90 = dEntryPrc * (1.0 + m_param.dPT90_TouchPoint);
+		dTouchPrc50 = dInitialPrc * (1.0 + m_param.dPT50_TouchPoint);
+		dTouchPrc80 = dInitialPrc * (1.0 + m_param.dPT80_TouchPoint);
+		dTouchPrc90 = dInitialPrc * (1.0 + m_param.dPT90_TouchPoint);
 
-		if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) >= 0)
+		if (!m_pos.bPT50Touched)
 		{
-			m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc90;
-			dTouchedPrc = dTouchPrc90;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) >= 0)
+			{
+				m_pos.bPT50Touched = TRUE;
+				dTouchedPoint = m_param.dPT50_TouchPoint;
+				dTouchedPrc = dTouchPrc50;
+				bUpdated = TRUE;
+			}
 		}
-		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) >= 0)
+
+		if(!m_pos.bPT80Touched)
 		{
-			m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc80;
-			dTouchedPrc = dTouchPrc80;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) >= 0)
+			{
+				m_pos.bPT80Touched = TRUE;
+				dTouchedPoint = m_param.dPT80_TouchPoint;
+				dTouchedPrc = dTouchPrc80;
+				bUpdated = TRUE;
+			}
 		}
-		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) >= 0)
+		if (!m_pos.bPT90Touched)
 		{
-			m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc50;
-			dTouchedPrc = dTouchPrc50;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) >= 0)
+			{
+				m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+				dTouchedPoint = m_param.dPT90_TouchPoint;
+				dTouchedPrc = dTouchPrc90;
+				bUpdated = TRUE;
+			}
 		}
-		else
-			return;
-	}
+
+	} // if (IsLong())
+
 	if (IsShort())
 	{
 		// 현재가 : 1.2707,  진입가:1.2718  0.1%:1.2705  0.5%:1.2667  
-		dTouchPrc50 = dEntryPrc * (1.0 - m_param.dPT50_TouchPoint);
-		dTouchPrc80 = dEntryPrc * (1.0 - m_param.dPT80_TouchPoint);
-		dTouchPrc90 = dEntryPrc * (1.0 - m_param.dPT90_TouchPoint);
+		//dTouchPrc50 = dEntryPrc * (1.0 - m_param.dPT50_TouchPoint);
+		//dTouchPrc80 = dEntryPrc * (1.0 - m_param.dPT80_TouchPoint);
+		//dTouchPrc90 = dEntryPrc * (1.0 - m_param.dPT90_TouchPoint);
+		dTouchPrc50 = dInitialPrc * (1.0 - m_param.dPT50_TouchPoint);
+		dTouchPrc80 = dInitialPrc * (1.0 - m_param.dPT80_TouchPoint);
+		dTouchPrc90 = dInitialPrc * (1.0 - m_param.dPT90_TouchPoint);
 
-		if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) <= 0)
+		if (!m_pos.bPT50Touched)
 		{
-			m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc90;
-			dTouchedPrc = dTouchPrc90;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) <= 0)
+			{
+				m_pos.bPT50Touched = TRUE;
+				dTouchedPoint = m_param.dPT50_TouchPoint;
+				dTouchedPrc = dTouchPrc50;
+				bUpdated = TRUE;
+			}
 		}
-		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) <= 0)
+
+		if (!m_pos.bPT80Touched)
 		{
-			m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc80;
-			dTouchedPrc = dTouchPrc80;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc80, m_symbol.dotcnt(), LEN_PRC) <= 0)
+			{
+				m_pos.bPT80Touched = TRUE;
+				dTouchedPoint = m_param.dPT80_TouchPoint;
+				dTouchedPrc = dTouchPrc80;
+				bUpdated = TRUE;
+			}
 		}
-		else if (CUtil::CompPrc(dCurrPrc, dTouchPrc50, m_symbol.dotcnt(), LEN_PRC) <= 0)
+
+		if (!m_pos.bPT90Touched)
 		{
-			m_pos.bPT50Touched = TRUE;
-			dTouchedPoint = dTouchPrc50;
-			dTouchedPrc = dTouchPrc50;
+			if (CUtil::CompPrc(dCurrPrc, dTouchPrc90, m_symbol.dotcnt(), LEN_PRC) <= 0)
+			{
+				m_pos.bPT90Touched = m_pos.bPT80Touched = m_pos.bPT50Touched = TRUE;
+				dTouchedPoint = m_param.dPT90_TouchPoint;
+				dTouchedPrc = dTouchPrc90;
+				bUpdated = TRUE;
+			}
 		}
-		else
-			return;
+	} // if (IsShort())
+
+	if (bUpdated)
+	{
+		g_log.log(INFO, "[전략발동(%d)][%s]오픈가대비 %.*f Percent 터치.지금부터 익절조건 점검(현재가:%s)(기준가:%.*f)(오픈가:%s)",
+			GetCurrentThread(),
+			m_symbol.symbol(),
+			m_symbol.dotcnt(), dTouchedPoint*100.,
+			pzCurrPrc,
+			m_symbol.dotcnt(), dTouchedPrc,
+			m_param.zInitialPrc
+		);
 	}
-
-	g_log.log(INFO, "[전략발동]오픈가대비 %.*f Percent 터치.지금부터 익절조건 점검(현재가:%s)(기준가:%.*f)(오픈가:%s)[%s]",
-			m_symbol.dotcnt(), dTouchedPoint*100., pzCurrPrc, m_symbol.dotcnt(), dTouchedPrc, m_param.zInitialPrc, m_symbol.symbol());
-
 	return;
 }
 

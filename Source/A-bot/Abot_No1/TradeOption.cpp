@@ -1,7 +1,10 @@
 #include "TradeOption.h"
 #include "../../IRUM_UTIL/Util.h"
+#include "../../IRUM_UTIL/LogMsg.h"
 
 
+extern CLogMsg g_log;
+extern char	g_zConfig[_MAX_PATH];
 
 COptBase::COptBase(char* pzConfig)
 {
@@ -61,13 +64,21 @@ BOOL CCrossOpt::TurnOn(void* p1)
 		return TRUE;
 	}
 
-	char zCrossAppliedMode[32], zCandleMin[32];
+	char zCrossAppliedMode[32], zCandleMin[32], zStrongYN[32];
 	CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "CROSS_APPLIED_MODE", zCrossAppliedMode);
 	if (strcmp(zCrossAppliedMode, "ALL_SYMBOL") == 0)
 	{
 		m_bOn = TRUE;
 		CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "CROSS_CANDLE_MIN", zCandleMin);
 		m_nCandleMin = atoi(zCandleMin);
+
+		CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "CROSS_SMA_MIN", zCandleMin);
+		m_nSMA_Min = atoi(zCandleMin);
+
+		CUtil::GetConfig(m_zConfig, "TRADE_OPTION", "CROSS_STRONG_YN", zStrongYN);
+		m_bStrongCross = (zStrongYN[0] == 'Y') ? TRUE : FALSE;
+
+		g_log.log(INFO, "TRADE OPTION.(Candle Min:%d) (SMA Min:%d) (StrongYN:%c)", m_nCandleMin, m_nSMA_Min, zStrongYN[0]);
 	}
 
 	if (strcmp(zCrossAppliedMode, "BY_SYMBOL") == 0)

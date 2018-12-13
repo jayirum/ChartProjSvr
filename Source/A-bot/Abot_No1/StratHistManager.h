@@ -136,7 +136,7 @@ public:
 	double	initialprc_d() { return atof(m_param.zInitialPrc); }
 	char*	initialprc() { return m_param.zInitialPrc; }
 	char*	endtm() { return m_param.zEndTM; }
-	char*	starttm() { return m_param.zStartTM; }
+	char*	starttm() {	return m_param.zStartTM; }
 	EN_STATUS_FLAG	status() { return m_pos.Status; }
 	BOOL	IsLong() { return (m_pos.Status == FLAG_OPEN_BUY); }
 	BOOL	IsShort() { return (m_pos.Status == FLAG_OPEN_SELL); }

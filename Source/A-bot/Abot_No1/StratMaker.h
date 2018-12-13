@@ -38,6 +38,7 @@ private:
 
 	VOID	APIOrdProc(char* pData);
 	VOID	StratProc(char* pMarketData);
+	VOID	TestChartNm();
 	VOID	StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
 	VOID	MarketCloseClr();
 	VOID	ClosePosition();

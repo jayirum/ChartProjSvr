@@ -751,7 +751,7 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 			double dTickVal		= db->GetDouble("TICK_VALUE");
 			double dTickSize	= db->GetDouble("TICK_SIZE");
 			int nDotCnt			= db->GetLong("DOT_CNT");
-			char zQty[128];		db->GetStr("ORD_QTY", zQty);			
+						
 			char zEndTM[128];	db->GetStr("END_TM", zEndTM);
 			char zStartTM[128];	db->GetStr("START_TM", zStartTM);
 			
@@ -760,9 +760,11 @@ BOOL CAbotMain::LoadSymbolInfo(BOOL bCreateStrat)
 			double dEntrySpread = db->GetDouble("ENTRY_SPREAD");	//0.001(0.1%)			
 			double dClrSpread = db->GetDouble("CLR_SPREAD");		//0.005(0.5%)
 			double dPtPoint		= db->GetDouble("PT_POINT");		//0.5(50%)
+			int nOrdQty = db->GetLong("ORD_QTY");
+			//char zQty[128];		db->GetStr("ORD_QTY", zQty);
 
 			//TODO
-			//if (strncmp(zSymbol, "GC", 2) != 0) {
+			//if (strncmp(zSymbol, "NQ", 2) != 0) {
 			//	db->Next();
 			//	continue;
 			//}

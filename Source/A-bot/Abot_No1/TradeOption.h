@@ -49,8 +49,12 @@ public:
 	BOOL		Is_3MinCandle() { return (m_nCandleMin == 3); }
 	BOOL		Is_5MinCandle() { return (m_nCandleMin == 5); }
 	int			GetCandleMin() { return m_nCandleMin; }
+	int			GetSMAMin() { return m_nSMA_Min; }
+	BOOL		Is_StrongCross() { return m_bStrongCross;}
 private:
 	int		m_nCandleMin;
+	int		m_nSMA_Min;			// 단기MA 구할때 5개짜리로 할것인가? 10개짜리로 할것인가?
+	BOOL	m_bStrongCross;		// 진성Cross 여부 (GOLDEN 이면서 LMA 가 상승 중)
 };
 
 
