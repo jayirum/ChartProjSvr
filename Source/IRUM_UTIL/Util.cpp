@@ -1424,3 +1424,4 @@ VOID	getGMTtime(char* pOut)
 	sprintf(pOut, "%04d%02d%02d-%02d%02d%02d",
 		1900 + ltime->tm_year, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
+

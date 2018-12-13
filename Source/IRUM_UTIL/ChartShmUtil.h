@@ -17,10 +17,18 @@ public:
 	BOOL	CurrChart(char *pzSymbol, CHART_TP ChartTp, char* date, char *time, _Out_ ST_SHM_CHART_UNIT& chart);
 	BOOL	PrevChart(char *pzSymbol, CHART_TP ChartTp, _In_ ST_SHM_CHART_UNIT& currChart, _Out_ ST_SHM_CHART_UNIT& prevChart);
 
-	CROSS_TP GetCross(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross=NULL);
-	CROSS_TP GetCross20_10(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross = NULL);
-	CROSS_TP GetCross20_5(ST_SHM_CHART_UNIT* chart, int nDotCnt, _Out_ char* pzCross = NULL);
+	CROSS_TP GetCross(char* pzSymbol, CHART_TP chartTp, ST_SHM_CHART_UNIT* chart, int nDotCnt, BOOL bShortest, BOOL bStrongCross,
+		_Out_ char* pzCross, _Out_ char* pzLMAFirstPrc, _Out_ char* pzLMALastPrc);
 
+	BOOL	CompareHiLo(char *pzSymbol, CHART_TP ChartTp, char* pzCurrPrc, int nCompCnt, char* date, char *time,int nDotCnt,
+		_Out_ int* pnHiCnt, 
+		//_Out_ ST_SHM_CHART_UNIT* arrHi, 
+		_Out_ int* pnLoCnt, 
+		//_Out_ ST_SHM_CHART_UNIT* arrLo,
+		_Out_ ST_SHM_CHART_UNIT* currChart);
+
+
+	BOOL	GetPreviousChartNm(_In_ char* pzOrgChartNm,_In_ CHART_TP ChartTp, _In_ int nPreviousCnt, _Out_ char* pResult);
 	char*	getmsg() { return m_zMsg; }
 private:
 	char	m_zArtc[128];

@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Abot_No2", "Abot_No2\Abot_N
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KRFBOrd", "..\BackupFiles\KR_Hedge\KRFBOrd\KRFBOrd.vcxproj", "{7B51D5A0-6B38-4912-AA06-2C22EFBA87F5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Abot_No3", "Abot_No3\Abot_No3.vcxproj", "{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -39,6 +41,14 @@ Global
 		{7B51D5A0-6B38-4912-AA06-2C22EFBA87F5}.Release|x64.ActiveCfg = Release|Win32
 		{7B51D5A0-6B38-4912-AA06-2C22EFBA87F5}.Release|x86.ActiveCfg = Release|Win32
 		{7B51D5A0-6B38-4912-AA06-2C22EFBA87F5}.Release|x86.Build.0 = Release|Win32
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Debug|x64.ActiveCfg = Debug|x64
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Debug|x64.Build.0 = Debug|x64
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Debug|x86.ActiveCfg = Debug|Win32
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Debug|x86.Build.0 = Debug|Win32
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Release|x64.ActiveCfg = Release|x64
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Release|x64.Build.0 = Release|x64
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Release|x86.ActiveCfg = Release|Win32
+		{8D9EB4BB-FC3C-43DB-A786-A61B323172B0}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

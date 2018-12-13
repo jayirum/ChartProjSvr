@@ -35,6 +35,8 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 //DEF-LEN
 #define IRLEN_KR_FULLCODE	32
 #define	LEN_SYMBOL	7			//FDAXU17
+#define	LEN_SYMBOL_NM	32			//FDAXU17
+#define	LEN_ARTC	7			//FDAXU17
 #define LEN_PRC		10
 #define LEN_SEQNO	10
 #define	LEN_SHM_GROUP_KEY	9	//CLK17+01  // GROUP KEY (종목+charttp)
@@ -55,7 +57,8 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define LEN_PACKET_CODE		6
 #define SIZE_PACKET_LEN		4
 #define LEN_MONEY			12
-
+#define LEN_TICKSIZE		10
+#define LEN_DOTCNT			2
 
 //DEF-BUY, DEF-SELL
 #define CD_BUY	'B'
@@ -160,7 +163,18 @@ enum CHART_TP {
 	TP_TICK40,
 	TP_TICK60
 };
-
+#define CHART_TP_S(tp,out){\
+	if(tp==TP_1MIN) strcpy(out,"1분");		\
+	if (tp == TP_3MIN) strcpy(out, "3분");	\
+	if (tp == TP_5MIN) strcpy(out, "5분");	\
+	if (tp == TP_10MIN) strcpy(out, "10분");	\
+	if (tp == TP_15MIN) strcpy(out, "15분");	\
+	if (tp == TP_20MIN) strcpy(out, "20분");	\
+	if (tp == TP_60MIN) strcpy(out, "60분");	\
+	if (tp == TP_120MIN) strcpy(out, "120분");	\
+	if (tp == TP_DAY) strcpy(out, "일간");	\
+	if (tp == TP_WEEK) strcpy(out, "주간");	\
+}
 
 //DEF-SHART SHM, DEF-CHARTSHM
 #define CHART_TP_CNT		20
@@ -552,6 +566,28 @@ typedef struct _ABOTLOG_NO1
 	char	zMsg[256];
 }ABOTLOG_NO1;
 
+
+
+typedef struct _ABOTLOG_NO3
+{
+	char	zSymbol[32];
+	char	zStratID[32];
+	char	FireYN[1];		//Y-발동, N-발동하지 않음(단지 정보성)
+	char	OpenClose[1];	//O, C
+	char	PLTp[1];		// P, L
+	char	BsTp[1];		//B, S
+	char	zOrdQty[32];
+	char	zCurrPrc[32];
+	char	zStratPrc[32];
+	char	zOpenPrc[32];
+	char	zEntryPrc[32];
+	char	zEntryPercent[32];
+	char	zCrossMsg[128];
+	char	zMaxPrc[32];		// 익절 max
+	char	zPtClrTriggerPercent[10];
+	char	zApiTM[32];
+	char	zMsg[256];
+}ABOTLOG_NO3;
 
 /////////////////////////////////////////////////////////////////////
 // LEGACY
