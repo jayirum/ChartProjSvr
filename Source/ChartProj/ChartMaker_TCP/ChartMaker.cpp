@@ -477,22 +477,34 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 
 	CMA	 ma(SMA_SHORTEST_CNT, SMA_SHORT_CNT, SMA_LONG_CNT, FALSE);
 
-	for (int i = 0; i <SMA_LONG_CNT; i++)
+	double sum = 0;
+	int nLoop = 0;
+	double dShortestMA, dShortMA, dLongMA;
+	for (int i = 0; i <SMA_LONG_CNT; i++, nLoop++)
 	{
 		sprintf(zChartNm, "%.*s", LEN_CHART_NM, chartShm.prevNm);
 		if (strcmp(DEFINE_NO_CHART, zChartNm) == 0)	break;
 
 		if (FALSE == m_shmQ.DataGet(pzGroupKey, zChartNm, (char*)&chartShm))
 		{
-			g_log.log(LOGTP_ERR, "[Chart_SMA][%s][%s]차트가 SHM 에 없다", pzGroupKey, zChartNm);
+			g_log.log(LOGTP_ERR, "[Chart_SMA][%s][%s]차트가 SHM 에 없다(SMA_LONG_CNT:%d,없는차트Index:%d)"
+				, pzGroupKey, zChartNm, SMA_LONG_CNT, i);
 			continue;
 		}
 
+		sum += atof(chartShm.close);
+		if (nLoop == SMA_SHORT_CNT - 1)
+		{
+			dShortMA = sum / (double)SMA_SHORT_CNT;
+		}
+		if (nLoop == SMA_SHORTEST_CNT - 1)
+		{
+			dShortestMA = sum / (double)SMA_SHORTEST_CNT;
+		}
 		ma.setClose(atof(chartShm.close));
 	}
-
-	double dShortestMA, dShortMA, dLongMA;
-	ma.getMAEx(&dShortestMA, &dShortMA, &dLongMA);
+	dLongMA = sum / (double)SMA_LONG_CNT;
+	//ma.getMAEx(&dShortestMA, &dShortMA, &dLongMA);
 
 	char zPrc[32];
 	FORMAT_PRC(dLongMA, m_nDotCnt, zPrc);
