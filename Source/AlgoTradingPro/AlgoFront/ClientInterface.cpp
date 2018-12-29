@@ -198,45 +198,22 @@ VOID CClientInterface::SendMessageToIocpThread(int Message)
 	}
 }
 
-
-
-VOID CClientInterface::Inner_PostData(char* pEtkData, BOOL bTick)
+VOID CClientInterface::Inner_PostData(char* pData, int nDataLen, BOOL bTick)
 {
 	IO_CONTEXT* pSend = new IO_CONTEXT;
 
 	ZeroMemory(pSend, sizeof(IO_CONTEXT));
-	
-	if (bTick)
-	{
-		ETK_CME_TICK *p = (ETK_CME_TICK*)pSend->buf;
-		memset(p, 0x20, sizeof(ETK_CME_TICK));
-		p->STX[0] = 0x02;
-		p->ETX[0] = 0x03;
-		SET_LEN(sizeof(ETK_CME_TICK), p->Header.Len);
-		memcpy(p->Header.Code, CD_PACKET_DATAFEED_ETK_CME_TICK, sizeof(p->Header.Code));
-		memcpy(&p->etkTick, pEtkData, sizeof(OVC_OutBlock));
-		pSend->wsaBuf.len = sizeof(ETK_CME_TICK);
-	}
-	else
-	{
-		ETK_CME_QUOTE *quote = (ETK_CME_QUOTE*)pSend->buf;
-		memset(quote, 0x20, sizeof(ETK_CME_QUOTE));
-		quote->STX[0] = 0x02;
-		quote->ETX[0] = 0x03;
-		SET_LEN(sizeof(ETK_CME_QUOTE), quote->Header.Len);
-		memcpy(quote->Header.Code, CD_PACKET_DATAFEED_ETK_CME_QOUTE, sizeof(quote->Header.Code));
-		memcpy(&quote->etkQuote, pEtkData, sizeof(OVH_OutBlock));
-		pSend->wsaBuf.len = sizeof(ETK_CME_QUOTE);
-	}
-
+	CopyMemory(pSend->buf, pData, nDataLen);
+	//	pSend->sock	= sock;
 	pSend->wsaBuf.buf = pSend->buf;
+	pSend->wsaBuf.len = nDataLen;
 
 	if(bTick)	pSend->context = CTX_RQST_INNER_TICK;
 	else		pSend->context = CTX_RQST_INNER_QUOTE;
 
 	PostQueuedCompletionStatus(
 		m_hCompletionPort
-		, pSend->wsaBuf.len
+		, nDataLen
 		, (ULONG_PTR)m_pInnerCKey
 		, (LPOVERLAPPED)pSend
 	);

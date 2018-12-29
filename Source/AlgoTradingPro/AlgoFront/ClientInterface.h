@@ -59,7 +59,7 @@ public:
 
 	// 내부(Application) 의 데이터 수신을 위해
 	BOOL Inner_Init();
-	VOID Inner_PostData(char* pEtkData, BOOL bTick);
+	VOID Inner_PostData(char* pData, int nDataLen, BOOL bTick);
 
 	void	RequestSendIO(COMPLETION_KEY* pCK, char* pSendBuf, int nSendLen);
 	void 	RequestRecvIO(COMPLETION_KEY* pCK);
