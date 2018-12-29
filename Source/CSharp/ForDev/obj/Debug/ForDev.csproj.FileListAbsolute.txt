@@ -1,0 +1,9 @@
+D:\ChartProjSvr\Source\CSharp\ForDev\bin\Debug\ForDev.exe.config
+D:\ChartProjSvr\Source\CSharp\ForDev\bin\Debug\ForDev.exe
+D:\ChartProjSvr\Source\CSharp\ForDev\bin\Debug\ForDev.pdb
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.csprojResolveAssemblyReference.cache
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.Form1.resources
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.Properties.Resources.resources
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.csproj.GenerateResource.Cache
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.exe
+D:\ChartProjSvr\Source\CSharp\ForDev\obj\Debug\ForDev.pdb
