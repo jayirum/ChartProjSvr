@@ -91,7 +91,7 @@ namespace RealtimeTest
             hHippoChart1.RealTimeList.Add(new HippoRealTimeAttribute());
             hHippoChart1.SeriesListDictionary.Add(seriesList);
 
-            this.timer1.Interval = 100;
+            this.timer1.Interval = 500;
         }
         private void InitDrawCandle()
         {
@@ -167,8 +167,6 @@ namespace RealtimeTest
 
             //SeriesList sList = new SeriesList();
 
-
-
             Random R = new Random();
             //for (nLastIdx = 22; nLastIdx < 50 + 1; nLastIdx++)
             //{
@@ -197,6 +195,8 @@ namespace RealtimeTest
                     item.HighValue = R.Next(888, 1200) * nLastIdx - 10 * nLastIdx; // 고가
                 }
 
+
+
                 seriesList.SeriesCollection[0].items.Add(item);
                 //break;
 
@@ -221,7 +221,7 @@ namespace RealtimeTest
             //this.hHippoChart1.SeriesListDictionary.Add(seriesList);
             //this.hHippoChart1.DrawChart();
             if(nLastIdx>2)
-                this.hHippoChart1.DrawRealTimeChart(20, item);
+                this.hHippoChart1.DrawRealTimeChart( item,1);
         }
 
         private void DrawCandleOrg()
@@ -328,35 +328,48 @@ namespace RealtimeTest
         }
 
 
-
+        bool bRealStart = false;
+        SeriesItem realItem = new SeriesItem();
+        string itemName = "ITEM-1";
         private void Draw(double addData)
         {
-            SeriesItem sItem = new SeriesItem();
-            sItem.Name = addData.ToString();
+            if (!bRealStart)
+            {
+                realItem.Name = itemName;
+                realItem.YStartValue = addData;
+                realItem.LowValue = addData;
+                realItem.YValue = addData;
+                realItem.HighValue = addData;
+                seriesList.SeriesCollection[0].items.Add(realItem);
+            }
+            else {
+                realItem.YValue = addData;
+                if (realItem.LowValue > addData)
+                    realItem.LowValue = addData;
 
-            sItem.YStartValue = addData;
-            sItem.LowValue = addData-20;
-            sItem.YValue = addData+15;
-            sItem.HighValue = addData+30;
-            seriesList.SeriesCollection[0].items.Add(sItem);
+                if (realItem.HighValue < addData)
+                    realItem.HighValue = addData;
+            }
+            bRealStart = true;
+            //
             //int cnt = seriesList.SeriesCollection[0].items.Count();
             //hHippoChart1.DrawRealTimeChart(20, sItem);
             //System.Threading.Thread.Sleep(1000);
 
             //sItem.LowValue = addData - 20;
-           // seriesList.SeriesCollection[0].items[cnt-1].LowValue = addData - 20;
-           // hHippoChart1.DrawRealTimeChart(20, sItem);
-           // System.Threading.Thread.Sleep(1000);
+            // seriesList.SeriesCollection[0].items[cnt-1].LowValue = addData - 20;
+            // hHippoChart1.DrawRealTimeChart(20, sItem);
+            // System.Threading.Thread.Sleep(1000);
 
-           // //sItem.YValue = addData + 15;
-           // seriesList.SeriesCollection[0].items[cnt - 1].YValue = addData +15;
-           // hHippoChart1.DrawRealTimeChart(20, sItem);
-           // System.Threading.Thread.Sleep(1000);
+            // //sItem.YValue = addData + 15;
+            // seriesList.SeriesCollection[0].items[cnt - 1].YValue = addData +15;
+            // hHippoChart1.DrawRealTimeChart(20, sItem);
+            // System.Threading.Thread.Sleep(1000);
 
-           //// sItem.HighValue = addData + 30;
-           // seriesList.SeriesCollection[0].items[cnt - 1].HighValue = addData +30;
-            hHippoChart1.DrawRealTimeChart(20, sItem);
-
+            //// sItem.HighValue = addData + 30;
+            // seriesList.SeriesCollection[0].items[cnt - 1].HighValue = addData +30;
+            hHippoChart1.DrawRealTimeChart(realItem,1);
+           // hHippoChart1.DrawChart(seriesList);
             // 그리기
             //hHippoChart1.DrawRealTimeChart(20, sItem);
 
@@ -385,7 +398,7 @@ namespace RealtimeTest
             this.hHippoChart1.SeriesListDictionary.Add(sList);
             //this.hHippoChart1.DrawChart();
 
-            this.timer2.Interval = 500;
+            this.timer2.Interval = 2000;
             this.timer2.Start();
         }
 
@@ -416,6 +429,7 @@ namespace RealtimeTest
 
             this.hHippoChart1.SeriesListDictionary[0].SeriesCollection[0].items[nCnt - 1].YValue = val + 30;
             this.hHippoChart1.DrawChart();
+            //this.DrawChart()
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -550,6 +564,58 @@ namespace RealtimeTest
             }
 
             this.DrawChart(startVal, EndVal);
+        }
+
+
+        AxisMarker mk = new AxisMarker();
+        private void button6_Click(object sender, EventArgs e)
+        {
+            SeriesList sList = new SeriesList();
+            sList.SeriesCollection.Add(new Series());
+            sList.SeriesCollection.Add(new Series());
+            sList.SeriesCollection.Add(new Series());
+
+            hHippoChart1.RealTimeList.Add(new HippoRealTimeAttribute());
+            hHippoChart1.RealTimeList.Add(new HippoRealTimeAttribute());
+            hHippoChart1.RealTimeList.Add(new HippoRealTimeAttribute());
+
+            // AxisMarker mk = new AxisMarker("This is line", 800);
+            
+            mk.Label.Text = "This is Line";
+            mk.Name = "Line Marker";
+            mk.BringToFront = true;
+            mk.Line.LineColor = Color.BlueViolet;
+
+            //AxisMarker mk2 = new AxisMarker("This is 2nd line", 500);
+            //mk2.Name = "Line Marker 2";
+            //mk2.BringToFront = true;
+            //mk2.Line.LineColor = Color.Yellow;
+
+            sList.AxisFactor.YAxis.Markers.Add(mk);
+            //sList.AxisFactor.YAxis.Markers.Add(mk2);
+
+
+            hHippoChart1.SeriesListDictionary.Add(sList);
+            timer6.Interval = 100;
+            timer6.Start();
+        }
+
+        private void timer6_Tick(object sender, EventArgs e)
+        {
+            SeriesItem[] items = new SeriesItem[3];//  { 0,0,0};
+
+            items.SetValue(new SeriesItem(new Random().Next(999)), 0);
+            items.SetValue(new SeriesItem(new Random().Next(555)), 1);
+            items.SetValue(new SeriesItem(new Random().Next(777)), 2);
+
+            hHippoChart1.SeriesListDictionary[0].AxisFactor.YAxis.Markers[0].Value = new Random().Next(666);
+
+
+            items[0].ItemColor = Color.Black;
+            items[0].ItemColor = Color.Red;
+            items[0].ItemColor = Color.Blue;
+            items[2].Name = DateTime.Now.ToString("mm:ss");
+            hHippoChart1.DrawRealTimeChart(100, items);
         }
     }
     

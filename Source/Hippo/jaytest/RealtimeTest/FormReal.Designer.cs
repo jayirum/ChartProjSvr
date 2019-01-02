@@ -42,6 +42,8 @@
             this.timer5 = new System.Windows.Forms.Timer(this.components);
             this.button5 = new System.Windows.Forms.Button();
             this.hScrollBar1 = new System.Windows.Forms.HScrollBar();
+            this.button6 = new System.Windows.Forms.Button();
+            this.timer6 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // hHippoChart1
@@ -78,11 +80,11 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(52, 425);
+            this.button1.Location = new System.Drawing.Point(15, 408);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(137, 38);
             this.button1.TabIndex = 1;
-            this.button1.Text = "button1";
+            this.button1.Text = "DrawRealTimeChart";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -92,9 +94,10 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(174, 414);
+            this.button2.Enabled = false;
+            this.button2.Location = new System.Drawing.Point(159, 407);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.Size = new System.Drawing.Size(137, 38);
             this.button2.TabIndex = 2;
             this.button2.Text = "button2";
             this.button2.UseVisualStyleBackColor = true;
@@ -102,9 +105,9 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(279, 419);
+            this.button3.Location = new System.Drawing.Point(302, 407);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(106, 35);
+            this.button3.Size = new System.Drawing.Size(137, 38);
             this.button3.TabIndex = 3;
             this.button3.Text = "button3";
             this.button3.UseVisualStyleBackColor = true;
@@ -116,11 +119,11 @@
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(456, 419);
+            this.button4.Location = new System.Drawing.Point(445, 407);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(75, 23);
+            this.button4.Size = new System.Drawing.Size(137, 38);
             this.button4.TabIndex = 4;
-            this.button4.Text = "button4";
+            this.button4.Text = "StackChart";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
@@ -134,27 +137,42 @@
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(580, 419);
+            this.button5.Location = new System.Drawing.Point(588, 407);
             this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(75, 23);
+            this.button5.Size = new System.Drawing.Size(137, 38);
             this.button5.TabIndex = 5;
-            this.button5.Text = "button5";
+            this.button5.Text = "LineChart";
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // hScrollBar1
             // 
-            this.hScrollBar1.Location = new System.Drawing.Point(52, 457);
+            this.hScrollBar1.Location = new System.Drawing.Point(48, 502);
             this.hScrollBar1.Name = "hScrollBar1";
             this.hScrollBar1.Size = new System.Drawing.Size(611, 16);
             this.hScrollBar1.TabIndex = 6;
             this.hScrollBar1.Scroll += new System.Windows.Forms.ScrollEventHandler(this.hScrollBar1_Scroll);
             // 
+            // button6
+            // 
+            this.button6.Location = new System.Drawing.Point(14, 458);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(137, 38);
+            this.button6.TabIndex = 7;
+            this.button6.Text = "DrawRealMulti";
+            this.button6.UseVisualStyleBackColor = true;
+            this.button6.Click += new System.EventHandler(this.button6_Click);
+            // 
+            // timer6
+            // 
+            this.timer6.Tick += new System.EventHandler(this.timer6_Tick);
+            // 
             // FormReal
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(681, 481);
+            this.ClientSize = new System.Drawing.Size(747, 531);
+            this.Controls.Add(this.button6);
             this.Controls.Add(this.hScrollBar1);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.button4);
@@ -183,6 +201,8 @@
         private System.Windows.Forms.Timer timer5;
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.HScrollBar hScrollBar1;
+        private System.Windows.Forms.Button button6;
+        private System.Windows.Forms.Timer timer6;
     }
 }
 
