@@ -13,7 +13,7 @@ namespace WindowsFormsApplication1
 {
     public partial class frmPacketParser : Form
     {
-        private PPTcpClient tcpClient;
+        private PPTcpClient m_tcpClient;
 
         public frmPacketParser()
         {
@@ -26,25 +26,26 @@ namespace WindowsFormsApplication1
 
         private void UpdateUI()
         {
-
             Color c = Color.Red;
             PPTcpClient.ConnectionStatus status = PPTcpClient.ConnectionStatus.DISCONNECTED;
             string btnText = "Connect";
             bool sendEnabled = false;
-            if (tcpClient != null)
+            if (m_tcpClient != null)
             {
-                status = tcpClient.Status;
+                status = m_tcpClient.Status;
             }
             if (status == PPTcpClient.ConnectionStatus.CONNECTED)
             {
                 btnText = "Disconnect";
                 c = Color.Green;
                 sendEnabled = true;
-            } else if (status == PPTcpClient.ConnectionStatus.CONNECTING)
+            }
+            else if (status == PPTcpClient.ConnectionStatus.CONNECTING)
             {
                 btnText = "Disconnect";
                 c = Color.Gray;
-            } else
+            }
+            else
             {
                 btnText = "Connect";
                 c = Color.Red;
@@ -59,15 +60,16 @@ namespace WindowsFormsApplication1
                     btnSend.Enabled = sendEnabled;
                     });
 
-            } else {
+            }
+            else {
                 txtStatus.Text = status.ToString();
                 txtStatus.BackColor = c;
                 btnConnect.Text = btnText;
                 txtSend.Enabled = sendEnabled;
                 btnSend.Enabled = sendEnabled;
             }
+        }//private void UpdateUI()
 
-        }
         private bool CheckIP(String ip)
         {
             bool ret = true;
@@ -79,24 +81,23 @@ namespace WindowsFormsApplication1
         }
         private bool CheckPort(String portstr)
         {
-            bool ret = true;
             int port;
             if (!Int32.TryParse(portstr, out port))
             {
-                ret = false;
-            } else
-            {
-                if(port <= 0 || port >= 65535)
-                {
-                    ret = false;
-                }
+                return false;
             }
-            return ret;
+
+            if (port <= 0 || port >= 65535)
+            {
+                return false;
+            }
+            return true;
         }
+
+
         private void btnConnect_Click(object sender, EventArgs e)
         {
-
-            if(tcpClient == null)
+            if(m_tcpClient == null)
             {
                 String ip = txtIP.Text.Trim();
                 String portstr = txtPort.Text.Trim();
@@ -112,24 +113,26 @@ namespace WindowsFormsApplication1
                     MessageBox.Show("Invalid Port");
                     txtPort.Focus();
                     return;
-                } else
-                {
-                    Int32.TryParse(portstr, out port);
                 }
-                tcpClient = new PPTcpClient(ip, port);
-                tcpClient.StatusUpdated += TcpClient_StatusUpdated;
-                tcpClient.onPacket += TcpClient_onPacket;
-                tcpClient.StartConnection();
-            } else
+
+
+                Int32.TryParse(portstr, out port);
+
+                m_tcpClient = new PPTcpClient(ip, port);
+                m_tcpClient.evStatusUpdateHandler += TcpClient_StatusUpdated;
+                m_tcpClient.evOnPacket += TcpClient_onPacket;
+                m_tcpClient.StartConnection();
+            }
+            else
             {
 
-                if(tcpClient.Status == PPTcpClient.ConnectionStatus.CONNECTED 
-                    || tcpClient.Status == PPTcpClient.ConnectionStatus.CONNECTING)
+                if(m_tcpClient.Status == PPTcpClient.ConnectionStatus.CONNECTED 
+                    || m_tcpClient.Status == PPTcpClient.ConnectionStatus.CONNECTING)
                 {
-                    tcpClient.StopConnection();
-                    tcpClient.StatusUpdated -= TcpClient_StatusUpdated;
-                    tcpClient.onPacket -= TcpClient_onPacket;
-                    tcpClient = null;
+                    m_tcpClient.StopConnection();
+                    m_tcpClient.evStatusUpdateHandler -= TcpClient_StatusUpdated;
+                    m_tcpClient.evOnPacket -= TcpClient_onPacket;
+                    m_tcpClient = null;
 
                 }
             }
@@ -141,7 +144,7 @@ namespace WindowsFormsApplication1
         {
             // call PacketParser
 
-            Console.WriteLine(String.Format("{0} onPacket", DateTime.Now.ToString("mm:ss.zzz")));
+            Console.WriteLine(String.Format("{0} evOnPacket", DateTime.Now.ToString("mm:ss.zzz")));
             txtLog.Invoke((MethodInvoker)delegate {
                 Console.WriteLine(String.Format("{0} Write Log", DateTime.Now.ToString("mm:ss.zzz")));
                 txtLog.AppendText(String.Format("GetOnePacket - {0}\n", Encoding.ASCII.GetString(data)));
@@ -150,20 +153,20 @@ namespace WindowsFormsApplication1
 
         private void TcpClient_StatusUpdated()
         {
-            // Console.WriteLine(String.Format("Tcp Client Status Updated {0}", this.tcpClient.Status));
-            String newstatus = this.tcpClient.Status.ToString();
+            // Console.WriteLine(String.Format("Tcp Client Status Updated {0}", this.m_tcpClient.Status));
+            String newstatus = this.m_tcpClient.Status.ToString();
             txtLog.Invoke((MethodInvoker)delegate
             {
                 txtLog.AppendText(String.Format("Tcp Client {0}\n", newstatus));
                 
             });
             UpdateUI();
-            if(tcpClient.Status == PPTcpClient.ConnectionStatus.DISCONNECTED)
+            if(m_tcpClient.Status == PPTcpClient.ConnectionStatus.DISCONNECTED)
             {
-                tcpClient.StopConnection();
-                tcpClient.StatusUpdated -= TcpClient_StatusUpdated;
-                tcpClient.onPacket -= TcpClient_onPacket;
-                tcpClient = null;
+                m_tcpClient.StopConnection();
+                m_tcpClient.evStatusUpdateHandler -= TcpClient_StatusUpdated;
+                m_tcpClient.evOnPacket -= TcpClient_onPacket;
+                m_tcpClient = null;
             }
             
         }
@@ -172,7 +175,7 @@ namespace WindowsFormsApplication1
         {
             String s = txtSend.Text;
             if (s.Length <= 0) return;
-            if(tcpClient != null && tcpClient.Connected)
+            if(m_tcpClient != null && m_tcpClient.Connected)
             {
                 int buflength = s.Length + 6;
                 byte[] buf = new byte[buflength];
@@ -189,7 +192,7 @@ namespace WindowsFormsApplication1
                 buf[i] = 0x03;
                 i += 1;
 
-                int sent = tcpClient.SendData(buf);
+                int sent = m_tcpClient.SendData(buf);
                 if(sent < buflength)
                 {
                     // error
@@ -203,12 +206,12 @@ namespace WindowsFormsApplication1
         private void frmPacketParser_FormClosing(object sender, FormClosingEventArgs e)
         {
 
-            if(tcpClient != null)
+            if(m_tcpClient != null)
             {
-                tcpClient.StopConnection();
-                tcpClient.StatusUpdated -= TcpClient_StatusUpdated;
-                tcpClient.onPacket -= TcpClient_onPacket;
-                tcpClient = null;
+                m_tcpClient.StopConnection();
+                m_tcpClient.evStatusUpdateHandler -= TcpClient_StatusUpdated;
+                m_tcpClient.evOnPacket -= TcpClient_onPacket;
+                m_tcpClient = null;
             }
 
         }

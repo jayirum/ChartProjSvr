@@ -10,20 +10,20 @@ namespace WindowsFormsApplication1
 {
     internal class PPTcpClient
     {
-        private Socket tcpSocket;
-        private string host;
-        private int port;
-        private Thread networkThread;
-        private Thread parserThread;
+        private Socket m_TcpSocket;
+        private string m_sHost;
+        private int m_nPort;
+        private Thread m_networkThread;
+        private Thread m_parserThread;
 
         private const int PACKET_SIZE = 8192;
         private bool Quit
         {
             get; set;
         }
-        private PacketParser packetParser;
+        private PacketParser m_PacketParser;
 
-        AutoResetEvent waitHandle = new AutoResetEvent(false);
+        AutoResetEvent m_waitHandle = new AutoResetEvent(false);
 
         public enum ConnectionStatus 
         {
@@ -43,23 +43,23 @@ namespace WindowsFormsApplication1
             get
             {
                 return (Status == ConnectionStatus.CONNECTED
-                    && (tcpSocket != null)
-                    && !(tcpSocket.Poll(1, SelectMode.SelectRead)
-                        && tcpSocket.Available == 0)
+                    && (m_TcpSocket != null)
+                    && !(m_TcpSocket.Poll(1, SelectMode.SelectRead)
+                        && m_TcpSocket.Available == 0)
                     );
             }
         }
         public delegate void StatusUpdateHandler ();
-        public event StatusUpdateHandler StatusUpdated;
+        public event StatusUpdateHandler evStatusUpdateHandler;
         public delegate void OnPacketHandler (byte[] data);
-        public event OnPacketHandler onPacket;
+        public event OnPacketHandler evOnPacket;
 
-        public PPTcpClient(string host, int port)
+        public PPTcpClient(string m_sHost, int m_nPort)
         {
-            this.host = host;
-            this.port = port;
+            this.m_sHost = m_sHost;
+            this.m_nPort = m_nPort;
 
-            packetParser = new PacketParser();
+            m_PacketParser = new PacketParser();
         }
 
         ~PPTcpClient()
@@ -71,56 +71,60 @@ namespace WindowsFormsApplication1
         {
             ThreadStart networkStart = new ThreadStart(NetworkThread);
             ThreadStart parserStart = new ThreadStart(ParserThread);
-            networkThread = new Thread(networkStart);
-            networkThread.Start();
-            parserThread = new Thread(parserStart);
-            parserThread.Start();
+            m_networkThread = new Thread(networkStart);
+            m_networkThread.Start();
+            m_parserThread = new Thread(parserStart);
+            m_parserThread.Start();
         }
 
         public void StopConnection()
         {
             Quit = true;
-            if(tcpSocket != null)
+            if(m_TcpSocket != null)
             {
-                tcpSocket.Close();
-                tcpSocket = null;
+                m_TcpSocket.Close();
+                m_TcpSocket = null;
             }
-            if (networkThread != null)
+            if (m_networkThread != null)
             {
-                networkThread.Abort();
+                //m_networkThread.Abort();
+                m_networkThread.Interrupt();
             }
-            if (parserThread != null)
+            if (m_parserThread != null)
             {
-                waitHandle.Set();
-                parserThread.Abort();
+                m_waitHandle.Set();
+                //m_parserThread.Abort();
+                m_parserThread.Interrupt();
             }
         }
 
         private void NetworkThread()
         {
-            tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            tcpSocket.ReceiveBufferSize = PACKET_SIZE;
-            tcpSocket.SendBufferSize = PACKET_SIZE;
-            tcpSocket.NoDelay = true;
-            tcpSocket.DontFragment = true;
-            // tcpSocket.ReceiveTimeout = 5000;
-            // tcpSocket.SendTimeout = 5000;
+            m_TcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            m_TcpSocket.ReceiveBufferSize = PACKET_SIZE;
+            m_TcpSocket.SendBufferSize = PACKET_SIZE;
+            m_TcpSocket.NoDelay = true;
+            m_TcpSocket.DontFragment = true;
+            // m_TcpSocket.ReceiveTimeout = 5000;
+            // m_TcpSocket.SendTimeout = 5000;
 
-            while (!tcpSocket.Connected && !Quit) {
+            while (!m_TcpSocket.Connected && !Quit)
+            {
                 // TODO raise connecting event
-                UpdateStatus(ConnectionStatus.CONNECTING);
+                UpdateConnectionStatus(ConnectionStatus.CONNECTING);
                 try
                 {
-                    tcpSocket.Connect(this.host, this.port);
-                } catch(SocketException e)
+                    m_TcpSocket.Connect(this.m_sHost, this.m_nPort);
+                }
+                catch (SocketException e)
                 {
                     Console.WriteLine("Error connecting to server {0} {1}", e.ErrorCode, e.Message);
                 }
 
-                if (tcpSocket.Connected)
+                if (m_TcpSocket.Connected)
                 {
                     // raise connected event
-                    UpdateStatus(ConnectionStatus.CONNECTED);
+                    UpdateConnectionStatus(ConnectionStatus.CONNECTED);
                 }
             }
 
@@ -129,13 +133,13 @@ namespace WindowsFormsApplication1
                 byte[] buffer = new byte[PACKET_SIZE];
                 try
                 {
-                    int r = tcpSocket.Receive(buffer);
+                    int r = m_TcpSocket.Receive(buffer);
                     if (r > 0)
                     {
                         // push packet
                         Console.WriteLine(String.Format("{0} Receive", DateTime.Now.ToString("mm:ss.fff")));
-                        packetParser.AddPacket(buffer, r);
-                        waitHandle.Set();
+                        m_PacketParser.AddPacket(buffer, r);
+                        m_waitHandle.Set();
                     }
                 } catch(SocketException e)
                 {
@@ -146,29 +150,29 @@ namespace WindowsFormsApplication1
             }
 
             Quit = true;
-            UpdateStatus(ConnectionStatus.DISCONNECTED);
+            UpdateConnectionStatus(ConnectionStatus.DISCONNECTED);
         }
 
         public int SendData(byte[] data)
         {
             int s = 0;
-            if(tcpSocket != null && tcpSocket.Connected)
+            if(m_TcpSocket != null && m_TcpSocket.Connected)
             {
-                s = tcpSocket.Send(data);
+                s = m_TcpSocket.Send(data);
             }
 
             return s;
         }
 
-        private void UpdateStatus(ConnectionStatus status)
+        private void UpdateConnectionStatus(ConnectionStatus status)
         {
 
             ConnectionStatus ostatus = this.Status;
             this.Status = status;
 
-            if(ostatus != status && StatusUpdated != null)
+            if(ostatus != status && evStatusUpdateHandler != null)
             {
-                StatusUpdated();
+                evStatusUpdateHandler();
             }
         }
 
@@ -177,17 +181,17 @@ namespace WindowsFormsApplication1
 
             while(!Quit)
             {
-                waitHandle.WaitOne();
+                m_waitHandle.WaitOne();
 
-                while (packetParser.MorePacket())
+                while (m_PacketParser.MorePacket())
                 {
-                    byte[] msg = packetParser.GetOnePacket();
+                    byte[] msg = m_PacketParser.GetOnePacket();
                     if (msg != null)
                     {
 
-                        if (onPacket != null)
+                        if (evOnPacket != null)
                         {
-                            onPacket(msg);
+                            evOnPacket(msg);
                         }
                     }
                 }
