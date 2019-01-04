@@ -1,0 +1,5 @@
+[ 여러서버에 전송 ]
+- 시작 : 2013.10.07
+- 여러 CLIENT 에게 시세 전송할 수 있도록
+- label : 시세중계
+- define : DEF_SISE_RELAY
