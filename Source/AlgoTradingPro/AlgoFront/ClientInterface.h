@@ -1,5 +1,14 @@
 #pragma once
 
+/*
+	1) accept 
+		- Do not add in the map before this user succeeds in log on
+	2) receive close event
+		- mark on bCloseRequested
+	3) bCloseRequested && refCnt==0
+		=> delete 
+*/
+
 #pragma warning( disable : 4786 )
 #pragma warning( disable : 4819 )
 
@@ -32,13 +41,39 @@ typedef struct _IO_CONTEXT
 typedef enum {	CLIENT_TP_INNER	//	Thread which receive market data from ETK. Inner Thread
 				, CLIENT_TP_OUTER	//	Clients who want to subscribe data feed
 } EN_CLIENT_TP;
-typedef struct _COMPLETION_KEY
+
+typedef enum {STATUS_NON_LOGON, STATUS_LOGGEDON, STATUS_CLOSING} EN_CLIENT_STATUS;
+//typedef struct _COMPLETION_KEY
+//{
+//	SOCKET			sock;
+//	EN_CLIENT_TP	clientTp;
+//	BOOL			bLoggedOn;
+//	std::string		userID;
+//} CUser;
+
+class CUser
 {
-	SOCKET			sock;
+public:
+	CUser() {
+		refCnt = 0; sockUser = INVALID_SOCKET; status = STATUS_NON_LOGON; clientTp = CLIENT_TP_OUTER;
+	}
+	void addRef() { InterlockedIncrement(&refCnt); }
+	void releaseRef() { InterlockedDecrement(&refCnt); }
+	bool hasRefCnt() { return (refCnt > 0); }
+	void SetInitData(SOCKET sock, char* psIp) { sockUser = sock; clientIp = std::string(psIp); }
+	void markCloseRequested() { status = STATUS_CLOSING; }
+	bool isClosing() { return (status == STATUS_CLOSING); }
+	bool isLoggedOn() { return (status == STATUS_LOGGEDON); }
+	bool isNonLoggedOn() { return (status == STATUS_NON_LOGON); }
+
+public:
+	unsigned long	refCnt;
+	SOCKET			sockUser;
+	EN_CLIENT_STATUS	status;
+	std::string		userID;
+	std::string		clientIp;
 	EN_CLIENT_TP	clientTp;
-	BOOL			bLoggedOn;
-	char			UserID[SIZE_USERID + 1];
-} COMPLETION_KEY;
+};
 
 
 class CClientInterface //: public CMT4Helper
@@ -61,26 +96,29 @@ public:
 	BOOL Inner_Init();
 	VOID Inner_PostData(char* pData, int nDataLen, BOOL bTick);
 
-	void	RequestSendIO(COMPLETION_KEY* pCK, char* pSendBuf, int nSendLen);
-	void 	RequestRecvIO(COMPLETION_KEY* pCK);
+	void	RequestSendIO(CUser* pCK, char* pSendBuf, int nSendLen);
+	void 	RequestRecvIO(CUser* pCK);
 
-	void DeleteSocket(COMPLETION_KEY *pCompletionKey);
-
-	void lockCK() { EnterCriticalSection(&m_csCK); }
-	void unlockCK() { LeaveCriticalSection(&m_csCK); }
-
-	void lockRecvData() { EnterCriticalSection(&m_csRecvData); }
-	void unlockRecvData() { LeaveCriticalSection(&m_csRecvData); }
+	void OnClose(CUser *pCompletionKey);
+	
+	void lock(CRITICAL_SECTION* cs){ EnterCriticalSection(cs); }
+	void unlock(CRITICAL_SECTION* cs) { LeaveCriticalSection(cs); }
 
 	VOID SendDataFeed(IO_CONTEXT* pCtx);
 	VOID SendToClients(char* pSendData, int nDataLen);
 
-	BOOL CheckLogin(COMPLETION_KEY* pCK, IO_CONTEXT* pCtx);
+	void OnClientRequest(CUser* pCK, IO_CONTEXT* pCtx);
+	VOID AfterClientRequest(CUser* pCK, IO_CONTEXT* pCtx);
+	VOID DeleteUser(CUser* pCK);
+	VOID ExecuteByRequest(CUser* pCK, IO_CONTEXT* pCtx);
 	
 protected:
 	HANDLE	m_hCompletionPort;
-	std::map<std::string, COMPLETION_KEY*>	m_mapCK;	//socket, ck
-	
+	std::map<std::string, CUser*>	m_mapUser;	//userid, userinfo including CK
+	std::map<std::string, CUser*>	m_mapRequest;	//userid, userinfo including CK
+	CRITICAL_SECTION	m_csUser, m_csRequest;
+	CRITICAL_SECTION	m_csRecvData;
+
 	char 	m_zServerIP[32];
 	int 	m_nListenPort;
 	WSAEVENT	m_hListenEvent;
@@ -92,12 +130,11 @@ protected:
 	unsigned int	m_dListenThread;
 
 	BOOL 	m_bRun;
-	CRITICAL_SECTION	m_csCK;
-	CRITICAL_SECTION	m_csRecvData;
+	
 
 	// 내부데이터를 전달받기 위해
 	SOCKET	m_innerSock;
-	COMPLETION_KEY* m_pInnerCKey;
+	CUser* m_pInnerCKey;
 
 	CPacketHandler	*m_pack;
 

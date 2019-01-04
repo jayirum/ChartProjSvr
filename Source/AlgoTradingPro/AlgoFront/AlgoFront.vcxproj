@@ -75,6 +75,9 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
+    <Link>
+      <OutputFile>$(SolutionDir)/_bin$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -110,14 +113,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="AlgoFront.cpp" />
     <ClCompile Include="ClientInterface.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="AlgoFront.h" />
     <ClInclude Include="ClientInterface.h" />
     <ClInclude Include="Main.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="DevNote.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

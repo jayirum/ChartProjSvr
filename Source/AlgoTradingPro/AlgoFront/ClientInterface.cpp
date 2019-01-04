@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "ClientInterface.h"
 #include <process.h>
 #include "../../IRUM_UTIL/Util.h"
@@ -39,7 +38,8 @@ BOOL CClientInterface::Initialize( )
 
 	//m_nOmniAcnt = nOmniAcnt;
 
-	InitializeCriticalSection(&m_csCK);
+	InitializeCriticalSection(&m_csUser);
+	InitializeCriticalSection(&m_csRequest);
 	InitializeCriticalSection(&m_csRecvData);
 
 	if (!InitListen()) {
@@ -83,13 +83,12 @@ BOOL CClientInterface::Initialize( )
 BOOL CClientInterface::Inner_Init()
 {
 	//	CK 와 IOCP 연결
-	m_pInnerCKey = new COMPLETION_KEY;
-	ZeroMemory(m_pInnerCKey, sizeof(COMPLETION_KEY));
-	m_pInnerCKey->sock = m_innerSock = socket(AF_INET, SOCK_STREAM, 0);
+	m_pInnerCKey = new CUser();
+	m_pInnerCKey->sockUser = m_innerSock = socket(AF_INET, SOCK_STREAM, 0);
 	m_pInnerCKey->clientTp = CLIENT_TP_INNER;
 
 	// Device(sock) 과 CP 를 연결시키고, 이때 Key 에는 유저가 원하는 데이터를 넘겨서 i/o 통지때 같이 받을 수 있다.
-	HANDLE h = CreateIoCompletionPort((HANDLE)m_pInnerCKey->sock,
+	HANDLE h = CreateIoCompletionPort((HANDLE)m_pInnerCKey->sockUser,
 		m_hCompletionPort,
 		(DWORD)m_pInnerCKey,
 		0);
@@ -187,7 +186,7 @@ void CClientInterface::CloseListenSock()
 
 VOID CClientInterface::SendMessageToIocpThread(int Message)
 {
-	for( int i=0; i<m_dwThreadCount; i++)
+	for( unsigned int i=0; i<m_dwThreadCount; i++)
 	{
 		PostQueuedCompletionStatus(
 			m_hCompletionPort
@@ -233,23 +232,41 @@ void CClientInterface::Finalize()
 		);
 	}
 
-	lockCK();
-	std::map<std::string, COMPLETION_KEY*>::iterator it;
-	for (it = m_mapCK.begin(); it != m_mapCK.end(); ++it)
+	lock(&m_csUser);
+	std::map<std::string, CUser*>::iterator it;
+	for (it = m_mapUser.begin(); it != m_mapUser.end(); ++it)
 	{
-		COMPLETION_KEY* pCKey = (*it).second;
-		shutdown(pCKey->sock, SD_BOTH);
+		CUser* pCKey = ((*it).second);
+		shutdown(pCKey->sockUser, SD_BOTH);
 
 		// TIME-WAIT 없도록
 		struct linger structLinger;
 		structLinger.l_onoff = TRUE;
 		structLinger.l_linger = 0;
-		setsockopt(pCKey->sock, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
-		closesocket(pCKey->sock);
+		setsockopt(pCKey->sockUser, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
+		closesocket(pCKey->sockUser);
 		delete pCKey;
 	}
-	m_mapCK.clear();
-	unlockCK();
+	m_mapUser.clear();
+	unlock(&m_csUser);
+
+	lock(&m_csRequest);
+	std::map<std::string, CUser*>::iterator it2;
+	for (it2 = m_mapRequest.begin(); it2 != m_mapRequest.end(); ++it2)
+	{
+		CUser* pCKey = ((*it2).second);
+		shutdown(pCKey->sockUser, SD_BOTH);
+
+		// TIME-WAIT 없도록
+		struct linger structLinger;
+		structLinger.l_onoff = TRUE;
+		structLinger.l_linger = 0;
+		setsockopt(pCKey->sockUser, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
+		closesocket(pCKey->sockUser);
+		delete pCKey;
+	}
+	m_mapRequest.clear();
+	unlock(&m_csRequest);
 
 	CloseListenSock();
 
@@ -258,35 +275,71 @@ void CClientInterface::Finalize()
 	//unlockRecvData();
 	SAFE_CLOSEHANDLE(m_hCompletionPort);
 
-	DeleteCriticalSection(&m_csCK);
+	DeleteCriticalSection(&m_csUser);
+	DeleteCriticalSection(&m_csRequest);
 	DeleteCriticalSection(&m_csRecvData);
 	SAFE_DELETE(m_pack);
 	WSACleanup();
 }
 
-void CClientInterface::DeleteSocket(COMPLETION_KEY *pCompletionKey)
+/*
+1) request map 을 찾아서 없으면 ref 도 없으므로 삭제 처리. 유저맵에서 제거
+2) request map 에 있으면 ref 확인. 0 이면 삭제. ==> DeleteUser()
+3) request map 에 있고 ref >0 이면 status 만 변경
+*/
+void CClientInterface::OnClose(CUser *pCompletionKey)
 {
-	lockCK();
-	char zSock[32];
-	sprintf(zSock, "%d", pCompletionKey->sock);
+	lock(&m_csRequest);
+	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCompletionKey->userID);
+	if (it2 == m_mapRequest.end())
+	{
+		unlock(&m_csRequest);
+		return DeleteUser(pCompletionKey);
+	}
 
-	std::map<std::string, COMPLETION_KEY*>::iterator it = m_mapCK.find(std::string(zSock));
-	if (it == m_mapCK.end())
+	// ref check
+	CUser* p = (*it2).second;
+	if (p->hasRefCnt())
+	{
+		p->markCloseRequested();
+		m_mapRequest[p->userID] = p;
 		return;
+	}
+	else
+	{
+		return DeleteUser(pCompletionKey);
+	}
+	
+}
 
-	shutdown(pCompletionKey->sock, SD_BOTH);
+VOID CClientInterface::DeleteUser(CUser* pCK)
+{
+	lock(&m_csUser);
+	std::map<std::string, CUser*>::iterator it = m_mapUser.find(pCK->userID);
+	if (it != m_mapUser.end())
+	{
+		m_mapUser.erase(it);
+	}
+	unlock(&m_csUser);
+
+	lock(&m_csRequest);
+	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
+	if (it2 != m_mapRequest.end())
+	{
+		m_mapRequest.erase(it2);
+	}
+	unlock(&m_csRequest);
+
+	shutdown(pCK->sockUser, SD_BOTH);
 
 	// TIME-WAIT 없도록
 	struct linger structLinger;
 	structLinger.l_onoff = TRUE;
 	structLinger.l_linger = 0;
-	setsockopt(pCompletionKey->sock, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
-	closesocket(pCompletionKey->sock);
-	delete pCompletionKey;
-	m_mapCK.erase(it);
-	unlockCK();
+	setsockopt(pCK->sockUser, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
+	closesocket(pCK->sockUser);
+	delete pCK;
 }
-
 
 
 /*
@@ -303,7 +356,7 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 {
 	CClientInterface* pThis = (CClientInterface*)lp;
 
-	COMPLETION_KEY	 *pCKey = NULL;
+	CUser	 *pCKey = NULL;
 	IO_CONTEXT		 *pIoContext = NULL;
 	DWORD				 dwBytesTransferred = 0;
 	DWORD                dwIoSize = 0;
@@ -330,7 +383,7 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 		
 		if (FALSE == bRet)
 		{
-			pThis->DeleteSocket(pCKey);
+			pThis->OnClose(pCKey);
 			g_log.log(LOGTP_ERR, "GetQueuedCompletionStatus error:%d", GetLastError());
 			Sleep(3000);
 			continue;
@@ -350,7 +403,7 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 				|| pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context == CTX_RQST_INNER_QUOTE
 				)
 			{
-				pThis->DeleteSocket(pCKey);
+				pThis->OnClose(pCKey);
 			}
 			continue;
 		}
@@ -363,29 +416,34 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 		// receive market data from inner thread
 		if (pIoContext->context == CTX_RQST_RECV || pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context == CTX_RQST_INNER_QUOTE)
 		{
-			//TODO
 			pThis->m_pack->add(pIoContext->buf, dwIoSize);
 
 			ZeroMemory(pIoContext->buf, sizeof(pIoContext->buf));
 			int nBufLen = 0;
 			while ((nBufLen = pThis->m_pack->getonepacket(pIoContext->buf)) > 0)
 			{
-				if (nDataCnt++ > 1000) {
-					g_log.log(LOGTP_SUCC, "[%d][RECV](%.*s)", GetCurrentThreadId(), nBufLen, pIoContext->buf);
-					nDataCnt = 0;
-				}
+				////debugging
+				//if (nDataCnt++ > 1000) {
+				//	g_log.log(LOGTP_SUCC, "[%d][RECV](%.*s)", GetCurrentThreadId(), nBufLen, pIoContext->buf);
+				//	nDataCnt = 0;
+				//}
+
 				if (pIoContext->context != CTX_RQST_INNER_TICK && pIoContext->context != CTX_RQST_INNER_QUOTE)
 				{
-					if (!pThis->CheckLogin(pCKey, pIoContext))
-						continue;
+					// 
+					pThis->OnClientRequest(pCKey, pIoContext);
+
+					pThis->AfterClientRequest(pCKey, pIoContext);
 				}
-				pThis->SendDataFeed(pIoContext);
+
+				//Send data to all clients
+				if ((pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context != CTX_RQST_INNER_QUOTE))
+					pThis->SendDataFeed(pIoContext);
 			}
 			if(pCKey->clientTp == CTX_RQST_RECV)
 				pThis->RequestRecvIO(pCKey);
 		}
 		
-
 		if (pIoContext->context == CTX_RQST_SEND)
 		{
 			//printf("RequestSendIO returned\n");
@@ -399,26 +457,127 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 }
 
 
-BOOL CClientInterface::CheckLogin(COMPLETION_KEY* pCK, IO_CONTEXT* pCtx)
+/*
+# 일반 요청을 받으면 => OnRequest
+ 1) request map 에 있고, closing status 이면 처리하지 않는다.
+ 2) request map 에 있고, closing status 가 아니면 ref 만 증가
+ 3) request map 에 없으면, 유저맵에서 제거, request map 에 input. ref 증가
+*/
+void CClientInterface::OnClientRequest(CUser* pCK, IO_CONTEXT* pCtx)
 {
-	// Already logged on
-	if (pCK->bLoggedOn)
-		return TRUE;
+	BOOL bExist = FALSE;
 
-	ALGO_LOGIN* p = (ALGO_LOGIN*)pCtx->buf;
-	if (strncmp(p->Header.Code, CD_PACKET_LOGIN, sizeof(p->Header.Code)))
+	lock(&m_csRequest);
+	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
+	if (it2 != m_mapRequest.end())
 	{
-		g_log.log(ERR, "This client must loggon first");
-		return FALSE;
+		bExist = TRUE;
 	}
 
-	if (strncmp(p->Pwd, DEF_PASSWORD, strlen(DEF_PASSWORD)))
-		return FALSE;
+	if (bExist)
+	{
+		CUser* p = (*it2).second;
+		if (!p->isClosing())
+		{
+			p->addRef();
+			m_mapRequest[p->userID] = p;
+		}
+		else
+		{
+			//do nothing
+			g_log.log(INFO, "[OnClientRequest][%s]The user is being closed. Do not proceed this request", pCK->userID.c_str());
+		}
+		unlock(&m_csRequest);
+		return;
+	}
+	unlock(&m_csRequest);
 
-	sprintf(pCK->UserID, "%.*s", SIZE_USERID, p->UserID);
 
-	return TRUE;
+	bExist = FALSE;
+	lock(&m_csUser);
+	std::map<std::string, CUser*>::iterator it = m_mapUser.find(pCK->userID);
+	if (it != m_mapUser.end())
+	{
+		bExist = TRUE;
+		m_mapUser.erase(it);
+		unlock(&m_csUser);
+	}
+	if (bExist)
+	{
+		lock(&m_csRequest);
+		pCK->addRef();
+		m_mapRequest[pCK->userID] = pCK;
+		unlock(&m_csRequest);
+	}
+	else
+	{
+		g_log.log(INFO, "[OnClientRequest][%s]The user is not in the User Map.This is maybe login request", pCK->userID.c_str());
+	}
+
+	ExecuteByRequest(pCK, pCtx);
 }
+
+VOID CClientInterface::ExecuteByRequest(CUser* pCK, IO_CONTEXT* pCtx)
+{
+
+}
+/*
+	1. request map 에 없으면 에러
+	2. request map 에 있고
+		1) closing status 이고, ref 가 0 이 되면 삭제
+		2) closing status 이고 ref>0 이면 놔둔다.
+		3) 일반 status 이고 ref==0 이면 request map 에서 제거하고 일반map 에 넣는다.
+		4) 일반 status 이고 ref>0 이면 놔둔다.
+*/
+VOID CClientInterface::AfterClientRequest(CUser* pCK, IO_CONTEXT* pCtx)
+{
+	BOOL bExist = FALSE;
+
+	lock(&m_csRequest);
+	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
+	if (it2 == m_mapRequest.end())
+	{
+		//TODO. LOGGING
+		unlock(&m_csRequest);
+		return;
+	}
+
+	CUser* p = (*it2).second;
+	p->releaseRef();
+	if (p->isClosing())
+	{
+		if (p->refCnt == 0)
+		{
+			m_mapRequest.erase(it2);
+			unlock(&m_csRequest);
+			DeleteUser(pCK);
+		}
+		else
+		{
+			m_mapRequest[p->userID] = p;
+			unlock(&m_csRequest);
+		}
+		return;
+	}
+
+	if (p->refCnt == 0)
+	{
+		m_mapRequest.erase(it2);
+		unlock(&m_csRequest);
+
+		lock(&m_csUser);
+		m_mapUser[pCK->userID] = pCK;
+		unlock(&m_csUser);
+	}
+	else
+	{
+		m_mapRequest[p->userID] = p;
+		unlock(&m_csRequest);
+	}
+
+
+}
+
 
 unsigned WINAPI CClientInterface::ListenThread(LPVOID lp)
 {
@@ -464,13 +623,12 @@ unsigned WINAPI CClientInterface::ListenThread(LPVOID lp)
 
 
 		//	CK 와 IOCP 연결
-		COMPLETION_KEY* pCKey = new COMPLETION_KEY;
-		ZeroMemory(pCKey, sizeof(COMPLETION_KEY));
-		pCKey->sock = sockClient;
-		pCKey->clientTp = CLIENT_TP_OUTER;
+		CUser* pCKey = new CUser();
+		pCKey->SetInitData(sockClient, "");
+		//pCKey->clientTp = CLIENT_TP_OUTER;
 
 		// Device(sock) 과 CP 를 연결시키고, 이때 Key 에는 유저가 원하는 데이터를 넘겨서 i/o 통지때 같이 받을 수 있다.
-		HANDLE h = CreateIoCompletionPort((HANDLE)pCKey->sock,
+		HANDLE h = CreateIoCompletionPort((HANDLE)pCKey->sockUser,
 			pThis->m_hCompletionPort,
 			(DWORD)pCKey,
 			0);
@@ -481,10 +639,10 @@ unsigned WINAPI CClientInterface::ListenThread(LPVOID lp)
 			continue;
 		}
 
-		char zSocket[32]; sprintf(zSocket, "%d", sockClient);
-		pThis->lockCK();
-		pThis->m_mapCK[std::string(zSocket)] = pCKey;
-		pThis->unlockCK();
+		//char zSocket[32]; sprintf(zSocket, "%d", sockClient);
+		//pThis->lockCK();
+		//pThis->m_mapUser[std::string(zSocket)] = pCKey;
+		//pThis->unlockCK();
 
 		g_log.log(LOGTP_SUCC, "Accept & Add IOCP.socket:%d", sockClient);
 
@@ -529,16 +687,16 @@ VOID CClientInterface::SendDataFeed(IO_CONTEXT* pCtx)
 */
 VOID CClientInterface::SendToClients(char* pSendData, int nDataLen)
 {
-	lockCK();
-	std::map<std::string, COMPLETION_KEY*>::iterator it;
-	for (it = m_mapCK.begin(); it != m_mapCK.end(); it++)
+	lock(&m_csUser);
+	std::map<std::string, CUser*>::iterator it;
+	for (it = m_mapUser.begin(); it != m_mapUser.end(); it++)
 	{
 		RequestSendIO((*it).second, pSendData, nDataLen);
 	}
-	unlockCK();
+	unlock(&m_csUser);
 }
 
-VOID CClientInterface::RequestSendIO(COMPLETION_KEY* pCKey, char* pSendBuf, int nSendLen)
+VOID CClientInterface::RequestSendIO(CUser* pCKey, char* pSendBuf, int nSendLen)
 {
 
 	BOOL  bRet = TRUE;
@@ -556,7 +714,7 @@ VOID CClientInterface::RequestSendIO(COMPLETION_KEY* pCKey, char* pSendBuf, int 
 		pSend->wsaBuf.len = nSendLen;
 		pSend->context = CTX_RQST_SEND;
 
-		int nRet = WSASend(pCKey->sock
+		int nRet = WSASend(pCKey->sockUser
 			, &pSend->wsaBuf	// wsaBuf 배열의 포인터
 			, 1					// wsaBuf 포인터 갯수
 			, &dwOutBytes		// 전송된 바이트 수
@@ -582,7 +740,7 @@ VOID CClientInterface::RequestSendIO(COMPLETION_KEY* pCKey, char* pSendBuf, int 
 }
 
 
-void  CClientInterface::RequestRecvIO(COMPLETION_KEY* pCKey)
+void  CClientInterface::RequestRecvIO(CUser* pCKey)
 {
 	IO_CONTEXT* pRecv = NULL;
 	DWORD dwNumberOfBytesRecvd = 0;
@@ -598,7 +756,7 @@ void  CClientInterface::RequestRecvIO(COMPLETION_KEY* pCKey)
 		pRecv->context = CTX_RQST_RECV;
 
 
-		int nRet = WSARecv(pCKey->sock
+		int nRet = WSARecv(pCKey->sockUser
 			, &(pRecv->wsaBuf)
 			, 1, &dwNumberOfBytesRecvd, &dwFlags
 			, &(pRecv->overLapped)
