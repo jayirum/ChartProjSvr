@@ -6,20 +6,29 @@
 #include "../../IRUM_UTIL/logmsg.h"
 #include "../Common/Inc_ETK/ETK_Common.h"
 #include "../Common/Inc_ETK/CVT_ETK.h"
+#include "../../IRUM_UTIL/mempool.h"
 
 extern char	g_zConfig[_MAX_PATH];
 extern CLogMsg	g_log;
+extern CMemPool	g_memPool;
+extern BOOL		g_bContinue;
 
-CClientInterface::CClientInterface()
+
+
+CClientInterface::CClientInterface(DWORD dwRealThreadId)
 {
-	m_hCompletionPort = NULL;
-	m_bRun = TRUE;
-	m_hListenEvent = NULL;;
+	m_dwRealThreadId	= dwRealThreadId;
+
+	m_hCompletionPort	= NULL;
+	m_bRun				= TRUE;
+	m_hListenEvent		= NULL;;
 
 	m_dwThreadCount = 0;
-	m_sockListen = INVALID_SOCKET;
+	m_sockListen	= INVALID_SOCKET;
 	m_hListenThread = NULL;
 	m_dListenThread = 0;
+
+	m_lbInfo = NULL;
 }
 CClientInterface::~CClientInterface()
 {
@@ -27,33 +36,16 @@ CClientInterface::~CClientInterface()
 }
 
 
+
 BOOL CClientInterface::Initialize( )
 {
 	g_log.log(INFO, "CClientInterface::Initialize() starts........");
-	char port[32];
-	CUtil::GetConfig(g_zConfig, "CLIENT_IF", "LISTEN_IP", m_zServerIP);
-	CUtil::GetConfig(g_zConfig, "CLIENT_IF", "LISTEN_PORT", port);
-	m_nListenPort = atoi(port);
-
-
-	//m_nOmniAcnt = nOmniAcnt;
 
 	InitializeCriticalSection(&m_csUser);
 	InitializeCriticalSection(&m_csRequest);
 	InitializeCriticalSection(&m_csRecvData);
 
-	if (!InitListen()) {
-		g_log.log(ERR, "Failed to Init Listen");
-		return FALSE;
-	}
-
-	m_pack = new CPacketHandler;
-
-	// CPU의 수를 알기 위해서....IOCP에서 사용할 쓰레드의 수는 cpu개수 또는 cpu*2
-	SYSTEM_INFO         systemInfo;
-	GetSystemInfo(&systemInfo);
-	m_dwThreadCount = systemInfo.dwNumberOfProcessors;
-
+	// Create IOCP
 	m_hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (INVALID_HANDLE_VALUE == m_hCompletionPort)
 	{
@@ -61,7 +53,50 @@ BOOL CClientInterface::Initialize( )
 		return FALSE;
 	}
 
-	// 실제로 recv와 send를 담당할 스레드를 생성한다.
+	// connect AlgoLB
+	m_lbInfo = new CLBInfo;
+	if (!m_lbInfo->Initialize(&CClientInterface::SendAllUserInfo))
+		return FALSE;
+
+	// link LBInfo with IOCP
+	HANDLE h = CreateIoCompletionPort((HANDLE)m_lbInfo->m_sock,
+		m_hCompletionPort,
+		(DWORD)m_lbInfo,
+		0);
+	if (h == NULL)
+	{
+		g_log.log(LOGTP_ERR, "Link LBInfo with IOCP Error:%d", GetLastError());
+		closesocket(m_lbInfo->m_sock);
+		delete m_lbInfo;
+		return FALSE;
+	}
+	
+	m_lbInfo->RequestRecvIO();
+
+
+
+	// Init listen socket
+	char port[32];
+	CUtil::GetConfig(g_zConfig, "CLIENT_IF", "LISTEN_IP", m_zServerIP);
+	CUtil::GetConfig(g_zConfig, "CLIENT_IF", "LISTEN_PORT", port);
+	m_nListenPort = atoi(port);
+
+	if (!InitListen()) {
+		g_log.log(ERR, "Failed to Init Listen");
+		return FALSE;
+	}
+
+	// packet handler
+	m_pack = new CPacketHandler;
+
+	// create iocp worker threads
+
+	SYSTEM_INFO         systemInfo;
+	GetSystemInfo(&systemInfo);
+	m_dwThreadCount = systemInfo.dwNumberOfProcessors;
+	if (m_dwThreadCount > IOCP_THREAD_CNT)
+		m_dwThreadCount = IOCP_THREAD_CNT;
+
 	unsigned int dwID;
 	for (DWORD n = 0; n<m_dwThreadCount; n++)
 	{
@@ -70,37 +105,8 @@ BOOL CClientInterface::Initialize( )
 	}
 
 
-	// Create & Bind IOCP Key for Inner Data Transfer
-	if (!Inner_Init()) {
-		g_log.log(ERR, "Failed to Init Inner IOCP Key");
-		return FALSE;
-	}
-
-
 	return TRUE;
 }
-
-BOOL CClientInterface::Inner_Init()
-{
-	//	CK 와 IOCP 연결
-	m_pInnerCKey = new CUser();
-	m_pInnerCKey->sockUser = m_innerSock = socket(AF_INET, SOCK_STREAM, 0);
-	m_pInnerCKey->clientTp = CLIENT_TP_INNER;
-
-	// Device(sock) 과 CP 를 연결시키고, 이때 Key 에는 유저가 원하는 데이터를 넘겨서 i/o 통지때 같이 받을 수 있다.
-	HANDLE h = CreateIoCompletionPort((HANDLE)m_pInnerCKey->sockUser,
-		m_hCompletionPort,
-		(DWORD)m_pInnerCKey,
-		0);
-	if (h == NULL)
-	{
-		delete m_pInnerCKey;
-		closesocket(m_innerSock);
-		return FALSE;
-	}
-	return TRUE;
-}
-
 BOOL CClientInterface::InitListen()
 {
 	g_log.log(INFO, "CClientInterface::InitListen() starts..........");
@@ -197,31 +203,12 @@ VOID CClientInterface::SendMessageToIocpThread(int Message)
 	}
 }
 
-VOID CClientInterface::Inner_PostData(char* pData, int nDataLen, BOOL bTick)
-{
-	IO_CONTEXT* pSend = new IO_CONTEXT;
-
-	ZeroMemory(pSend, sizeof(IO_CONTEXT));
-	CopyMemory(pSend->buf, pData, nDataLen);
-	//	pSend->sock	= sock;
-	pSend->wsaBuf.buf = pSend->buf;
-	pSend->wsaBuf.len = nDataLen;
-
-	if(bTick)	pSend->context = CTX_RQST_INNER_TICK;
-	else		pSend->context = CTX_RQST_INNER_QUOTE;
-
-	PostQueuedCompletionStatus(
-		m_hCompletionPort
-		, nDataLen
-		, (ULONG_PTR)m_pInnerCKey
-		, (LPOVERLAPPED)pSend
-	);
-}
 
 void CClientInterface::Finalize()
 {
 	m_bRun = FALSE;
 
+	// kill all iocp worker threads
 	for (UINT i = 0; i < m_dwThreadCount; i++)
 	{
 		PostQueuedCompletionStatus(
@@ -232,11 +219,13 @@ void CClientInterface::Finalize()
 		);
 	}
 
+
+	// destroy user map
 	lock(&m_csUser);
-	std::map<std::string, CUser*>::iterator it;
+	std::map<std::string, CUserInfo*>::iterator it;
 	for (it = m_mapUser.begin(); it != m_mapUser.end(); ++it)
 	{
-		CUser* pCKey = ((*it).second);
+		CUserInfo* pCKey = ((*it).second);
 		shutdown(pCKey->sockUser, SD_BOTH);
 
 		// TIME-WAIT 없도록
@@ -250,11 +239,13 @@ void CClientInterface::Finalize()
 	m_mapUser.clear();
 	unlock(&m_csUser);
 
+
+	// destroy request map
 	lock(&m_csRequest);
-	std::map<std::string, CUser*>::iterator it2;
+	std::map<std::string, CUserInfo*>::iterator it2;
 	for (it2 = m_mapRequest.begin(); it2 != m_mapRequest.end(); ++it2)
 	{
-		CUser* pCKey = ((*it2).second);
+		CUserInfo* pCKey = ((*it2).second);
 		shutdown(pCKey->sockUser, SD_BOTH);
 
 		// TIME-WAIT 없도록
@@ -268,11 +259,14 @@ void CClientInterface::Finalize()
 	m_mapRequest.clear();
 	unlock(&m_csRequest);
 
+
+	// close listen socket
 	CloseListenSock();
 
-	//lockRecvData();
-	//m_lstRecvData.clear();
-	//unlockRecvData();
+	// close LBInfo 
+	delete m_lbInfo;
+
+
 	SAFE_CLOSEHANDLE(m_hCompletionPort);
 
 	DeleteCriticalSection(&m_csUser);
@@ -287,60 +281,118 @@ void CClientInterface::Finalize()
 2) request map 에 있으면 ref 확인. 0 이면 삭제. ==> DeleteUser()
 3) request map 에 있고 ref >0 이면 status 만 변경
 */
-void CClientInterface::OnClose(CUser *pCompletionKey)
+void CClientInterface::OnClose(void *pCompletionKey)
 {
+	CUserInfo* p = (CUserInfo*)pCompletionKey;
 	lock(&m_csRequest);
-	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCompletionKey->userID);
+	std::map<std::string, CUserInfo*>::iterator it2 = m_mapRequest.find(p->userID);
 	if (it2 == m_mapRequest.end())
 	{
-		unlock(&m_csRequest);
-		return DeleteUser(pCompletionKey);
-	}
-
-	// ref check
-	CUser* p = (*it2).second;
-	if (p->hasRefCnt())
-	{
-		p->markCloseRequested();
-		m_mapRequest[p->userID] = p;
-		return;
+		DeleteUser(p, TRUE, FALSE);
 	}
 	else
 	{
-		return DeleteUser(pCompletionKey);
+		// ref check
+		CUserInfo* p = (*it2).second;
+		if (p->hasRefCnt())
+		{
+			p->markCloseRequested();
+			m_mapRequest[p->userID] = p;
+		}
+		else
+		{
+			DeleteUser(p, TRUE, FALSE);
+		}
 	}
-	
+	unlock(&m_csRequest);
 }
 
-VOID CClientInterface::DeleteUser(CUser* pCK)
+VOID CClientInterface::DeleteUser(CUserInfo* pCK, BOOL bNeedLockUser, BOOL bNeedLockRqst)
 {
-	lock(&m_csUser);
-	std::map<std::string, CUser*>::iterator it = m_mapUser.find(pCK->userID);
+	// Tell CReal Thread
+	UnsubscribeSymbol(pCK->sockUser);
+
+
+	// USER MAP
+	if(bNeedLockUser)	lock(&m_csUser);
+	std::map<std::string, CUserInfo*>::iterator it = m_mapUser.find(pCK->userID);
 	if (it != m_mapUser.end())
 	{
 		m_mapUser.erase(it);
 	}
-	unlock(&m_csUser);
+	if (bNeedLockUser)	unlock(&m_csUser);
 
-	lock(&m_csRequest);
-	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
+
+	// REQUEST MAP
+	if (bNeedLockRqst)	lock(&m_csRequest);
+	std::map<std::string, CUserInfo*>::iterator it2 = m_mapRequest.find(pCK->userID);
 	if (it2 != m_mapRequest.end())
 	{
 		m_mapRequest.erase(it2);
 	}
-	unlock(&m_csRequest);
+	if (bNeedLockRqst)	unlock(&m_csRequest);
 
+	std::string sUserId = pCK->userID;
+
+	// CLOSE SOCKET
 	shutdown(pCK->sockUser, SD_BOTH);
 
-	// TIME-WAIT 없도록
 	struct linger structLinger;
 	structLinger.l_onoff = TRUE;
 	structLinger.l_linger = 0;
 	setsockopt(pCK->sockUser, SOL_SOCKET, SO_LINGER, (LPSTR)&structLinger, sizeof(structLinger));
 	closesocket(pCK->sockUser);
 	delete pCK;
+
+	// Tell AlgoLB
+	m_lbInfo->TellUserClose((LPSTR)sUserId.c_str());
+
 }
 
+VOID CClientInterface::SubscribeSymbol(CUserInfo* pCK, _ALGOINC::IO_CONTEXT* pCtx)
+{
+	_ALGOINC::ST_1003* p = (_ALGOINC::ST_1003*)pCtx->buf;
+
+	char *pSymbol = g_memPool.get();
+	sprintf(pSymbol, "%.*s", sizeof(p->symbolCode), p->symbolCode);
+
+	PostThreadMessage(m_dwRealThreadId, _ALGOINC::WM_RELEASE_CLIENT, (WPARAM)pCK->sockUser, (LPARAM)pSymbol);
+}
+
+
+/*
+	try to connect AlgoLB again
+*/
+void CClientInterface::ReConnLB()
+{
+	m_lbInfo->ReConnLB();
+}
+
+
+void CClientInterface::SendAllUserInfo()
+{
+	lock(&m_csRequest);
+	std::map<std::string, CUserInfo*>::iterator it2;
+	for(it2 = m_mapRequest.begin(); it2!= m_mapRequest.end();it2++)
+	{
+		m_lbInfo->TellUserLogon((char*)(*it2).first.c_str());
+	}
+	unlock(&m_csRequest);
+
+	lock(&m_csUser);
+	std::map<std::string, CUserInfo*>::iterator it;
+	for (it = m_mapRequest.begin(); it != m_mapRequest.end(); it++)
+	{
+		m_lbInfo->TellUserLogon((char*)(*it).first.c_str());
+	}
+	unlock(&m_csUser);
+}
+
+
+VOID CClientInterface::UnsubscribeSymbol(SOCKET sockUser)
+{
+	PostThreadMessage(m_dwRealThreadId, _ALGOINC::WM_RELEASE_CLIENT, (WPARAM)sockUser, (LPARAM)0);
+}
 
 /*
 1.	WSASend / WSARecv 를 호출한 경우는 사용한 socket 과 CK 가 연결되어 있으므로
@@ -356,8 +408,8 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 {
 	CClientInterface* pThis = (CClientInterface*)lp;
 
-	CUser	 *pCKey = NULL;
-	IO_CONTEXT		 *pIoContext = NULL;
+	VOID	 *pCKey = NULL;
+	_ALGOINC::IO_CONTEXT		 *pIoContext = NULL;
 	DWORD				 dwBytesTransferred = 0;
 	DWORD                dwIoSize = 0;
 	DWORD                dwRecvNumBytes = 0;
@@ -366,7 +418,7 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 	LPOVERLAPPED		 pOverlap = NULL;
 	BOOL bRet;
 	int nDataCnt = 0;
-	
+
 	while (pThis->m_bRun)
 	{
 		bRet = GetQueuedCompletionStatus(pThis->m_hCompletionPort,
@@ -380,10 +432,21 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 		{
 			break;
 		}
-		
+
 		if (FALSE == bRet)
 		{
-			pThis->OnClose(pCKey);
+			pIoContext = (_ALGOINC::IO_CONTEXT*)pOverlap;
+
+			if (pIoContext->sysTp == _ALGOINC::SYSTP_LB)
+			{
+				pThis->ReConnLB();
+			}
+
+			if (pIoContext->sysTp == _ALGOINC::SYSTP_CLIENT)
+			{
+				pThis->OnClose(pCKey);
+			}
+
 			g_log.log(LOGTP_ERR, "GetQueuedCompletionStatus error:%d", GetLastError());
 			Sleep(3000);
 			continue;
@@ -395,26 +458,36 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 			break;
 		}
 
-		pIoContext = (IO_CONTEXT*)pOverlap;
+		pIoContext = (_ALGOINC::IO_CONTEXT*)pOverlap;
 
 		if (dwIoSize == 0)
 		{
-			if (pIoContext->context == CTX_RQST_SEND || pIoContext->context == CTX_RQST_RECV
-				|| pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context == CTX_RQST_INNER_QUOTE
+			if (pIoContext->context == _ALGOINC::CTX_RQST_SEND ||
+				pIoContext->context == _ALGOINC::CTX_RQST_RECV
 				)
 			{
-				pThis->OnClose(pCKey);
+				pIoContext = (_ALGOINC::IO_CONTEXT*)pOverlap;
+
+				if (pIoContext->sysTp == _ALGOINC::SYSTP_LB)
+				{
+					pThis->ReConnLB();
+				}
+
+				if (pIoContext->sysTp == _ALGOINC::SYSTP_CLIENT)
+				{
+					pThis->OnClose(pCKey);
+				}
 			}
 			continue;
 		}
 
-		if (pIoContext->context == CTX_DIE)
+		if (pIoContext->context == _ALGOINC::CTX_DIE)
 		{
 			break;
 		}
 
 		// receive market data from inner thread
-		if (pIoContext->context == CTX_RQST_RECV || pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context == CTX_RQST_INNER_QUOTE)
+		if (pIoContext->context == _ALGOINC::CTX_RQST_RECV)
 		{
 			pThis->m_pack->add(pIoContext->buf, dwIoSize);
 
@@ -422,33 +495,30 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
 			int nBufLen = 0;
 			while ((nBufLen = pThis->m_pack->getonepacket(pIoContext->buf)) > 0)
 			{
-				////debugging
-				//if (nDataCnt++ > 1000) {
-				//	g_log.log(LOGTP_SUCC, "[%d][RECV](%.*s)", GetCurrentThreadId(), nBufLen, pIoContext->buf);
-				//	nDataCnt = 0;
-				//}
-
-				if (pIoContext->context != CTX_RQST_INNER_TICK && pIoContext->context != CTX_RQST_INNER_QUOTE)
+				if (pIoContext->sysTp == _ALGOINC::SYSTP_CLIENT)
 				{
-					// 
-					pThis->OnClientRequest(pCKey, pIoContext);
+					pThis->OnClientRequest((CUserInfo*)pCKey, pIoContext);
 
-					pThis->AfterClientRequest(pCKey, pIoContext);
+					pThis->AfterClientRequest((CUserInfo*)pCKey, pIoContext);
+
+					char* pIoBuffer = g_memPool.get();
+					if (!_ALGOINC::RequestRecvIO(((CUserInfo*)pCKey)->sockUser, pIoContext->sysTp, pIoBuffer))
+						g_memPool.release(pIoBuffer);
 				}
+				if (pIoContext->sysTp == _ALGOINC::SYSTP_LB)
+				{
+					//TODO. 
 
-				//Send data to all clients
-				if ((pIoContext->context == CTX_RQST_INNER_TICK || pIoContext->context != CTX_RQST_INNER_QUOTE))
-					pThis->SendDataFeed(pIoContext);
-			}
-			if(pCKey->clientTp == CTX_RQST_RECV)
-				pThis->RequestRecvIO(pCKey);
+					((CLBInfo*)pCKey)->RequestRecvIO();
+				}
+			}			
 		}
 		
-		if (pIoContext->context == CTX_RQST_SEND)
+		if (pIoContext->context == _ALGOINC::CTX_RQST_SEND)
 		{
 			//printf("RequestSendIO returned\n");
 		}
-		delete pIoContext;
+		g_memPool.release((char*) pIoContext);
 
 	} // while
 
@@ -463,49 +533,39 @@ unsigned WINAPI CClientInterface::IocpWorkerThread(LPVOID lp)
  2) request map 에 있고, closing status 가 아니면 ref 만 증가
  3) request map 에 없으면, 유저맵에서 제거, request map 에 input. ref 증가
 */
-void CClientInterface::OnClientRequest(CUser* pCK, IO_CONTEXT* pCtx)
+void CClientInterface::OnClientRequest(CUserInfo* pCK, _ALGOINC::IO_CONTEXT* pCtx)
 {
 	BOOL bExist = FALSE;
 
 	lock(&m_csRequest);
-	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
+	std::map<std::string, CUserInfo*>::iterator it2 = m_mapRequest.find(pCK->userID);
 	if (it2 != m_mapRequest.end())
 	{
-		bExist = TRUE;
-	}
-
-	if (bExist)
-	{
-		CUser* p = (*it2).second;
-		if (!p->isClosing())
+		CUserInfo* p = (*it2).second;
+		if (!p->hasMarkedClose())
 		{
 			p->addRef();
 			m_mapRequest[p->userID] = p;
+			BOOL bExist = TRUE;
 		}
 		else
 		{
 			//do nothing
 			g_log.log(INFO, "[OnClientRequest][%s]The user is being closed. Do not proceed this request", pCK->userID.c_str());
 		}
-		unlock(&m_csRequest);
-		return;
 	}
 	unlock(&m_csRequest);
+	if (bExist) return;
 
-
-	bExist = FALSE;
 	lock(&m_csUser);
-	std::map<std::string, CUser*>::iterator it = m_mapUser.find(pCK->userID);
+	std::map<std::string, CUserInfo*>::iterator it = m_mapUser.find(pCK->userID);
 	if (it != m_mapUser.end())
 	{
-		bExist = TRUE;
 		m_mapUser.erase(it);
 		unlock(&m_csUser);
-	}
-	if (bExist)
-	{
+
 		lock(&m_csRequest);
-		pCK->addRef();
+		pCK->refCnt = 1;
 		m_mapRequest[pCK->userID] = pCK;
 		unlock(&m_csRequest);
 	}
@@ -513,14 +573,81 @@ void CClientInterface::OnClientRequest(CUser* pCK, IO_CONTEXT* pCtx)
 	{
 		g_log.log(INFO, "[OnClientRequest][%s]The user is not in the User Map.This is maybe login request", pCK->userID.c_str());
 	}
+	unlock(&m_csUser);
 
+
+	//
 	ExecuteByRequest(pCK, pCtx);
+	//
 }
 
-VOID CClientInterface::ExecuteByRequest(CUser* pCK, IO_CONTEXT* pCtx)
+
+
+VOID CClientInterface::ExecuteByRequest(CUserInfo* pCK, _ALGOINC::IO_CONTEXT* pCtx)
 {
-
+	_ALGOINC::HEADER* p = (_ALGOINC::HEADER*)&pCtx->buf[1];
+	if (strncmp(p->code, "1001", 4) == 0)
+		LoginProc(pCK, pCtx);
+	if (strncmp(p->code, "1003", 4) == 0)
+		SubscribeSymbol(pCK, pCtx);
 }
+
+BOOL CClientInterface::LoginProc(CUserInfo* pCK, _ALGOINC::IO_CONTEXT* pCtx)
+{
+	_ALGOINC::ST_1001* p = (_ALGOINC::ST_1001*)pCtx->buf;
+
+	char zUserID[32], zPwd[32], zMac[32];
+	sprintf(zUserID, "%.*s", sizeof(p->userId), p->userId);
+	sprintf(zPwd, "%.*s", sizeof(p->pwd), p->pwd);
+	sprintf(zMac, "%.*s", sizeof(p->mac), p->mac);
+
+	//DB Process
+	char zExtrMsg[128] = { 0, }, tmp[128];
+	BOOL bRet = LoginDB(zUserID, zPwd, pCK->clientIp.c_str(), zMac, zExtrMsg);
+
+	// return to client
+	_ALGOINC::ST_2003 t;
+	memset(&t, 0x20, sizeof(_ALGOINC::ST_2003));
+	t.stx[0] = _ALGOINC::STX;
+	t.etx[0] = _ALGOINC::ETX;
+
+	memcpy(t.header.len, _ALGOINC::packlen(sizeof(_ALGOINC::ST_2003), tmp), sizeof(t.header.len));
+	memcpy(t.header.code, "2003", sizeof(t.header.code));
+	
+	if (bRet)
+	{
+		memcpy(t.header.rsltCode, _ALGOINC::rsltCode(_ALGOINC::RT_SUCCESS, tmp), sizeof(t.header.rsltCode));
+		memcpy(t.extraMsg, zExtrMsg, min(sizeof(t.extraMsg),strlen(zExtrMsg)));
+	}
+	else
+		memcpy(t.header.rsltCode, "9999", sizeof(t.header.rsltCode));
+
+	memcpy(t.header.tm, _ALGOINC::now(tmp), sizeof(t.header.tm));
+	t.header.sysTp[0] = _ALGOINC::SYSTP_FRONT;
+
+	char* pIoBuffer = g_memPool.get();
+	if (!_ALGOINC::RequestSendIO(pCK->sockUser, _ALGOINC::SYSTP_FRONT, (char*)&t, sizeof(t), pIoBuffer))
+	{
+		g_memPool.release(pIoBuffer);
+		return FALSE;
+	}
+
+	// send to AlgoLB
+	m_lbInfo->TellUserLogon(zUserID);
+
+	return TRUE;
+}
+
+BOOL CClientInterface::LoginDB(char* pzUserId, char* pzPwd, const char* pzIpAddress, const char* pzMacAddress, char* pzExtraMsg)
+{
+	//TODO. DB.
+
+	// error. 
+
+	return TRUE;
+}
+
+
 /*
 	1. request map 에 없으면 에러
 	2. request map 에 있고
@@ -529,53 +656,40 @@ VOID CClientInterface::ExecuteByRequest(CUser* pCK, IO_CONTEXT* pCtx)
 		3) 일반 status 이고 ref==0 이면 request map 에서 제거하고 일반map 에 넣는다.
 		4) 일반 status 이고 ref>0 이면 놔둔다.
 */
-VOID CClientInterface::AfterClientRequest(CUser* pCK, IO_CONTEXT* pCtx)
+VOID CClientInterface::AfterClientRequest(CUserInfo* pCK, _ALGOINC::IO_CONTEXT* pCtx)
 {
 	BOOL bExist = FALSE;
 
 	lock(&m_csRequest);
-	std::map<std::string, CUser*>::iterator it2 = m_mapRequest.find(pCK->userID);
-	if (it2 == m_mapRequest.end())
-	{
-		//TODO. LOGGING
-		unlock(&m_csRequest);
-		return;
-	}
 
-	CUser* p = (*it2).second;
-	p->releaseRef();
-	if (p->isClosing())
+	std::map<std::string, CUserInfo*>::iterator it2 = m_mapRequest.find(pCK->userID);
+	if (it2 != m_mapRequest.end())
 	{
+		CUserInfo* p = (*it2).second;
+		p->releaseRef();
+
 		if (p->refCnt == 0)
 		{
-			m_mapRequest.erase(it2);
-			unlock(&m_csRequest);
-			DeleteUser(pCK);
+			if (p->hasMarkedClose()) {
+				DeleteUser(p, TRUE, FALSE);
+			}
+			else
+			{
+				m_mapRequest.erase(it2);
+
+				lock(&m_csUser);
+				m_mapUser[pCK->userID] = p;
+				unlock(&m_csUser);
+			}
 		}
 		else
 		{
 			m_mapRequest[p->userID] = p;
-			unlock(&m_csRequest);
 		}
-		return;
-	}
 
-	if (p->refCnt == 0)
-	{
-		m_mapRequest.erase(it2);
-		unlock(&m_csRequest);
+	}//if (it2 != m_mapRequest.end())
 
-		lock(&m_csUser);
-		m_mapUser[pCK->userID] = pCK;
-		unlock(&m_csUser);
-	}
-	else
-	{
-		m_mapRequest[p->userID] = p;
-		unlock(&m_csRequest);
-	}
-
-
+	unlock(&m_csRequest);
 }
 
 
@@ -621,11 +735,12 @@ unsigned WINAPI CClientInterface::ListenThread(LPVOID lp)
 			continue;;
 		}
 
+		char zClientIp[32];
+		strcpy(zClientIp,inet_ntoa(sinClient.sin_addr));
 
 		//	CK 와 IOCP 연결
-		CUser* pCKey = new CUser();
-		pCKey->SetInitData(sockClient, "");
-		//pCKey->clientTp = CLIENT_TP_OUTER;
+		CUserInfo* pCKey = new CUserInfo();
+		pCKey->SetInitData(sockClient, "", zClientIp);
 
 		// Device(sock) 과 CP 를 연결시키고, 이때 Key 에는 유저가 원하는 데이터를 넘겨서 i/o 통지때 같이 받을 수 있다.
 		HANDLE h = CreateIoCompletionPort((HANDLE)pCKey->sockUser,
@@ -639,47 +754,19 @@ unsigned WINAPI CClientInterface::ListenThread(LPVOID lp)
 			continue;
 		}
 
-		//char zSocket[32]; sprintf(zSocket, "%d", sockClient);
-		//pThis->lockCK();
-		//pThis->m_mapUser[std::string(zSocket)] = pCKey;
-		//pThis->unlockCK();
-
 		g_log.log(LOGTP_SUCC, "Accept & Add IOCP.socket:%d", sockClient);
 
 		//	최초 RECV IO 요청
-		pThis->RequestRecvIO(pCKey);
+		char* pIoBuffer = g_memPool.get();
+		if (!_ALGOINC::RequestRecvIO(sockClient, _ALGOINC::SYSTP_CLIENT, pIoBuffer))
+		{
+			//TODO. LOG
+			g_memPool.release(pIoBuffer);
+		}
 
 	}//while
 
 	return 0;
-}
-
-VOID CClientInterface::SendDataFeed(IO_CONTEXT* pCtx)
-{
-	char szSendBuf[1024];
-	int nSendLen = 0;
-	CCVT_ETK cvt;
-
-	//////////////////////////////////////////////////////////////////////////
-	//	TICK DATA
-	if (pCtx->context== CTX_RQST_INNER_TICK)
-	{
-		double dErrSise = 0;
-		ETK_CME_TICK* pRecv = (ETK_CME_TICK*)pCtx->buf;
-		nSendLen = cvt.de_FU_SiseEx((char*)&pRecv->etkTick, szSendBuf, &dErrSise);
-		//g_log.log(INFO, "[SEND TICK](%.*s)", nSendLen, szSendBuf);
-	}
-
-	///////////////////////////////////////////////////////////////////////////
-	//	QUOTE DATA
-	if (pCtx->context == CTX_RQST_INNER_QUOTE)
-	{
-		ETK_CME_QUOTE* pRecv = (ETK_CME_QUOTE*)pCtx->buf;
-		nSendLen = cvt.de_FU_Hoga((CHAR*)&pRecv->etkQuote, szSendBuf);
-		//g_log.log(INFO, "[SEND QUOTE](%.*s)", nSendLen, szSendBuf);
-	}
-
-	//TODO SendToClients(szSendBuf, nSendLen);
 }
 
 /*
@@ -688,93 +775,12 @@ VOID CClientInterface::SendDataFeed(IO_CONTEXT* pCtx)
 VOID CClientInterface::SendToClients(char* pSendData, int nDataLen)
 {
 	lock(&m_csUser);
-	std::map<std::string, CUser*>::iterator it;
+	std::map<std::string, CUserInfo*>::iterator it;
 	for (it = m_mapUser.begin(); it != m_mapUser.end(); it++)
 	{
-		RequestSendIO((*it).second, pSendData, nDataLen);
+		char* p = g_memPool.get();
+		if (!_ALGOINC::RequestSendIO((*it).second->sockUser, _ALGOINC::SYSTP_CLIENT, pSendData, nDataLen, p))
+			g_memPool.release(p);
 	}
 	unlock(&m_csUser);
-}
-
-VOID CClientInterface::RequestSendIO(CUser* pCKey, char* pSendBuf, int nSendLen)
-{
-
-	BOOL  bRet = TRUE;
-	DWORD dwOutBytes = 0;
-	DWORD dwFlags = 0;
-	IO_CONTEXT* pSend = NULL;
-
-	try {
-		pSend = new IO_CONTEXT;
-
-		ZeroMemory(pSend, sizeof(IO_CONTEXT));
-		CopyMemory(pSend->buf, pSendBuf, nSendLen);
-		//	pSend->sock	= sock;
-		pSend->wsaBuf.buf = pSend->buf;
-		pSend->wsaBuf.len = nSendLen;
-		pSend->context = CTX_RQST_SEND;
-
-		int nRet = WSASend(pCKey->sockUser
-			, &pSend->wsaBuf	// wsaBuf 배열의 포인터
-			, 1					// wsaBuf 포인터 갯수
-			, &dwOutBytes		// 전송된 바이트 수
-			, dwFlags
-			, &pSend->overLapped	// overlapped 포인터
-			, NULL);
-		if (nRet == SOCKET_ERROR) {
-			if (WSAGetLastError() != WSA_IO_PENDING) {
-				g_log.log(LOGTP_ERR, "WSASend error : %d", WSAGetLastError);
-				bRet = FALSE;
-			}
-		}
-		//printf("WSASend ok..................\n");
-	}
-	catch (...) {
-		//TODO PrintMsg(0, "WSASend try catch error [CSession]");
-		bRet = FALSE;
-	}
-	if (!bRet)
-		delete pSend;
-
-	return;
-}
-
-
-void  CClientInterface::RequestRecvIO(CUser* pCKey)
-{
-	IO_CONTEXT* pRecv = NULL;
-	DWORD dwNumberOfBytesRecvd = 0;
-	DWORD dwFlags = 0;
-
-	BOOL bRet = TRUE;
-	try {
-		pRecv = new IO_CONTEXT;
-		ZeroMemory(pRecv, CONTEXT_SIZE);
-		//ZeroMemory( &(pRecv->overLapped), sizeof(WSAOVERLAPPED));
-		pRecv->wsaBuf.buf = pRecv->buf;
-		pRecv->wsaBuf.len = BUF_LEN;
-		pRecv->context = CTX_RQST_RECV;
-
-
-		int nRet = WSARecv(pCKey->sockUser
-			, &(pRecv->wsaBuf)
-			, 1, &dwNumberOfBytesRecvd, &dwFlags
-			, &(pRecv->overLapped)
-			, NULL);
-		if (nRet == SOCKET_ERROR) {
-			if (WSAGetLastError() != WSA_IO_PENDING) {
-				g_log.log(LOGTP_ERR, "WSARecv error : %d", WSAGetLastError);
-				bRet = FALSE;
-			}
-		}
-	}
-	catch (...) {
-		//TODO PrintMsg(0, "RequestRecvIO : WSASend TRY CATCH [CSession]");
-		bRet = FALSE;
-	}
-
-	if (!bRet)
-		delete pRecv;
-
-	return;
 }

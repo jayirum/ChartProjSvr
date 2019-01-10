@@ -25,5 +25,6 @@
 
  [ AlgoFront class ]
 
- 1. AlgoAPI 에 연결 및 DATAFEED subscribing
- 2. 종목별, 서버별?
+ 1. API Client Thread
+ 2. CLIENT 요청 수신 Thread (iocp)
+ 3. 데이터 송신 Thread

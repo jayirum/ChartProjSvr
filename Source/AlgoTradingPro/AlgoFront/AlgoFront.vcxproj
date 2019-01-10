@@ -117,12 +117,19 @@
     <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
-    <ClCompile Include="AlgoFront.cpp" />
+    <ClCompile Include="..\Common\AlgoInc.cpp" />
+    <ClCompile Include="..\Common\Algo_PacketHandler.cpp" />
+    <ClCompile Include="ApiClient.cpp" />
     <ClCompile Include="ClientInterface.cpp" />
+    <ClCompile Include="LBInfo.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Real.cpp" />
+    <ClCompile Include="UserInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
@@ -130,12 +137,19 @@
     <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\MemPool.h" />
     <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
-    <ClInclude Include="AlgoFront.h" />
+    <ClInclude Include="..\Common\AlgoInc.h" />
+    <ClInclude Include="..\Common\Algo_PacketHandler.h" />
+    <ClInclude Include="ApiClient.h" />
     <ClInclude Include="ClientInterface.h" />
+    <ClInclude Include="LBInfo.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Real.h" />
+    <ClInclude Include="UserInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="DevNote.txt" />

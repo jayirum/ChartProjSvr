@@ -1,16 +1,32 @@
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+// This is not a Service //
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
 #pragma warning(disable:4786)
 #pragma warning(disable:4503)
 
 
-#include "AlgoFront.h"
+//#include "AlgoFront.h"
+#include "ApiClient.h"
+#include "Real.h"
+#include "ClientInterface.h"
 #include "main.h"
 #include <Windows.h>
 #include <stdio.h>
-//#include "../../IRUM_UTIL/Log.h"
 #include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_UTIL/Prop.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_util/IRUM_Common.h"
+#include "../../IRUM_UTIL/MemPool.h"
+#include "../Common/AlgoInc.h"
 
 // service main function
 void __stdcall ServiceStart(DWORD argc, LPTSTR* argv);
@@ -37,10 +53,14 @@ DWORD	g_XSS;
 
 BOOL	g_bDebug;
 HANDLE	g_hDieEvent;				// event for terminating process
-volatile BOOL	g_bContinue = TRUE;	// flag whether continue process or not
 CRITICAL_SECTION	g_Console;
-CLogMsg g_log;
-char	g_zConfig[_MAX_PATH];
+
+/// global variables shared with all classes
+BOOL		g_bContinue = TRUE;	// flag whether continue process or not
+CLogMsg		g_log;
+char		g_zConfig[_MAX_PATH];
+CMemPool	g_memPool(_ALGOINC::MEM_PRE_ALLOC, _ALGOINC::MEM_MAX_ALLOC, _ALGOINC::MEM_BLOCK_SIZE);
+char		g_zMyName[128];
 
 int  _Start()
 {
@@ -68,12 +88,14 @@ int  _Start()
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
 
-	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
+	char zName[128]; sprintf(zName, "%s_%s", EXENAME, g_zMyName);
+	g_log.OpenLogEx(szDir, zName, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "버전[%s] %s", __DATE__, __APP_VERSION);
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	
+
 
 	//---------------------------------------------
 	//---------------------------------------------
@@ -89,11 +111,31 @@ int  _Start()
 		//log.LogEventInf(-1," 서비스를 시작합니다.");
 	}
 
-	CAlgoFront bot;
-	if (bot.Initialize())
+
+	// CReal
+	CReal *real = new CReal;
+	if (!real->Initialize())
 	{
-		DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);
+		//TODO. LOGGING
+		return 0;
 	}
+
+	// ClientInterface
+	CClientInterface *cIf = new CClientInterface(real->GetMyThreadID());
+	if (!cIf->Initialize())
+	{
+		//TODO. LOGGING
+		return 0;
+	}
+
+	// API Client
+	CApiClient* api = new CApiClient(real->GetMyThreadID());
+	if (!api->Initialize())
+	{
+		//TODO. LOGGING
+		return 0;
+	}
+
 	CoUninitialize();
 	return 0;
 }
@@ -120,48 +162,23 @@ BOOL WINAPI ControlHandler ( DWORD dwCtrlType )
 }  
 
 
+
+/*
+	usage
+	filename servername
+*/
 int main(int argc, LPSTR *argv)
 {
-	g_bDebug = FALSE;
-  
-	if ( (argc > 1) &&
-         ((*argv[1] == '-') || (*argv[1] == '/')) )   
-    {  
-        if ( _stricmp( "install", argv[1]+1 ) == 0 )  
-        {  
-            install();  
-        }  
-        else if ( _stricmp( "remove", argv[1]+1 ) == 0 || _stricmp( "delete", argv[1]+1 ) == 0 )  
-        {  
-            uninstall();  
-        }  
-        else if ( _stricmp( "debug", argv[1]+1 ) == 0 )  
-        {  
-            g_bDebug = TRUE;
-				SetConsoleCtrlHandler( ControlHandler, TRUE ); 
-				InitializeCriticalSection(&g_Console);
-				
-				_Start();
-
-				DeleteCriticalSection (&g_Console);
-				printf("Stopped.\n"); 
-				return 0;  
-        }  
-        else  
-        { 
-			  return 0;
-        } 
-    } 
-	SERVICE_TABLE_ENTRY stbl[] = 
+	g_bDebug = TRUE;
+	if (argc < 2)
 	{
-		{SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
-		{NULL, NULL}
-	};
-
-	if(!StartServiceCtrlDispatcherA(stbl))
-	{
-		return  -1;
+		printf("You must input the Front Server Name like Lion\n");
+		return 0;
 	}
+
+	strcpy(g_zMyName, argv[1] + 1);
+
+	_Start();
 
 	return 0;
 }
