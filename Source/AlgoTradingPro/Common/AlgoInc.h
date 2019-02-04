@@ -22,6 +22,8 @@ namespace _ALGOINC
 	const char	STX = 0x02;
 	const char	ETX = 0x03;
 
+	// RequestRecv : request receive from Whom
+	// RequestSend : be sent by whom
 	const char SYSTP_CLIENT	= '0';
 	const char SYSTP_LB		= '1';
 	const char SYSTP_FRONT	= '2';
@@ -55,6 +57,7 @@ namespace _ALGOINC
 		char			buf[LEN_BUFFER];
 		char			sysTp;		//_ALGOINC::enum {SYSTP_CIENT=0, SYSTP_LB, SYSTP_FRONT};
 		int				context;
+		//BOOL			bLoginComplete;
 	}IO_CONTEXT;
 
 
