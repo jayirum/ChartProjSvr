@@ -212,7 +212,8 @@ public:
 //	static	TCHAR*	ResizeStr_Dbl( TCHAR* pOrg, int nOrgLen, TCHAR* pOut, int nOutLen );
 
 	static	int		GetDecimalCnt( TCHAR* psNTTN );	//	소숫점 이하 갯수
-	static	BOOL	IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin );	//	분(minitue)가 지났는지 여부
+	//static	BOOL	IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin );	//	분(minitue)가 지났는지 여부
+	//static	BOOL	IsPassedSec( TCHAR* i_psLastTime, int i_nBaseSec);	//	초(sec)가 지났는지 여부
 	static	TCHAR*	CvtInt_SpaceLeading( TCHAR* i_psOrg, int i_nOrgLen, int i_nOutLen, TCHAR* o_psOut );
 	static	TCHAR*	CvtDbl_SpaceLeading( TCHAR* i_psOrg, int i_nOrgLen, int i_nOutLen, TCHAR* o_psOut );
 
@@ -244,7 +245,7 @@ public:
 	static VOID SplitData(_In_ char* psData, _In_ char cDelimeter, _Out_ std::list<std::string>* pListResult);
 	static VOID SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize, _Out_ std::list<std::string>* pListResult);
 
-	
+	static int GetPassedSeconds(char* pStartTime, BOOL bColon);
 };
 
 
