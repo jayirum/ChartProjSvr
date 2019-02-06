@@ -134,13 +134,13 @@ filename servername
 int main(int argc, LPSTR *argv)
 {
 	g_bDebug = TRUE;
-	if (argc < 2)
-	{
-		printf("You must input the Front Server Name like Lion\n");
-		return 0;
-	}
+	//if (argc < 2)
+	//{
+	//	printf("You must input the Front Server Name like Lion\n");
+	//	return 0;
+	//}
 
-	strcpy(g_zMyName, argv[1] + 1);
+	strcpy(g_zMyName, argv[0]);
 
 	_Start();
 

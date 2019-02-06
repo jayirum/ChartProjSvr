@@ -39,7 +39,7 @@ namespace _FBI
 	
 	const int RT_SUCCESS = 0;
 
-	const int TIMEOUT_CHECK_DEAL = 100;	// miliseconds
+	const int TIMEOUT_CHECK_DEAL = 1000;	// 100;	// miliseconds
 
 
 	char* dealstatus(const int status, char* pzStatus);
@@ -59,7 +59,7 @@ namespace _FBI
 	};
 
 	// API CHART DATA
-	struct ST_API_CHART
+	struct PT_API_CHART
 	{
 		char	STX[1];
 		char	Len[4];
@@ -76,7 +76,7 @@ namespace _FBI
 		char	ETX[1];
 	};
 	// API TICK DATA PACKET
-	struct ST_TICK_API
+	struct PT_TICK_API
 	{
 		char	STX[1];
 		char	Len[4];	// 전체 길이
@@ -93,15 +93,15 @@ namespace _FBI
 	{
 		char	Symbol[FBILEN_SYMBOL];
 		int		DealSeq;
-		char	SysDt[8];
-		char	tm_order[8];	//hh:mm:ss
-		char	tm_wait[8];		//hh:mm:ss
-		char	tm_result[8];	//hh:mm:ss
+		char	SysDt[8+1];
+		char	tm_order[8+1];	//hh:mm:ss
+		char	tm_wait[8+1];		//hh:mm:ss
+		char	tm_result[8+1];	//hh:mm:ss
 		int		DealStatus;
 		int		DurationMin;
 	};
 
-	struct ST_DEAL_STATUS
+	struct PT_DEAL_STATUS
 	{
 		char Symbol[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];

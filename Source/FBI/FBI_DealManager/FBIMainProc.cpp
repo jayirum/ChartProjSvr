@@ -43,13 +43,13 @@ BOOL CFBIMainProc::Initialize()
 		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
 		if (!m_pDBPool->Init(atoi(cnt)))
 		{
-			g_log.log(NOTIFY, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			g_log.log(ERR/*NOTIFY*/, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
 			return FALSE;
 		}
 	}
 
 	if (!LoadSymbolInfo()) {
-		g_log.log(NOTIFY, "LoadSymbolInfo Error. Terminate Application");
+		g_log.log(ERR/*NOTIFY*/, "LoadSymbolInfo Error. Terminate Application");
 		return FALSE;
 	}
 
@@ -87,7 +87,7 @@ BOOL CFBIMainProc::LoadSymbolInfo()
 	sprintf(zQ, "SELECT ARTC_CD FROM AA_ARTC_MST WHERE USE_YN='Y'");
 	if (FALSE == db->ExecQuery(zQ))
 	{
-		g_log.log(NOTIFY, "Load Symbol Error(%s)", zQ);
+		g_log.log(ERR/*NOTIFY*/, "Load Symbol Error(%s)", zQ);
 	}
 	else
 	{
@@ -95,8 +95,9 @@ BOOL CFBIMainProc::LoadSymbolInfo()
 		{
 			char zArtc[128];	db->GetStr("ARTC_CD", zArtc);
 			CDealManager* p = new CDealManager(zArtc);
-			EnterCriticalSection(&m_csDM);
+			p->Initialize();
 
+			EnterCriticalSection(&m_csDM);
 			m_mapDealManager[zArtc] = p;
 			LeaveCriticalSection(&m_csDM);
 
@@ -104,6 +105,9 @@ BOOL CFBIMainProc::LoadSymbolInfo()
 			printf("LoadSymbol(%s)\n", zArtc);
 
 			db->Next();
+
+			//TODO
+			break;
 		}
 	}
 	db->Close();
@@ -144,11 +148,14 @@ void CFBIMainProc::CloseApiSocket()
 
 unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 {
+	//TODO
+	return 0;
+
 	CFBIMainProc* p = (CFBIMainProc*)lp;
 
 	CTimeInterval interval;
 
-	_FBI::ST_API_CHART* pSise;
+	_FBI::PT_API_CHART* pSise;
 	char zSymbol[128];
 	//char tm[9];
 	//schar zCurrPrc[32];
@@ -157,7 +164,7 @@ unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 	{
 		if (!p->m_pApiClient->Begin((LPSTR)p->m_zApiIP, atoi(p->m_zApiPort), 10))
 		{
-			g_log.log(NOTIFY, "API DataFeed Socket Error[%s][%s]", p->m_zApiIP, p->m_zApiPort);
+			g_log.log(ERR/*NOTIFY*/, "API DataFeed Socket Error[%s][%s]", p->m_zApiIP, p->m_zApiPort);
 			Sleep(5000);
 		}
 		else {
@@ -176,7 +183,7 @@ unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 
 		if (interval.isPassed(MODE_MIN, 30))
 		{
-			g_log.log(NOTIFY, "30 mins passed without receiving any market data");
+			g_log.log(ERR/*NOTIFY*/, "30 mins passed without receiving any market data");
 			Sleep(1000);
 		}
 
@@ -192,7 +199,7 @@ unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 
 		if (p->m_pApiClient->HappenedRecvError())
 		{
-			g_log.log(NOTIFY, "TICK DATA RECV ERROR:%s", p->m_pApiClient->GetMsg());
+			g_log.log(ERR/*NOTIFY*/, "TICK DATA RECV ERROR:%s", p->m_pApiClient->GetMsg());
 			continue;
 		}
 		char* pBuf = NULL;;
@@ -219,7 +226,7 @@ unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 
 			//printf("[RECV SISE](%.100s)\n", pBuf);
 
-			pSise = (_FBI::ST_API_CHART*)pBuf;
+			pSise = (_FBI::PT_API_CHART*)pBuf;
 			//sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
 			//memcpy(pSise->Time, tm, sizeof(pSise->Time));
 			//sprintf(zCurrPrc, "%.*s", sizeof(pSise->Close), pSise->Close);
@@ -278,7 +285,7 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 			}
 			if (msg.message == _FBI::WM_RECV_API_CHART)
 			{
-				_FBI::ST_API_CHART *chart = (_FBI::ST_API_CHART *)msg.lParam;
+				_FBI::PT_API_CHART *chart = (_FBI::PT_API_CHART *)msg.lParam;
 				int nLen = msg.wParam;
 
 				sprintf(zQ, "EXEC AA_SAVE_CHART "
@@ -304,7 +311,7 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 				);
 				if (FALSE == db->ExecQuery(zQ))
 				{
-					g_log.log(NOTIFY, "AA_SAVE_CHART Error(%s)", zQ);
+					g_log.log(ERR/*NOTIFY*/, "AA_SAVE_CHART Error(%s)", zQ);
 				}
 				db->Close();
 				g_memPool.release((char*)chart);

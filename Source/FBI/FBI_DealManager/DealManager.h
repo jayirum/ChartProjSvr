@@ -39,13 +39,16 @@ public:
 	VOID DealResult(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
 	VOID DealWait(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
 	VOID DealOrd(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
-	static unsigned WINAPI Thread_UpdateDeal(LPVOID lp);
+	//static unsigned WINAPI Thread_UpdateDeal(LPVOID lp);
 	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
+
+	VOID ResultProcByChart(char* pChartData);
+	
 private:
 	char	m_zArtcCd[32];
 	CDBPoolAdo		*m_pDBPool;
-	HANDLE			m_hUpdateDeal;
-	unsigned int	m_unUpdateDeal;
+	//HANDLE			m_hUpdateDeal;
+	//unsigned int	m_unUpdateDeal;
 
 	std::map<std::string, _FBI::ST_DEAL_INFO*>	m_mapDeal;	// 주문시작시간, deal info
 	CRITICAL_SECTION						m_csDeal;

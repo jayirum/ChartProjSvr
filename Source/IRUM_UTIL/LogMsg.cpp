@@ -38,7 +38,7 @@ CSendMsg::~CSendMsg()
 
 VOID CSendMsg::ThreadFunc()
 {
-	std::printf("CSendMsg thread:%d\n", getMyThreadID());
+	//std::printf("CSendMsg thread:%d\n", getMyThreadID());
 	while (TRUE)
 	{
 
@@ -223,7 +223,7 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 
 			sprintf(buff + 3, "[%02d:%02d:%02d.%03d]%.*s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, DEF_LOG_LEN - 20, p->msg);
 			_write(m_fd, buff, strlen(buff));
-			printf("%.80s", buff);
+			printf("%.100s", buff);
 			m_pool->Restore(p);
 			
 			//notification send to Server
@@ -248,7 +248,7 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 
 VOID CLogMsg::ThreadFunc()
 {
-	printf("CLogMsg thread:%d\n", GetMyThreadID());
+	//printf("CLogMsg thread:%d\n", GetMyThreadID());
 	while (TRUE)
 	{
 		DWORD dwRet = MsgWaitForMultipleObjects(1, (HANDLE*)&m_hDie, FALSE, 1, QS_ALLPOSTMESSAGE);

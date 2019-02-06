@@ -1448,7 +1448,7 @@ int CUtil::GetPassedSeconds(char* psStartTime, BOOL bColon)
 
 
 	if (bColon)
-		sprintf(zStartTime, "%.2s%.2s%.2s", psStartTime, psStartTime + 2, psStartTime + 4);
+		sprintf(zStartTime, "%.2s%.2s%.2s", psStartTime, psStartTime + 3, psStartTime + 6);
 	else
 		sprintf(zStartTime, "%.6s", psStartTime);
 
