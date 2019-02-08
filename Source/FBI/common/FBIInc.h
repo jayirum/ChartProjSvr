@@ -7,11 +7,17 @@
 
 namespace _FBI
 {
-	const int DEAL_STATUS_NONSTART	= 0;	//	미시작
-	const int DEAL_STATUS_ORD = 1;		//	주문가능
-	const int DEAL_STATUS_WAIT = 2;		//	대기
-	const int DEAL_STATUS_RESULT = 3;	//	결과진행
-	const int DEAL_STATUS_DONE = 4;		//	완료
+	const char TM_DEAL_START[] = "08:00:00";
+	const char TM_DEAL_END[] = "06:00:00";
+
+	enum EN_DEAL_SATTUS {
+		DEAL_STATUS_NONSTART = 0//	미시작
+		, DEAL_STATUS_ORD		//	주문가능 1
+		, DEAL_STATUS_WAIT		//	대기 2
+		, DEAL_STATUS_CHARTWAIT	//	차트대기 3
+		, DEAL_STATUS_RESULTING	//	결과산출 4
+		, DEAL_STATUS_DONE		//	완료 5
+	};
 
 	const int FBILEN_SYMBOL		= 10;
 	const int FBILEN_PRC		= 10;
@@ -39,14 +45,19 @@ namespace _FBI
 	
 	const int RT_SUCCESS = 0;
 
-	const int TIMEOUT_CHECK_DEAL = 1000;	// 100;	// miliseconds
+	const int TIMEOUT_CHECK_DEAL = 500;	// 100;	// miliseconds
 
+
+	enum EN_DATETP { DATETP_TRADE = 0, DATETP_NEXT } ;
 
 	char* dealstatus(const int status, char* pzStatus);
 	char* packlen(int len, char* out);
 	char* rsltCode(int code, char* out);
 	char* now(char* out);
+	EN_DATETP   dateTp(char* pzNow);
 
+	// date->yyyymmdd, time -> hh:mm:ss
+	char* chartName(char* psDate, char* psTime, _Out_ char* pzChartNm);
 
 
 	struct HEADER
@@ -63,7 +74,7 @@ namespace _FBI
 	{
 		char	STX[1];
 		char	Len[4];
-		char	Symbol[FBILEN_SYMBOL];
+		char	StkCd[FBILEN_SYMBOL];
 		char	Date[8];
 		char	ChartType[1];	// m:minute, h:hour, d:day
 		char	TimeFrame[3];	// 001: 1min, 005
@@ -91,19 +102,22 @@ namespace _FBI
 
 	struct ST_DEAL_INFO
 	{
-		char	Symbol[FBILEN_SYMBOL];
+		char	ArtcCd[FBILEN_SYMBOL];
 		int		DealSeq;
+		int		DateTp;
 		char	SysDt[8+1];
 		char	tm_order[8+1];	//hh:mm:ss
 		char	tm_wait[8+1];		//hh:mm:ss
-		char	tm_result[8+1];	//hh:mm:ss
-		int		DealStatus;
+		char	tm_chartwait[8+1];	//hh:mm:ss
+		char	tm_end[8 + 1];
+		EN_DEAL_SATTUS		DealStatus;
 		int		DurationMin;
 	};
 
 	struct PT_DEAL_STATUS
 	{
-		char Symbol[FBILEN_SYMBOL];
+		char ArtcCd[FBILEN_SYMBOL];
+		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
 		char DealStatus[2];
 		char Time[8];				// 각 status 시작시간

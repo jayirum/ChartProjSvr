@@ -48,8 +48,8 @@ BOOL CFBIMainProc::Initialize()
 		}
 	}
 
-	if (!LoadSymbolInfo()) {
-		g_log.log(ERR/*NOTIFY*/, "LoadSymbolInfo Error. Terminate Application");
+	if (!LoadStkCode()) {
+		g_log.log(ERR/*NOTIFY*/, "LoadStkCode Error. Terminate Application");
 		return FALSE;
 	}
 
@@ -80,11 +80,11 @@ void CFBIMainProc::Finalize()
 }
 
 
-BOOL CFBIMainProc::LoadSymbolInfo()
+BOOL CFBIMainProc::LoadStkCode()
 {
 	CDBHandlerAdo db(m_pDBPool->Get());
 	char zQ[1024];
-	sprintf(zQ, "SELECT ARTC_CD FROM AA_ARTC_MST WHERE USE_YN='Y'");
+	sprintf(zQ, "SELECT STK_CD FROM AA_STK_MST WHERE USE_YN='Y'");
 	if (FALSE == db->ExecQuery(zQ))
 	{
 		g_log.log(ERR/*NOTIFY*/, "Load Symbol Error(%s)", zQ);
@@ -93,25 +93,31 @@ BOOL CFBIMainProc::LoadSymbolInfo()
 	{
 		while (db->IsNextRow())
 		{
-			char zArtc[128];	db->GetStr("ARTC_CD", zArtc);
-			CDealManager* p = new CDealManager(zArtc);
+			char zStCd[128];	db->GetStr("STK_CD", zStCd);
+
+			//TODO
+			if (strncmp(zStCd, "6A", 2) != 0)
+			{
+				db->Next();
+				continue;
+			}
+
+
+			CDealManager* p = new CDealManager(zStCd);
 			p->Initialize();
 
 			EnterCriticalSection(&m_csDM);
-			m_mapDealManager[zArtc] = p;
+			m_mapDealManager[zStCd] = p;
 			LeaveCriticalSection(&m_csDM);
 
-			g_log.log(LOGTP_SUCC, "LoadSymbol(%s)", zArtc);
-			printf("LoadSymbol(%s)\n", zArtc);
+			g_log.log(LOGTP_SUCC, "LoadSymbol(%s)", zStCd);
+			printf("LoadSymbol(%s)\n", zStCd);
 
 			db->Next();
-
-			//TODO
-			break;
 		}
 	}
 	db->Close();
-	g_log.log(INFO, "Succeeded in LoadSymbolInfo...");
+	g_log.log(INFO, "Succeeded in LoadStkCode...");
 	return TRUE;
 }
 
@@ -146,12 +152,92 @@ void CFBIMainProc::CloseApiSocket()
 }
 
 
+/*
+struct PT_API_CHART
+{
+char	STX[1];
+char	Len[4];
+char	Symbol[FBILEN_SYMBOL];
+char	Date[8];
+char	ChartType[1];	// m:minute, h:hour, d:day
+char	TimeFrame[3];	// 001: 1min, 005
+char	ChartTime[5];	// hh:mm
+char	Open[FBILEN_PRC];
+char	High[FBILEN_PRC];
+char	Low[FBILEN_PRC];
+char	Close[FBILEN_PRC];
+char	Volume[FBILEN_VOLUME];
+char	ETX[1];
+};
+*/
+void CFBIMainProc::testChart()
+{
+	char buffer[512];
+	char zStkCd[] = "6AH19";
+	SYSTEMTIME st;
+	char z[128];
+	double dBasePrc = 0.7107000000;
+
+	while (m_bContinue)
+	{
+		Sleep(1000 * 60);	// 1min
+
+		_FBI::PT_API_CHART* chart = (_FBI::PT_API_CHART*)buffer;
+		memset(chart, 0x20, sizeof(_FBI::PT_API_CHART));
+		buffer[sizeof(_FBI::PT_API_CHART)] = 0x00;
+
+		memcpy(chart->StkCd, zStkCd, strlen(zStkCd));
+
+		GetLocalTime(&st);
+		sprintf(chart->Date, "%04d%02d%02d", st.wYear, st.wMonth, st.wDay);
+		chart->ChartType[0] = 'M';
+		sprintf(chart->ChartTime, "%02d:%02d", st.wHour, st.wMinute);
+
+		sprintf(z, "%.2f", dBasePrc);
+		memcpy(chart->Open, z, strlen(z));
+
+		sprintf(z, "%.2f", dBasePrc + 0.0025);
+		memcpy(chart->High, z, strlen(z));
+
+		sprintf(z, "%.2f", dBasePrc - 0.0025);
+		memcpy(chart->Low, z, strlen(z));
+
+		int remainder = (rand()*rand()/rand()) % 5;
+		if (remainder == 0)	sprintf(z, "%.2f", dBasePrc + 0.002);
+		if (remainder == 1)	sprintf(z, "%.2f", dBasePrc - 0.0015);
+		if (remainder == 2)	sprintf(z, "%.2f", dBasePrc + 0.0013);
+		if (remainder == 3)	sprintf(z, "%.2f", dBasePrc - 0.0016);
+		if (remainder == 4)	sprintf(z, "%.2f", dBasePrc + 0.002);
+
+		memcpy(chart->Close, z, strlen(z));
+
+		CUtil::TrimAll(zStkCd, strlen(zStkCd));
+		std::string sStk = zStkCd;
+
+		EnterCriticalSection(&m_csDM);
+		std::map<std::string, CDealManager*>::iterator it = m_mapDealManager.find(sStk);
+		if (it != m_mapDealManager.end())
+		{
+			char* pBuf = g_memPool.get();
+			memcpy(pBuf, (char*)chart, sizeof(_FBI::PT_API_CHART));
+			CDealManager* pDM = (*it).second;
+			PostThreadMessage(pDM->GetMyThreadID(), _FBI::WM_RECV_API_CHART, 0, (LPARAM)pBuf);
+
+			char* pBuf2 = g_memPool.get();
+			memcpy(pBuf2, (char*)chart, sizeof(_FBI::PT_API_CHART));
+			PostThreadMessage(m_unSaveData, _FBI::WM_RECV_API_CHART, 0, (LPARAM)pBuf2);
+		}
+		LeaveCriticalSection(&m_csDM);
+	}
+}
+
 unsigned WINAPI CFBIMainProc::Thread_ApiChart(LPVOID lp)
 {
 	//TODO
+	CFBIMainProc* p = (CFBIMainProc*)lp;
+	p->testChart();
 	return 0;
 
-	CFBIMainProc* p = (CFBIMainProc*)lp;
 
 	CTimeInterval interval;
 
@@ -288,7 +374,7 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 				_FBI::PT_API_CHART *chart = (_FBI::PT_API_CHART *)msg.lParam;
 				int nLen = msg.wParam;
 
-				sprintf(zQ, "EXEC AA_SAVE_CHART "
+				sprintf(zQ, "EXEC AA_CHART_SAVE "
 					"%d"	//@I_CHART_TP	INT
 					", '%.*s'"	//	VARCHAR(10)
 					", '%.*s'"	//	, @I_CHART_DT	CHAR(8)	--YYMMDD
@@ -299,8 +385,8 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 					", '%.*s'"	//	, @I_CLOSE	VARCHAR(20)
 					", '%.*s'"	//	, @I_VOL		VARCHAR(10)
 					,
-					1			//TODO. 추후 PACKET 에서 추출해야 한다.
-					,sizeof(chart->Symbol), chart->Symbol
+					0			//TODO. 추후 PACKET 에서 추출해야 한다.
+					,sizeof(chart->StkCd), chart->StkCd
 					, sizeof(chart->Date), chart->Date
 					, sizeof(chart->ChartTime), chart->ChartTime	//API 에서 어떻게 오는지 봐야 한다.
 					, sizeof(chart->Open), chart->Open
@@ -311,7 +397,11 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 				);
 				if (FALSE == db->ExecQuery(zQ))
 				{
-					g_log.log(ERR/*NOTIFY*/, "AA_SAVE_CHART Error(%s)", zQ);
+					g_log.log(ERR/*NOTIFY*/, "AA_SAVE_CHART Error(%s)(%s)",db->GetError(), zQ);
+				}
+				else
+				{
+					g_log.log(INFO, "AA_SAVE_CHART OK(%s)", zQ);
 				}
 				db->Close();
 				g_memPool.release((char*)chart);

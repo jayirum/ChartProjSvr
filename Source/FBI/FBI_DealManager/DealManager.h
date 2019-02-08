@@ -3,7 +3,6 @@
 #include "../../IRUM_UTIL/adofunc.h"
 #include "../common/FBIInc.h"
 #include <map>
-#include <algorithm>
 #include <string>
 
 /*
@@ -21,36 +20,59 @@ DEAL_MANAGER 가 로딩할 때 DEAL_SEQ와 각 시작시간과 DEAL_STATUS, DURATION 를 가져
 결과 DB 처리 후 소켓으로 클라이언트에게 전달
 */
 
+
+class CChartMap
+{
+public:
+	CChartMap();
+	~CChartMap();
+
+	VOID Save(char* pChartData);
+	_FBI::PT_API_CHART* GetFirstChart(_Out_ std::string *psChartNm);
+	_FBI::PT_API_CHART* GetNextChart(_In_ std::string sPrevChartNm, _Out_ std::string *psChartNm);
+	VOID DeleteAfterOrerProc(_In_ std::string sChartNm);
+	//std::string GetFirstChartNm() { return m_sFirstChartNm; }
+private:
+	std::map<std::string, _FBI::PT_API_CHART*>	m_mapChart;
+	CRITICAL_SECTION							m_csChart;
+	//std::string m_sFirstChartNm;
+};
+
 class CDealManager : public CBaseThread
 {
 public:
-	CDealManager(char* pzArtcCd);
+	CDealManager(char* pzStkCd);
 	~CDealManager();
 
 	BOOL Initialize();
 	VOID Finalize();
 
 	BOOL InitClientConnect();
+	BOOL LoadChartInfo();
 	BOOL LoadDealInfo();
 
 	VOID ThreadFunc();
 	VOID DealManage();
 	VOID DealManageInner();
-	VOID DealResult(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
-	VOID DealWait(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
-	VOID DealOrd(char* pzNow, std::string sOrdTm, _FBI::ST_DEAL_INFO* pInfo);
-	//static unsigned WINAPI Thread_UpdateDeal(LPVOID lp);
+	VOID DealOrd(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
+	VOID DealWait(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
+	VOID DealChartWait(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
+	VOID DealResulting(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
+	VOID DealErase(int nDealSeq);
 	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
 
-	VOID ResultProcByChart(char* pChartData);
+	static unsigned WINAPI Thread_ResultProcByChart(LPVOID lp);
 	
 private:
-	char	m_zArtcCd[32];
+	char	m_zStkCd[32], m_zArtcCd[32];
 	CDBPoolAdo		*m_pDBPool;
-	//HANDLE			m_hUpdateDeal;
-	//unsigned int	m_unUpdateDeal;
+	
+	HANDLE			m_hRsltProc;
+	unsigned int	m_unRsltProc;
 
-	std::map<std::string, _FBI::ST_DEAL_INFO*>	m_mapDeal;	// 주문시작시간, deal info
-	CRITICAL_SECTION						m_csDeal;
+	std::map<int, _FBI::ST_DEAL_INFO*>	m_mapDeal;	// deal seq, deal info
+	CRITICAL_SECTION					m_csDeal;
+
+	CChartMap							m_chartMap;
 };
 
