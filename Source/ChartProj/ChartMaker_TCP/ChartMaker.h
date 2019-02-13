@@ -10,6 +10,7 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/QueueShm.h"
 #include "../../IRUM_UTIL/MemPool.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
 
 #define MAX_CHARTTP_CNT	20
 
@@ -57,4 +58,6 @@ private:
 	unsigned int	m_dwWorkThreadID;
 	int				m_nDotCnt;
 	BOOL			m_bSaveChart;
+
+	CHARTNAME_TYPE	m_chartNmType;
 };

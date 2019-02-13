@@ -1,6 +1,74 @@
 #include "IRUM_Common.h" //todo after completion - remove ../NEW/
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "Util.h"
+
+int StrToN(char* pszIn, int nLen)
+{
+	if (!nLen)	return atoi(pszIn);
+
+	char result[128];
+	sprintf(result, "%*.*s", nLen, nLen, pszIn);
+	//ReplaceChr(result, result+nLen, 0x20, '0');
+	return atoi(result);
+}
+
+
+char* ComposeChartName(char* date, char* time, int tp, int nameTp, char* out)
+{
+	int divider, ret; 
+	char zMin[32], zSec[32];	
+	char zTm[32];
+	sprintf(zTm, "%.8s", time);
+	sprintf(zMin, "%.2s", zTm + 3);
+	sprintf(zSec, "%.2s", zTm + 6);
+	
+	if (tp == TP_1MIN) divider = 1;
+	if (tp == TP_3MIN) divider = 3;
+	if (tp == TP_5MIN) divider = 5;
+	if (tp == TP_10MIN) divider = 10;
+	if (tp == TP_15MIN) divider = 15;
+	if (tp == TP_20MIN) divider = 20;
+	if (tp == TP_60MIN) divider = 60;
+	if (tp == TP_120MIN) divider = 120;
+
+	// 00:01:00 ~ 00:01:59 ==> 01분 차트
+	if (nameTp == CHARTNAME_TP_NEAR)
+	{
+		ret = (atoi(zMin) / divider);
+	}
+	// 00:01:01 ~ 00:02:00 ==> 02분 차트
+	else 
+	{ 
+		if (strncmp(time + 6, "00", 2) == 0) 
+			ret = ((atoi(zMin)) / divider); 
+		else 
+			ret = ((atoi(zMin) + 1) / divider);
+	}
+	int min = (ret)*divider;
+	if (tp == TP_60MIN) 
+	{ 
+		int h = S2N(zTm, 2); 
+		if (h == 24)
+			h = 0; 
+		sprintf(out, "%.8s%02d00", date, h); 
+	}
+	else if (tp == TP_120MIN) { 
+		int h = S2N(zTm, 2); 
+		int hRemain = h % 2; 
+		if (hRemain == 1)	
+			h -= 1; 
+		sprintf(out, "%.8s%02d00", date, h); 
+	}
+	else { 
+		sprintf(out, "%.8s%.2s%02d", date, zTm, min); 
+	}
+
+	return out;
+}
+
+
 
 bool ir_isbrokerKR(char* psBroker)
 {

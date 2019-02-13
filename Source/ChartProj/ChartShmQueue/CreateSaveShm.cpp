@@ -145,6 +145,10 @@ VOID CCreateSaveShm::ThreadFunc()
 }
 //
 
+
+
+
+#if 0
 BOOL	CCreateSaveShm::LoadShmWrapper(/*CHART_TP*/int  tp)
 {
 	__try
@@ -278,7 +282,7 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 	} // for (it = listGroupKey.begin(); it != listGroupKey.end(); it++)
 	return TRUE;
 }
-
+#endif
 
 //VOID	CCreateSaveShm::DBSave(/*CHART_TP*/int  tp)
 //{

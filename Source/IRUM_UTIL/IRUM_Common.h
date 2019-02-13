@@ -231,61 +231,16 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 
 
 
+enum CHARTNAME_TYPE { CHARTNAME_TP_NEAR, CHARTNAME_TP_};
 
-/*
-10:25	=> 25 / 5 = 5. (5)*5 = 25 분봉
-10:29   => 29 / 5 = 5. (5)*5 = 25 분봉
-10:32	=> 32 / 5 = 6. (6)*5 = 30 분봉
 
-10:20:00 => 20 / 1 = 20 (20)* 1 = 20분봉
-10:20:59 => 20 / 1 = 20 (20)* 1 = 20분봉
-10:21:05 => 21 / 1 = 21 (21)* 1 = 21분봉
 
-time -> hh:mm:ss
-*/
-#define GET_CHART_NM(time,CHART_TP, out){	\
-	int divider; char tmp[32];	char zTm[32]; SYSTEMTIME systime;\
-	sprintf(zTm, "%.8s", time);						\
-	if(CHART_TP==TP_1MIN) divider=1;		\
-	if(CHART_TP==TP_3MIN) divider=3;		\
-	if(CHART_TP==TP_5MIN) divider=5;		\
-	if(CHART_TP==TP_10MIN) divider=10;		\
-	if(CHART_TP==TP_15MIN) divider=15;		\
-	if(CHART_TP==TP_20MIN) divider=20;		\
-	if(CHART_TP==TP_60MIN) divider=60;		\
-	if(CHART_TP==TP_120MIN) divider=120;		\
-	sprintf(tmp, "%.2s", (zTm+3));		\
-	int ret = (atoi(tmp) / divider); 		\
-	int min = (ret)*divider;				\
-	GetLocalTime(&systime);					\
-	if(min==60){ int h = S2N(zTm,2)+1; if(h==24) h=0; sprintf(out, "%04d%02d%02d%02d00",systime.wYear, systime.wMonth, systime.wDay,h);}	\
-	else if(min==120){ int h = S2N(zTm,2)+2; if(h==24) h=0; sprintf(out, "%04d%02d%02d%02d00",systime.wYear, systime.wMonth, systime.wDay,h);}	\
-	else sprintf(out, "%04d%02d%02d%.2s%02d",systime.wYear, systime.wMonth, systime.wDay, zTm, min);\
-}
-
+// 00:01:00 ~ 00:01:59 ==> 01분 차트
 // date : yyyymmdd, time:hh:mm:ss
 // 120분 차트는 6시 부터 시작한다
-#define GET_CHART_NM_EX(date,time, tp, out){	\
-	int divider; char tmp[32];	char zTm[32]; \
-	sprintf(zTm, "%.8s", time);					\
-	if(tp==TP_1MIN) divider=1;		\
-	if(tp==TP_3MIN) divider=3;		\
-	if(tp==TP_5MIN) divider=5;		\
-	if(tp==TP_10MIN) divider=10;		\
-	if(tp==TP_15MIN) divider=15;		\
-	if(tp==TP_20MIN) divider=20;		\
-	if(tp==TP_60MIN) divider=60;		\
-	if(tp==TP_120MIN) divider=120;		\
-	sprintf(tmp, "%.2s", (zTm+3));		\
-	int ret = (atoi(tmp) / divider); 		\
-	int min = (ret)*divider;				\
-	if (tp == TP_60MIN) {int h = S2N(zTm, 2); if (h == 24) h = 0; sprintf(out, "%.8s%02d00", date, h);	}	\
-	else if (tp == TP_120MIN) {	int h = S2N(zTm, 2); int hRemain = h % 2; if (hRemain == 1)	h -= 1; sprintf(out, "%.8s%02d00", date, h);}\
-	else {sprintf(out, "%.8s%.2s%02d", date, zTm, min);}\
-}
+char* ComposeChartName(char* date, char* time, int tp, int nameTp, char* out);
 
 #define GET_TICKCHART_NM(seq,out){ sprintf(out, "%0*d", LEN_CHART_NM, seq);}
-
 
 /*
 SHM - 품목코드로 (6E)

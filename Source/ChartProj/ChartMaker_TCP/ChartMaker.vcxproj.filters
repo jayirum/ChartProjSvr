@@ -92,4 +92,7 @@
       <UniqueIdentifier>{17d69040-a46c-4aa5-ad22-429349c40575}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ChartMaker.ini" />
+  </ItemGroup>
 </Project>

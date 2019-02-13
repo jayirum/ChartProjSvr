@@ -61,9 +61,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp);
 CRITICAL_SECTION	g_Console;
 CLogMsg				g_log;
 CDBPoolAdo			*g_ado		= NULL;
-//TODO CSiseRecv			*g_pMDSub = NULL;
-//CNanoPubSub			*g_pMDSub = NULL;
-//CMCastRecv			*g_pMcastRecv = NULL;
+
 CTcpClient			*g_pApiRecv = NULL;
 CMemPool			*g_pMemPool = NULL;
 
@@ -350,12 +348,15 @@ BOOL LoadSymbol()
 {
 
 	CDBHandlerAdo db(g_ado->Get());
-	char zQ[1024];
-	sprintf(zQ, "EXEC CHART_GET_SYMBOL");
-
-	if (!db->ExecQuery(zQ))
+	char zStkCdQry[1024];
+	if (!CUtil::GetConfig(g_zConfig, "SQL", "GET_SYMBOL_INFO", zStkCdQry))
 	{
-		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zQ, db->GetError());
+		g_log.log(ERR, "CONFIG파일 [SQL] GET_SYMBOL_INFO 의 쿼리가 없음");
+		return 0;
+	}
+	if (!db->ExecQuery(zStkCdQry))
+	{
+		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zStkCdQry, db->GetError());
 		return FALSE;
 	}
 
@@ -368,24 +369,10 @@ BOOL LoadSymbol()
 	int nDotCnt = 0;
 	while (db->IsNextRow())
 	{
-		db->GetStr("ARTC_CODE", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zArtc);
-
-
-		db->GetStr("SYMBOL", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zSymbol);
-
+		db->GetStr("ARTC_CD", zArtc);
+		db->GetStr("STK_CD", zSymbol);
 		nDotCnt = db->GetLong("DOT_CNT");
 
-		//TODO
-		/*if (strncmp(zSymbol, "CL", 2) != 0
-			) {
-			db->Next();
-			continue;
-		}*/
-		
-		// KR 은 CLQ7, 다른곳은 CLQ17 
-		ir_cvtcode_HD_KR(zSymbol, zTemp);
 		std::string symbol = zSymbol;
 
 		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread, (saveYn[0]=='Y'));

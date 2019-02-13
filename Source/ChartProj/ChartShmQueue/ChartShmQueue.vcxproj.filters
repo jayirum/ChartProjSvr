@@ -70,4 +70,8 @@
       <UniqueIdentifier>{7a537dc7-65dd-4626-acab-aefbc94763f4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ChartShmQueue.ini" />
+    <None Include="REGEDIT.reg" />
+  </ItemGroup>
 </Project>

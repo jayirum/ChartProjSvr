@@ -101,7 +101,7 @@ VOID CTcpClient::ThreadFunc()
 VOID CTcpClient::RecvThread()
 {
 	char zRecvBuff[LEN_BUFF_SIZE];
-	printf("TcpClent thread:%d\n", m_dwThreadID);
+	//printf("TcpClent thread:%d\n", m_dwThreadID);
 
 	while (Is_TimeOfStop() == FALSE)
 	{

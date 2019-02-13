@@ -13,38 +13,6 @@ extern CLogMsg g_log;
 extern char	g_zConfig[_MAX_PATH];
 extern CMemPool	*g_pMemPool;
 
-// 120분 차트는 6시 부터 시작한다
-void fnGET_CHART_NM_EX(char* date, char*time, int tp, char* out)
-{
-	int divider; char tmp[32];	char zTm[32];
-	sprintf(zTm, "%.8s", time);
-	if (tp == TP_1MIN) divider = 1;
-	if (tp == TP_3MIN) divider = 3;
-	if (tp == TP_5MIN) divider = 5;
-	if (tp == TP_10MIN) divider = 10;
-	if (tp == TP_15MIN) divider = 15;
-	if (tp == TP_20MIN) divider = 20;
-	if (tp == TP_60MIN) divider = 60;
-	if (tp == TP_120MIN) divider = 120;
-	sprintf(tmp, "%.2s", (zTm + 3));
-	int ret = (atoi(tmp) / divider);
-	int min = (ret)*divider;
-	if (tp == TP_60MIN) {
-		int h = S2N(zTm, 2); if (h == 24) h = 0; sprintf(out, "%.8s%02d00", date, h);
-	}
-	else if (tp == TP_120MIN) {
-		int h = S2N(zTm, 2);
-		int hRemain = h % 2;
-		if (hRemain == 1)	h -= 1;
-		if (h == 24) h = 0; sprintf(out, "%.8s%02d00", date, h);
-	}
-	else
-		sprintf(out, "%.8s%.2s%02d", date, zTm, min);
-	//if(min==60){ int h = S2N(zTm,2)+1; if(h==24) h=0; sprintf(out, "%.8s%02d00",date,h);}	
-	//else if(min==120){ int h = S2N(zTm,2)+2; if(h==24) h=0; sprintf(out, "%.8s%02d00",date,h);}	
-	//else sprintf(out, "%.8s%.2s%02d",date, zTm, min);
-}
-
 
 CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId, BOOL bSaveChart)
 {
@@ -56,6 +24,10 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 	m_nDotCnt = nDotCnt;
 	GET_SHM_NM(pzArtcCode, m_zShmNm);
 	GET_SHM_LOCK_NM(pzArtcCode, m_zMutexNm);
+
+	char zChartNmTp[32] = { 0, };
+	CUtil::GetConfig(g_zConfig, "CHARTNAME_TYPE", "TYPE", zChartNmTp);
+	m_chartNmType = (CHARTNAME_TYPE)atoi(zChartNmTp);
 
 	ResumeThread();
 
@@ -274,8 +246,8 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 				char* pData = (char*)msg.lParam;
 				int nLen = (int)msg.wParam;
 
-				int i = 0;
-				for (i = (int)TP_1MIN; i < (int)TP_DAY; i++)	//일,주,월은 배치로
+				int i = (int)TP_1MIN;	// 0;
+				//for (i = (int)TP_1MIN; i < (int)TP_DAY; i++)	//일,주,월은 배치로
 				{
 					p->ChartProc((void*)pData, (int)i);
 				}
@@ -304,10 +276,9 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 
 	// STRUCT KEY (chart name) 0000, 0005, 0010
 	char szChartNm[LEN_SHM_STRUCT_KEY + 1];
-	GET_CHART_NM_EX(p->Date, p->Time, tp, szChartNm);
-	//fnGET_CHART_NM_EX(p->Date, p->Time, tp, szChartNm);
-	// SEQNO 자리에 패킷시간을 적는다.
-	//memcpy(recvUnit.seq, p->org.Time, sizeof(p->org.Time));
+
+	ComposeChartName(p->Date, p->Time, tp, m_chartNmType, szChartNm); 
+
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// chart unit 구성
