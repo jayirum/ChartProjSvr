@@ -60,6 +60,12 @@
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -104,5 +110,14 @@
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FBI_DealManager.ini" />
   </ItemGroup>
 </Project>

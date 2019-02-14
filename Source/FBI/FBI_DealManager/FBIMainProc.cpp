@@ -15,11 +15,11 @@ extern CMemPool	g_memPool;
 
 CFBIMainProc::CFBIMainProc():CBaseThread("FBIMain", TRUE)
 {
-	m_unApiTick = m_unSaveData = 0;
-	m_hApiTick = m_hSaveData = NULL;
+	//m_unApiTick = m_unSaveData = 0;
+	//m_hApiTick = m_hSaveData = NULL;
 	m_pDBPool = NULL;
 	m_bContinue = TRUE;
-	m_pApiClient = NULL;
+	//m_pApiClient = NULL;
 	
 	InitializeCriticalSection(&m_csDM);
 }
@@ -53,26 +53,26 @@ BOOL CFBIMainProc::Initialize()
 		return FALSE;
 	}
 
-	InitApiSocket();
+	//InitApiSocket();
 
 	ResumeThread();
 
 	// create recv thread
-	m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiChart, this, 0, &m_unApiTick);
+	//m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiChart, this, 0, &m_unApiTick);
 
 	// create save thread
-	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveChart, this, 0, &m_unSaveData);
+	//m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveChart, this, 0, &m_unSaveData);
 
 	return TRUE;
 }
 
 void CFBIMainProc::Finalize()
 {
-	PostThreadMessage(m_unApiTick, _FBI::WM_TERMINATE, 0, 0);
-	PostThreadMessage(m_unSaveData, _FBI::WM_TERMINATE, 0, 0);
+	//PostThreadMessage(m_unApiTick, _FBI::WM_TERMINATE, 0, 0);
+	//PostThreadMessage(m_unSaveData, _FBI::WM_TERMINATE, 0, 0);
 
-	SAFE_CLOSEHANDLE(m_hApiTick);
-	SAFE_CLOSEHANDLE(m_hSaveData);
+	//SAFE_CLOSEHANDLE(m_hApiTick);
+	//SAFE_CLOSEHANDLE(m_hSaveData);
 
 	SAFE_DELETE(m_pDBPool);
 	ClearDealMap();
@@ -84,7 +84,9 @@ BOOL CFBIMainProc::LoadStkCode()
 {
 	CDBHandlerAdo db(m_pDBPool->Get());
 	char zQ[1024];
-	sprintf(zQ, "SELECT STK_CD FROM AA_STK_MST WHERE USE_YN='Y'");
+	//sprintf(zQ, "SELECT STK_CD FROM AA_STK_MST WHERE USE_YN='Y'");
+	CUtil::GetConfig(g_zConfig, "SQL", "GET_SYMBOL_INFO", zQ);
+
 	if (FALSE == db->ExecQuery(zQ))
 	{
 		g_log.log(ERR/*NOTIFY*/, "Load Symbol Error(%s)", zQ);
@@ -94,16 +96,16 @@ BOOL CFBIMainProc::LoadStkCode()
 		while (db->IsNextRow())
 		{
 			char zStCd[128];	db->GetStr("STK_CD", zStCd);
-
+			char zArtcCd[128];	db->GetStr("STK_CD", zArtcCd);
 			//TODO
-			if (strncmp(zStCd, "6A", 2) != 0)
+			if (strncmp(zStCd, "CL", 2) != 0)
 			{
 				db->Next();
 				continue;
 			}
 
 
-			CDealManager* p = new CDealManager(zStCd);
+			CDealManager* p = new CDealManager(zStCd, zArtcCd);
 			p->Initialize();
 
 			EnterCriticalSection(&m_csDM);
@@ -135,7 +137,13 @@ VOID CFBIMainProc::ClearDealMap()
 	LeaveCriticalSection(&m_csDM);
 }
 
+void CFBIMainProc::ThreadFunc()
+{
+	WaitForSingleObject(CBaseThread::m_hDie, INFINITE);
+}
 
+
+#if 0
 void CFBIMainProc::InitApiSocket()
 {
 	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "API_TR_IP", m_zApiIP);
@@ -412,9 +420,4 @@ unsigned WINAPI CFBIMainProc::Thread_SaveChart(LPVOID lp)
 	}
 	return 0;
 }
-
-
-void CFBIMainProc::ThreadFunc()
-{
-	WaitForSingleObject(CBaseThread::m_hDie, INFINITE);
-}
+#endif

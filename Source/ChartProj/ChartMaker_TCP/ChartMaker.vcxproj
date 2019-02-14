@@ -168,7 +168,6 @@
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
-    <ClInclude Include="..\Common\ChartCommon.h" />
     <ClInclude Include="ChartMaker.h" />
     <ClInclude Include="Main.h" />
   </ItemGroup>

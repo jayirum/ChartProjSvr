@@ -2,6 +2,7 @@
 #include "../../IRUM_UTIL/BaseThread.h"
 #include "../../IRUM_UTIL/adofunc.h"
 #include "../common/FBIInc.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
 #include <map>
 #include <string>
 
@@ -41,23 +42,24 @@ private:
 class CDealManager : public CBaseThread
 {
 public:
-	CDealManager(char* pzStkCd);
+	CDealManager(char* pzStkCd, char* pzArtcCd);
 	~CDealManager();
 
 	BOOL Initialize();
 	VOID Finalize();
 
 	BOOL InitClientConnect();
-	BOOL LoadChartInfo();
+	BOOL InitChartShm();
+	//BOOL LoadChartInfo();
 	BOOL LoadDealInfo();
 
 	VOID ThreadFunc();
 	VOID DealManage();
-	VOID DealManageInner();
-	VOID DealOrd(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
-	VOID DealWait(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
-	VOID DealChartWait(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
-	VOID DealResulting(char* pzNow, _FBI::ST_DEAL_INFO* pInfo);
+	BOOL DealManageInner();
+	BOOL DealOrd(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
+	BOOL DealWait(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
+	BOOL DealChartWait(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
+	BOOL DealResulting(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
 	VOID DealErase(int nDealSeq);
 	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
 
@@ -73,6 +75,7 @@ private:
 	std::map<int, _FBI::ST_DEAL_INFO*>	m_mapDeal;	// deal seq, deal info
 	CRITICAL_SECTION					m_csDeal;
 
-	CChartMap							m_chartMap;
+	//CChartMap							m_chartMap;
+	CChartShmUtil						*m_chart;
 };
 

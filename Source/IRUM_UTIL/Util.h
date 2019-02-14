@@ -232,6 +232,8 @@ public:
 	static	char*	GetCnfgXMLFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue);
 	static	char*	GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue );
 	static  BOOL	GetNextConfigData(char* pzCnfgFileNm, char* pzSectionNm, char* pzPrevKeyNm, char* o_pzNextKeyNm, char* o_pzNextValue);
+	//static	char*	GetCnfgQuery(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+
 	static int		GetTickGap(double dFirstPrc, double dSndPrc, int nDotCnt, double dTickSize);
 	static double	GetPrcByTick(char* pzOrigPrc, double dTickCnt, double dTickSize, char cPlusMinus);
 	static int CompPrc(const char* pPrc1, const int nLen1, const char* pPrc2, const int nLen2, const int nDotCnt, const int nFormatLen);

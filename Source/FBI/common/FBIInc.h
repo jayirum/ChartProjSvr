@@ -17,6 +17,17 @@ namespace _FBI
 		, DEAL_STATUS_CHARTWAIT	//	차트대기 3
 		, DEAL_STATUS_RESULTING	//	결과산출 4
 		, DEAL_STATUS_DONE		//	완료 5
+	};	
+
+#define DEAL_RSLT_UP	'U'
+#define DEAL_RSLT_DOWN	'D'
+#define DEAL_RSLT_EVEN	'E'
+
+	enum EN_DEAL_SETTLE {
+		SETTLE_LOSE = 0
+		, SETTLE_WIN = 1
+		, SETTLE_EVEN = 2
+
 	};
 
 	const int FBILEN_SYMBOL		= 10;
@@ -42,6 +53,7 @@ namespace _FBI
 	const int WM_TERMINATE = WM_USER + 513;
 	const int WM_RECV_API_CHART = WM_USER + 514;
 	const int WM_DEAL_STATUS = WM_USER + 515;
+	const int WM_RESULT_START = WM_USER + 515;
 	
 	const int RT_SUCCESS = 0;
 
@@ -105,7 +117,7 @@ namespace _FBI
 		char	ArtcCd[FBILEN_SYMBOL];
 		int		DealSeq;
 		int		DateTp;
-		char	SysDt[8+1];
+		char	Date[8+1];
 		char	tm_order[8+1];	//hh:mm:ss
 		char	tm_wait[8+1];		//hh:mm:ss
 		char	tm_chartwait[8+1];	//hh:mm:ss

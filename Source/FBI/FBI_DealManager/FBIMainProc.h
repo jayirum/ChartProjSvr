@@ -22,26 +22,26 @@ public:
 
 private:
 	VOID ThreadFunc();
-	static unsigned WINAPI Thread_ApiChart(LPVOID lp);
-	static unsigned WINAPI Thread_SaveChart(LPVOID lp);
+	//static unsigned WINAPI Thread_ApiChart(LPVOID lp);
+	//static unsigned WINAPI Thread_SaveChart(LPVOID lp);
 
 
 	BOOL	LoadStkCode();
 	VOID	ClearDealMap();
-	void	InitApiSocket();
-	void	CloseApiSocket();
+	//void	InitApiSocket();
+	//void	CloseApiSocket();
 
-	void	testChart();
+	//void	testChart();
 
 private:
-	CTcpClient		*m_pApiClient;
+	//CTcpClient		*m_pApiClient;
 	CDBPoolAdo		*m_pDBPool;
 
-	char			m_zApiIP[32];
-	char			m_zApiPort[32];
+	//char			m_zApiIP[32];
+	//char			m_zApiPort[32];
 		
-	HANDLE			m_hApiTick, m_hSaveData;
-	unsigned int	m_unApiTick, m_unSaveData;
+	//HANDLE			m_hApiTick, m_hSaveData;
+	//unsigned int	m_unApiTick, m_unSaveData;
 
 	std::map<std::string, CDealManager*>	m_mapDealManager;	//STK_CD
 	CRITICAL_SECTION						m_csDM;

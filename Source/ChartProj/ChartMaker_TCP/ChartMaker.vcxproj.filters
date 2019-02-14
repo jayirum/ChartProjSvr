@@ -41,7 +41,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\ChartCommon.h" />
     <ClInclude Include="ChartMaker.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">

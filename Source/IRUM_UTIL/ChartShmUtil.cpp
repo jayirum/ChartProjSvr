@@ -1,11 +1,12 @@
 #include "ChartShmUtil.h"
 #include "Util.h"
 
-CChartShmUtil::CChartShmUtil()
+CChartShmUtil::CChartShmUtil(int nChartNameTp)
 {
 	m_log = NULL;
 	m_pShmQ = NULL;
 	m_bOpen = FALSE;
+	m_nChartNameTp = nChartNameTp;
 }
 
 
@@ -13,6 +14,66 @@ CChartShmUtil::~CChartShmUtil()
 {
 	m_bOpen = FALSE;
 }
+
+
+
+// 00:01:00 ~ 00:01:59 ==> 01분 차트
+// date : yyyymmdd, time:hh:mm:ss
+// 120분 차트는 6시 부터 시작한다
+char* CChartShmUtil::ComposeChartName(char* date, char* time, int tp, char* out)
+{
+	int divider, ret;
+	char zMin[32], zSec[32];
+	char zTm[32];
+	sprintf(zTm, "%.8s", time);
+	sprintf(zMin, "%.2s", zTm + 3);
+	sprintf(zSec, "%.2s", zTm + 6);
+
+	if (tp == TP_1MIN) divider = 1;
+	if (tp == TP_3MIN) divider = 3;
+	if (tp == TP_5MIN) divider = 5;
+	if (tp == TP_10MIN) divider = 10;
+	if (tp == TP_15MIN) divider = 15;
+	if (tp == TP_20MIN) divider = 20;
+	if (tp == TP_60MIN) divider = 60;
+	if (tp == TP_120MIN) divider = 120;
+
+	// 00:01:00 ~ 00:01:59 ==> 01분 차트
+	if (m_nChartNameTp == CHARTNAME_TP_NEAR)
+	{
+		ret = (atoi(zMin) / divider);
+	}
+	// 00:01:01 ~ 00:02:00 ==> 02분 차트
+	else
+	{
+		if (strncmp(time + 6, "00", 2) == 0)
+			ret = ((atoi(zMin)) / divider);
+		else
+			ret = ((atoi(zMin) + 1) / divider);
+	}
+	int min = (ret)*divider;
+	if (tp == TP_60MIN)
+	{
+		int h = S2N(zTm, 2);
+		if (h == 24)
+			h = 0;
+		sprintf(out, "%.8s%02d00", date, h);
+	}
+	else if (tp == TP_120MIN) {
+		int h = S2N(zTm, 2);
+		int hRemain = h % 2;
+		if (hRemain == 1)
+			h -= 1;
+		sprintf(out, "%.8s%02d00", date, h);
+	}
+	else {
+		sprintf(out, "%.8s%.2s%02d", date, zTm, min);
+	}
+
+	return out;
+}
+
+
 
 BOOL CChartShmUtil::OpenChart(char* pzArtc, CLogMsg* log /*= NULL*/)
 {
@@ -44,6 +105,42 @@ VOID CChartShmUtil::ReleaseChart()
 }
 
 
+
+BOOL CChartShmUtil::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChartNm,
+	_Out_ ST_SHM_CHART_UNIT& chart)
+{
+	if (!m_bOpen)
+	{
+		sprintf(m_zMsg, "Please call [OpenChart] function first");
+		return FALSE;
+	}
+	char zGroupKey[128] = { 0, };
+
+	GET_GROUP_KEY(pzSymbol, (int)ChartTp, zGroupKey);
+
+	int nLoop = 0;
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Get the current chart
+	BOOL bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
+
+	// retry 2 times
+	while (FALSE == bExist)
+	{
+		Sleep(10);
+		if (++nLoop > 2) {
+			// There is no chart of the current time. Something is wrong.
+			sprintf(m_zMsg, "[%s][%s] No Chart even if receive curr price.", zGroupKey, pzChartNm);
+			return FALSE;
+		}
+		bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
+
+	} // if(!bExist)
+
+	return bExist;
+}
+
+
 /*
 	date : yyyymmdd
 	time : hh:mm:ss
@@ -60,28 +157,10 @@ BOOL CChartShmUtil::CurrChart(char *pzSymbol, CHART_TP ChartTp, char* date, char
 	char zChartNm[128] = { 0, };
 
 	GET_GROUP_KEY(pzSymbol, (int)ChartTp, zGroupKey);
-	GET_CHART_NM_EX(date, time, (int)ChartTp, zChartNm);
+	//GET_CHART_NM_EX(date, time, (int)ChartTp, zChartNm);
+	ComposeChartName(date, time, (int)ChartTp, zChartNm);
 
-	int nLoop = 0;
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Get the current chart
-	BOOL bExist = m_pShmQ->DataGet(zGroupKey, zChartNm, (char*)&chart);
-
-	// retry 2 times
-	while (FALSE == bExist)
-	{
-		Sleep(10);
-		if (++nLoop > 2) {
-			// There is no chart of the current time. Something is wrong.
-			sprintf(m_zMsg, "[%s][%s] No Chart even if receive curr price.",zGroupKey, zChartNm);
-			return FALSE;
-		}
-		bExist = m_pShmQ->DataGet(zGroupKey, zChartNm, (char*)&chart);
-
-	} // if(!bExist)
-
-	return bExist;
+	return GetChartData(pzSymbol, ChartTp, zChartNm, chart);
 }
 
 BOOL	CChartShmUtil::CompareHiLo(char *pzSymbol, CHART_TP ChartTp, char* pzCurrPrc, int nCompCnt, 
@@ -101,7 +180,8 @@ BOOL	CChartShmUtil::CompareHiLo(char *pzSymbol, CHART_TP ChartTp, char* pzCurrPr
 	char zChartNm[128] = { 0, };
 
 	GET_GROUP_KEY(pzSymbol, (int)ChartTp, zGroupKey);
-	GET_CHART_NM_EX(date, time, (int)ChartTp, zChartNm);
+	//GET_CHART_NM_EX(date, time, (int)ChartTp, zChartNm);
+	ComposeChartName(date, time, (int)ChartTp, zChartNm);
 
 	int nLoop = 0;
 	while (FALSE == m_pShmQ->DataGet(zGroupKey, zChartNm, (char*)currChart))
@@ -379,7 +459,8 @@ BOOL CChartShmUtil::GetPreviousChartNm(_In_ char* pzOrgChartNm, _In_ CHART_TP Ch
 	sprintf(zDT, "%04d%02d%02d", 1900 + ltime->tm_year, ltime->tm_mon + 1, ltime->tm_mday);
 	sprintf(zTM, "%02d:%02d:%02d", ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 
-	GET_CHART_NM_EX(zDT, zTM, ChartTp, pResult);
+	//GET_CHART_NM_EX(zDT, zTM, ChartTp, pResult);
+	ComposeChartName(zDT, zTM, (int)ChartTp, pResult);
 
 	return TRUE;
 }

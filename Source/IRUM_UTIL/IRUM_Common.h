@@ -1,6 +1,8 @@
 #pragma once
 
 #pragma warning(disable:4996)
+#pragma warning(disable:4700)
+#pragma warning(disable:4703)
 
 /*
 종목 : MAX 50개
@@ -141,49 +143,6 @@ STRUCT KEY : 1분, 5분, 10분, 30분, 60분 (01MIN, 05MIN, 10MIN, 30MIN, 60MIN_
 #define DEF_EOL				0x0a	// delphi ipworks 와 통신하기 위해
 
 
-enum CHART_TP {
-	TP_1MIN = 0,
-	TP_3MIN,
-	TP_5MIN,
-	TP_10MIN,
-	TP_15MIN,
-	TP_20MIN,
-	//TP_30MIN, 
-	TP_60MIN,
-	TP_120MIN,
-	TP_DAY,
-	TP_WEEK,
-	TP_MON,
-	TP_TICK1,
-	TP_TICK2,
-	TP_TICK5,
-	TP_TICK10,
-	TP_TICK20,
-	TP_TICK30,
-	TP_TICK40,
-	TP_TICK60
-};
-#define CHART_TP_S(tp,out){\
-	if(tp==TP_1MIN) strcpy(out,"1분");		\
-	if (tp == TP_3MIN) strcpy(out, "3분");	\
-	if (tp == TP_5MIN) strcpy(out, "5분");	\
-	if (tp == TP_10MIN) strcpy(out, "10분");	\
-	if (tp == TP_15MIN) strcpy(out, "15분");	\
-	if (tp == TP_20MIN) strcpy(out, "20분");	\
-	if (tp == TP_60MIN) strcpy(out, "60분");	\
-	if (tp == TP_120MIN) strcpy(out, "120분");	\
-	if (tp == TP_DAY) strcpy(out, "일간");	\
-	if (tp == TP_WEEK) strcpy(out, "주간");	\
-}
-
-//DEF-SHART SHM, DEF-CHARTSHM
-#define CHART_TP_CNT		20
-#define MAX_CHART_TP_CNT	CHART_TP_CNT
-#define MAX_SYMBOL_PER_ARTC	2		//	품목당 2개의 월물(종목)에 대해서만 지원한다.
-#define MAX_GROUPKEY_CNT	MAX_SYMBOL_PER_ARTC * CHART_TP_CNT
-#define MAX_CHART_UNIT_CNT	1000	//	한 GROUP당 (한종목, 한차트당 'CLU7 00')
-#define MAX_ARTC_CNT		10		//	10개의 품목만 
-
 
 //DEF-CROSS
 // 골든크로스 (단기>장기), 데드크로스(단기<장기)
@@ -199,7 +158,6 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define	SMA_SHORT_CNT	10	// 단기 SMA 갯수
 #define	SMA_LONG_CNT	20	// 장기 SMA 갯수
 
-#define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 #define	FORMAT_PRC(prc,dotcnt,out) { sprintf(out, "%0*.*f", LEN_PRC, dotcnt, prc); } // 000000012.12
 #define FORMAT_PRC_STR(prc,len, out){ sprintf(out, "%*.*s", len, len, prc);} // "       12.12"	
 #define FORMAT_SEQNO(seqno,out) { sprintf(out, "%0*ld",LEN_SEQNO, seqno);}
@@ -230,17 +188,6 @@ enum CROSS_TP { NONE_CROSS = 0, GOLDEN_CROSS, DEAD_CROSS };
 #define WM_DIE				WM_USER + 999
 
 
-
-enum CHARTNAME_TYPE { CHARTNAME_TP_NEAR, CHARTNAME_TP_};
-
-
-
-// 00:01:00 ~ 00:01:59 ==> 01분 차트
-// date : yyyymmdd, time:hh:mm:ss
-// 120분 차트는 6시 부터 시작한다
-char* ComposeChartName(char* date, char* time, int tp, int nameTp, char* out);
-
-#define GET_TICKCHART_NM(seq,out){ sprintf(out, "%0*d", LEN_CHART_NM, seq);}
 
 /*
 SHM - 품목코드로 (6E)
