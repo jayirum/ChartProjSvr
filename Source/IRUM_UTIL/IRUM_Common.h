@@ -491,6 +491,17 @@ typedef struct _ABOTLOG_NO3
 	char	zMsg[256];
 }ABOTLOG_NO3;
 
+
+
+
+
+namespace _IRUM
+{
+	const int MEM_PRE_ALLOC = 100;
+	const int MEM_MAX_ALLOC = 10000;
+	const int MEM_BLOCK_SIZE = 512;
+}
+
 /////////////////////////////////////////////////////////////////////
 // LEGACY
 
