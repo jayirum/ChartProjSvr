@@ -248,6 +248,7 @@ public:
 	static VOID SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize, _Out_ std::list<std::string>* pListResult);
 
 	static int GetPassedSeconds(char* pStartTime, BOOL bColon);
+
 };
 
 

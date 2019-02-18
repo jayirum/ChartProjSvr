@@ -28,6 +28,8 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 	char zChartNmTp[32] = { 0, };
 	CUtil::GetConfig(g_zConfig, "CHARTNAME_TYPE", "TYPE", zChartNmTp);
 	m_chartNmType = (CHARTNAME_TYPE)atoi(zChartNmTp);
+	
+	m_chartUtil = new CChartShmUtil(m_chartNmType);
 
 	ResumeThread();
 
@@ -87,72 +89,6 @@ BOOL CChartMaker::InitChartSHM()
 	}
 	return TRUE;
 }
-
-
-
-//
-//BOOL CChartMaker::InitChartSHM()
-//{
-//	char szDir[_MAX_PATH], szModule[_MAX_PATH], szConfig[_MAX_PATH];
-//	CUtil::GetMyModuleAndDir(szDir, szModule, szConfig);
-//
-//	//	LAST SHM OPEN
-//	//if (!m_shmLast.Open(LASTCHART_SHM_NM, LASTCHART_LOCK_NM))
-//	//{
-//	//	g_log.log(LOGTP_FATAL, ">>>>>>>LAST CHART SHM OPEN 에러(%s)(symbol:%s)(%s)", LASTCHART_SHM_NM, LASTCHART_LOCK_NM, m_shmLast.GetErr());
-//	//	return FALSE;
-//	//}
-//	
-//	//	OPEN SHM
-//	if (!m_shmQ.Open((LPCTSTR)m_zShmNm, (LPCTSTR)m_zMutexNm))
-//	{
-//		g_log.log(LOGTP_FATAL, ">>>>>>>CHART SHM OPEN 에러(%s)(symbol:%s)(%s)",m_zShmNm, m_zSymbol, m_shmQ.GetErr());
-//		return FALSE;
-//	}
-//	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_zMutexNm);
-//
-//
-//	// DB 에서 마지막 차트 이름을 가져온다.
-//	char ip[32], id[32], pwd[32], name[32];
-//	CUtil::GetConfig(szConfig, "DBINFO", "DB_IP", ip);
-//	CUtil::GetConfig(szConfig, "DBINFO", "DB_ID", id);
-//	CUtil::GetConfig(szConfig, "DBINFO", "DB_PWD", pwd);
-//	CUtil::GetConfig(szConfig, "DBINFO", "DB_NAME", name);
-//
-//	CDBPoolAdo *pDBPool;
-//	pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-//	if (!pDBPool->Init(1))
-//	{
-//		SAFE_DELETE(pDBPool);
-//		return 0;
-//	}
-//	CDBHandlerAdo db(pDBPool->Get());
-//	char zQ[1024];
-//
-//
-//	for (int i = TP_1MIN; i < TP_DAY; i++)
-//	{
-//		sprintf(zQ, "EXEC CHART_GET_LASTCHART_NM '%s', %d ", m_zSymbol, i);
-//		if (FALSE == db->QrySelect(zQ))
-//		{
-//			g_log.log(LOGTP_ERR, "마지막차트 조회 오류(%s)(%s)", db->GetError(), zQ);
-//			return 0;
-//		}
-//
-//
-//		while (db->IsNextRow())
-//		{
-//			char temp[128];
-//			int nTp = db->GetLong("CHART_TP");
-//			m_sLastChartNm[nTp] = db->GetStr("CHART_NM", temp);
-//			db->Next();
-//		}
-//	}
-//	db->Close();
-//
-//	return TRUE;
-//}
-//
 
 
 
@@ -277,8 +213,9 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	// STRUCT KEY (chart name) 0000, 0005, 0010
 	char szChartNm[LEN_SHM_STRUCT_KEY + 1];
 
-	ComposeChartName(p->Date, p->Time, tp, m_chartNmType, szChartNm); 
-
+	m_chartUtil->ComposeChartName(p->Date, p->Time, tp, szChartNm);
+	g_log.log(INFO, "[DATE:%.8s][TIME:%.8s][CHART:%s][TICK:%.*s]", p->Date, p->Time, szChartNm, LEN_PRC, p->Close);
+	//return;
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// chart unit 구성
@@ -354,7 +291,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		//memcpy(recvUnit.seq, p->org.Time, sizeof(p->org.Time));
 
 		// 시가를 받은 경우 직전차트의 SMA 를 구해서 저장한다.
-		Chart_SMA(tp, szGroupKey, szChartNm, (char*)&recvUnit);
+		// Chart_SMA(tp, szGroupKey, szChartNm, (char*)&recvUnit);
 
 		if (!m_shmQ.DataInsert(szGroupKey, (char*)&recvUnit))
 		{
@@ -424,6 +361,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
 			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
 			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
+			g_log.log(INFO, "[%.*s](O:%.*s)(H:%.*s)(L:%.*s)(C:%.*s)",
+				LEN_CHART_NM, existUnit.Nm,
+				LEN_PRC, existUnit.open,
+				LEN_PRC, existUnit.high,
+				LEN_PRC, existUnit.low,
+				LEN_PRC, existUnit.close
+			);
 		}	//	szGroupKey, debug.Nm, debug.prevNm, atoi(debug.seq), atof(debug.open), atof(debug.close), debug.gb);
 	}
 }
@@ -492,6 +436,74 @@ VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ 
 	//SHM 반영
 	//m_shmQ.DataUpdate(pzGroupKey, zCloseChartNm, 0, sizeof(ST_SHM_CHART_UNIT), (char*)&stLastChartShm);
 }
+
+
+
+
+//
+//BOOL CChartMaker::InitChartSHM()
+//{
+//	char szDir[_MAX_PATH], szModule[_MAX_PATH], szConfig[_MAX_PATH];
+//	CUtil::GetMyModuleAndDir(szDir, szModule, szConfig);
+//
+//	//	LAST SHM OPEN
+//	//if (!m_shmLast.Open(LASTCHART_SHM_NM, LASTCHART_LOCK_NM))
+//	//{
+//	//	g_log.log(LOGTP_FATAL, ">>>>>>>LAST CHART SHM OPEN 에러(%s)(symbol:%s)(%s)", LASTCHART_SHM_NM, LASTCHART_LOCK_NM, m_shmLast.GetErr());
+//	//	return FALSE;
+//	//}
+//	
+//	//	OPEN SHM
+//	if (!m_shmQ.Open((LPCTSTR)m_zShmNm, (LPCTSTR)m_zMutexNm))
+//	{
+//		g_log.log(LOGTP_FATAL, ">>>>>>>CHART SHM OPEN 에러(%s)(symbol:%s)(%s)",m_zShmNm, m_zSymbol, m_shmQ.GetErr());
+//		return FALSE;
+//	}
+//	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_zMutexNm);
+//
+//
+//	// DB 에서 마지막 차트 이름을 가져온다.
+//	char ip[32], id[32], pwd[32], name[32];
+//	CUtil::GetConfig(szConfig, "DBINFO", "DB_IP", ip);
+//	CUtil::GetConfig(szConfig, "DBINFO", "DB_ID", id);
+//	CUtil::GetConfig(szConfig, "DBINFO", "DB_PWD", pwd);
+//	CUtil::GetConfig(szConfig, "DBINFO", "DB_NAME", name);
+//
+//	CDBPoolAdo *pDBPool;
+//	pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+//	if (!pDBPool->Init(1))
+//	{
+//		SAFE_DELETE(pDBPool);
+//		return 0;
+//	}
+//	CDBHandlerAdo db(pDBPool->Get());
+//	char zQ[1024];
+//
+//
+//	for (int i = TP_1MIN; i < TP_DAY; i++)
+//	{
+//		sprintf(zQ, "EXEC CHART_GET_LASTCHART_NM '%s', %d ", m_zSymbol, i);
+//		if (FALSE == db->QrySelect(zQ))
+//		{
+//			g_log.log(LOGTP_ERR, "마지막차트 조회 오류(%s)(%s)", db->GetError(), zQ);
+//			return 0;
+//		}
+//
+//
+//		while (db->IsNextRow())
+//		{
+//			char temp[128];
+//			int nTp = db->GetLong("CHART_TP");
+//			m_sLastChartNm[nTp] = db->GetStr("CHART_NM", temp);
+//			db->Next();
+//		}
+//	}
+//	db->Close();
+//
+//	return TRUE;
+//}
+//
+
 
 
 //VOID CChartMaker::Chart_SMA(int tp, char* pzGroupKey, char* pzNowChartNm, _Out_ char* i_pNowChart)

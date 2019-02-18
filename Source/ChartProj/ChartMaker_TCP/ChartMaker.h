@@ -10,7 +10,7 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/QueueShm.h"
 #include "../../IRUM_UTIL/MemPool.h"
-#include "../../IRUM_UTIL/IRUM_Common.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
 
 #define MAX_CHARTTP_CNT	20
 
@@ -60,4 +60,5 @@ private:
 	BOOL			m_bSaveChart;
 
 	CHARTNAME_TYPE	m_chartNmType;
+	CChartShmUtil	*m_chartUtil;
 };

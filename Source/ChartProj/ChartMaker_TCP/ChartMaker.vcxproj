@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h" />
     <ClInclude Include="..\..\IRUM_UTIL\ChartUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h" />
     <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h" />
@@ -167,12 +168,14 @@
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="ChartMaker.h" />
     <ClInclude Include="Main.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\ChartUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp" />
@@ -185,6 +188,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="ChartMaker.cpp" />
     <ClCompile Include="main.cpp" />

@@ -234,7 +234,7 @@ void RecvMDThreadFn()
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
-
+			//printf("%s\n", zSymbol);
 			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
 			{
@@ -305,7 +305,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 				}
 				else
 				{
-					//g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
+					g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
 				}
 					
 				delete p;
@@ -365,7 +365,7 @@ BOOL LoadSymbol()
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "YEAR_LENGTH", yearLen);
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "EURO_DOLLAR", euroDollar);
 
-	char zTemp[32], zSymbol[32], zArtc[32];
+	char zSymbol[32], zArtc[32];
 	int nDotCnt = 0;
 	while (db->IsNextRow())
 	{
@@ -373,14 +373,23 @@ BOOL LoadSymbol()
 		db->GetStr("STK_CD", zSymbol);
 		nDotCnt = db->GetLong("DOT_CNT");
 
+		//TODO
+		//if (strncmp(zArtc, "6A", 2) != 0) {
+		//	db->Next();
+		//	continue;
+		//}
+			
+
+
 		std::string symbol = zSymbol;
 
 		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread, (saveYn[0]=='Y'));
 
 		g_mapSymbol[symbol] = p;
 		g_log.log(LOGTP_SUCC, "[%s][%s] Chart Symbol", zArtc, zSymbol);
-		//printf("[%s][%s] 瞒飘备己辆格\n", zArtc, zSymbol);
+		printf("[%s][%s] 瞒飘备己辆格\n", zArtc, zSymbol);
 
+		
 		db->Next();
 	}
 	db->Close();

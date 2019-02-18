@@ -39,6 +39,12 @@
     <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChartMaker.h" />
@@ -80,6 +86,12 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,6 @@
 #include "ChartShmUtil.h"
 #include "Util.h"
+#include "TimeUtils.h"
 
 CChartShmUtil::CChartShmUtil(int nChartNameTp)
 {
@@ -22,21 +23,26 @@ CChartShmUtil::~CChartShmUtil()
 // 120분 차트는 6시 부터 시작한다
 char* CChartShmUtil::ComposeChartName(char* date, char* time, int tp, char* out)
 {
+	if (tp == TP_1MIN)
+		return ComposeChartName_1min(date, time, out);
+
+
 	int divider, ret;
-	char zMin[32], zSec[32];
+	char zHour[32], zMin[32], zSec[32];
 	char zTm[32];
 	sprintf(zTm, "%.8s", time);
+	sprintf(zHour, "%.2s", zTm);
 	sprintf(zMin, "%.2s", zTm + 3);
 	sprintf(zSec, "%.2s", zTm + 6);
 
 	if (tp == TP_1MIN) divider = 1;
-	if (tp == TP_3MIN) divider = 3;
-	if (tp == TP_5MIN) divider = 5;
-	if (tp == TP_10MIN) divider = 10;
-	if (tp == TP_15MIN) divider = 15;
-	if (tp == TP_20MIN) divider = 20;
-	if (tp == TP_60MIN) divider = 60;
-	if (tp == TP_120MIN) divider = 120;
+	else if (tp == TP_3MIN) divider = 3;
+	else if (tp == TP_5MIN) divider = 5;
+	else if (tp == TP_10MIN) divider = 10;
+	else if (tp == TP_15MIN) divider = 15;
+	else if (tp == TP_20MIN) divider = 20;
+	else if (tp == TP_60MIN) divider = 60;
+	else if (tp == TP_120MIN) divider = 120;
 
 	// 00:01:00 ~ 00:01:59 ==> 01분 차트
 	if (m_nChartNameTp == CHARTNAME_TP_NEAR)
@@ -48,28 +54,85 @@ char* CChartShmUtil::ComposeChartName(char* date, char* time, int tp, char* out)
 	{
 		if (strncmp(time + 6, "00", 2) == 0)
 			ret = ((atoi(zMin)) / divider);
-		else
-			ret = ((atoi(zMin) + 1) / divider);
+		else {
+			int nMin = atoi(zMin) + 1;
+
+			// 시간 변경
+			if (nMin == 60)
+			{
+				ret = 0;
+				int nHour = atoi(zHour) + 1;
+				if (nHour == 24)
+					strcpy(zHour, "00");
+				else
+					sprintf(zHour, "%02d", nHour);
+			}
+			else
+				ret = nMin / divider;
+		}
 	}
 	int min = (ret)*divider;
+
 	if (tp == TP_60MIN)
 	{
-		int h = S2N(zTm, 2);
+		int h = atoi(zHour);
 		if (h == 24)
 			h = 0;
 		sprintf(out, "%.8s%02d00", date, h);
 	}
 	else if (tp == TP_120MIN) {
-		int h = S2N(zTm, 2);
+		int h = atoi(zHour);
 		int hRemain = h % 2;
 		if (hRemain == 1)
 			h -= 1;
 		sprintf(out, "%.8s%02d00", date, h);
 	}
 	else {
-		sprintf(out, "%.8s%.2s%02d", date, zTm, min);
+		sprintf(out, "%.8s%.2s%02d", date, zHour, min);
 	}
 
+	return out;
+}
+
+
+
+
+// date : yyyymmdd
+// time : hh:mm:ss
+char* CChartShmUtil::ComposeChartName_1min(char* date, char* time, char* out)
+{
+	char zHour[32], zMin[32], zSec[32];
+	char zTm[32];
+	sprintf(zTm, "%.8s", time);
+	sprintf(zHour, "%.2s", zTm);
+	sprintf(zMin, "%.2s", zTm + 3);
+	sprintf(zSec, "%.2s", zTm + 6);
+
+	// case 1
+	// 00:01:00 ~ 00:01:59 ==> candle is 01 min
+	if (m_nChartNameTp == CHARTNAME_TP_NEAR)
+	{
+		sprintf(out, "%.8s%.2s%02s", date, zHour, zMin);
+		return out;
+	}
+
+	// case 2
+	// 00:01:01 ~ 00:02:00 ==> candle is 02 min
+	if (strncmp(zSec, "00", 2) == 0)
+	{
+		sprintf(out, "%.8s%.2s%02s", date, zHour, zMin);
+		return out;
+	}
+
+
+	/*
+		23:58:50	==> 59 min candle
+		23:59:01	==> +1 min. It may change hour/day/month/year
+	*/
+	char hhmmss[32];
+	sprintf(hhmmss, "%s%s%s", zHour, zMin, zSec);
+	CTimeUtils::AddMins(date, hhmmss, 1, zTm);
+	sprintf(out, "%.12s", zTm);
 	return out;
 }
 

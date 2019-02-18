@@ -16,7 +16,7 @@
 #define GET_TICKCHART_NM(seq,out){ sprintf(out, "%0*d", LEN_CHART_NM, seq);}
 #define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 
-enum CHARTNAME_TYPE { CHARTNAME_TP_NEAR, CHARTNAME_TP_ };
+enum CHARTNAME_TYPE { CHARTNAME_TP_NEAR, CHARTNAME_TP_FAR };
 
 
 enum CHART_TP {
@@ -64,6 +64,7 @@ public:
 	VOID	ReleaseChart();
 
 	char*	ComposeChartName(char* date, char* time, int tp, char* out);
+	char*	ComposeChartName_1min(char* date, char* time,char* out);
 
 	BOOL	GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChartNm, _Out_ ST_SHM_CHART_UNIT& chart);
 	BOOL	CurrChart(char *pzSymbol, CHART_TP ChartTp, char* date, char *time, _Out_ ST_SHM_CHART_UNIT& chart);
