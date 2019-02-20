@@ -65,7 +65,7 @@ public:
 	VOID DealErase(int nDealSeq);
 	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
 
-	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket);
+	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt);
 
 	static unsigned WINAPI Thread_ResultProcByChart(LPVOID lp);
 	

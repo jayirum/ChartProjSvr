@@ -217,7 +217,8 @@ typedef struct _ST_SHM_CHART_UNIT
 	char	sma_short[LEN_PRC];		//20,130 단기short term SMA(Simple Moving Average). 10
 	char	sma_long[LEN_PRC];		//20,150 장기long term SMA(Simple Moving Average). 20
 	char	sma_shortest[LEN_PRC];	//20,170 단기short term SMA(Simple Moving Average). 5
-	char	Reserved[50];
+	char	Reserved[40];			//원래 50bytes 였다가, stk_cd 에 떼어줌
+	char	stk_cd[10];
 	
 }ST_SHM_CHART_UNIT;	// 
 					//#define LEN_CHART_WITHOUT_STRAT	sizeof(ST_SHM_CHART_UNIT) - STRATEGY_CNT

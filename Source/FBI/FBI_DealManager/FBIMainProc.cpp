@@ -85,7 +85,7 @@ BOOL CFBIMainProc::LoadStkCode()
 	CDBHandlerAdo db(m_pDBPool->Get());
 	char zQ[1024];
 	//sprintf(zQ, "SELECT STK_CD FROM AA_STK_MST WHERE USE_YN='Y'");
-	CUtil::GetConfig(g_zConfig, "SQL", "GET_SYMBOL_INFO", zQ);
+	sprintf(zQ, "EXEC AA_GET_SYMBOL");
 
 	if (FALSE == db->ExecQuery(zQ))
 	{
@@ -106,8 +106,11 @@ BOOL CFBIMainProc::LoadStkCode()
 
 
 			CDealManager* p = new CDealManager(zStCd, zArtcCd);
-			if (!p->Initialize())
+			if (!p->Initialize()) {
+				delete p;
+				db->Next();
 				continue;
+			}
 
 			EnterCriticalSection(&m_csDM);
 			m_mapDealManager[zStCd] = p;

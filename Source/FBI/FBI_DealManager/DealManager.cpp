@@ -49,8 +49,8 @@ BOOL CDealManager::Initialize()
 		}
 	}
 
-	if (!InitClientConnect())
-		return FALSE;
+	//if (!InitClientConnect())
+	//	return FALSE;
 
 	if (!InitChartShm())
 		return FALSE;
@@ -120,10 +120,7 @@ BOOL CDealManager::LoadDealInfo()
 
 	CDBHandlerAdo db(m_pDBPool->Get());
 	
-	sprintf(zQ, "SELECT DEAL_SEQ, ARTC_CD, DATE_TP, DBO.AA_FN_TRADE_DT() AS TRADE_DT, "
-				" convert(char(8),convert(datetime, dbo.AA_FN_TRADE_DT())+1,112) AS NEXT_DT, "
-				" TM_ORD_START, TM_WAIT_START, TM_CHARTWAIT_START, TM_END, DEAL_STATUS, 3 AS DURATION "
-				" FROM AA_DEAL_MST WHERE ARTC_CD='%s' ", m_zArtcCd);
+	sprintf(zQ, "EXEC AA_GET_DEAL_INFO '%s' ", m_zArtcCd);
 	if (FALSE == db->ExecQuery(zQ))
 	{
 		g_log.log(ERR/*NOTIFY*/, "Load DealInfo Error(%s)", zQ);
@@ -203,8 +200,13 @@ BOOL CDealManager::LoadDealInfo()
 
 VOID CDealManager::ThreadFunc()
 {
-	//if (!LoadDealInfo())
-	//	return;
+	while (!InitClientConnect() )
+	{
+		if (!m_bContinue)
+			return;
+
+		Sleep(3000);
+	}
 
 	while (TRUE)
 	{
@@ -348,7 +350,7 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 				, zClose
 				, zChartNm
 			);
-
+			g_log.log(INFO, "[결과SP](%s)", zQ);
 			if (FALSE == db->ExecQuery(zQ))
 			{
 				g_log.log(ERR/*NOTIFY*/, "주문결과처리(AA_ORD_RESULT) error(%s)", zQ);
@@ -361,8 +363,14 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 				g_log.log(INFO, "[주문처리 성공][%s][SEQ:%d][CHART_NM:%s][OPEN:%.10s][CLOSE:%.10s]",
 					pThis->m_zArtcCd, nDealSeq, zChartNm, chartData.open, chartData.close);
 
+
 				//CLIENT 에게 전송
 				memset(cPack, 0x20, nCPackLen);
+				cPack->STX[0] = _FBI::STX;
+
+				char len[32];
+				sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
+				memcpy(cPack->Len, len, strlen(len));
 				memcpy(cPack->ArtcCd, pThis->m_zArtcCd, min(sizeof(cPack->ArtcCd), strlen(pThis->m_zArtcCd)));
 				memcpy(cPack->StkCd, pThis->m_zStkCd, min(sizeof(cPack->StkCd), strlen(pThis->m_zStkCd)));
 				sprintf(z, "%d", nDealSeq);
@@ -370,8 +378,10 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 				cPack->DealStatus[0] = '5';
 				cPack->OrdResult[0] = *UpDown;
 				memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
+				cPack->ETX[0] = _FBI::ETX;
+				*(cPack->ETX + 1) = 0x00;
 
-				pThis->SendToClient(cPack);
+				pThis->SendToClient(cPack, 0);
 
 				// DealInfo 삭제
 				pThis->DealErase(nDealSeq);
@@ -698,12 +708,21 @@ void CDealManager::UpdateDeal(_FBI::ST_DEAL_INFO* pInfo)
 	char z[128];
 	char packet[1024] = { 0, };
 	_FBI::PT_DEAL_STATUS* p = (_FBI::PT_DEAL_STATUS*)packet;
+	memset(p, 0x20, sizeof(_FBI::PT_DEAL_STATUS));
 
+	p->STX[0] = _FBI::STX;
+
+	char len[32];
+	sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
+	memcpy(p->Len, len, strlen(len));
 	memcpy(p->ArtcCd, m_zStkCd, min(strlen(m_zArtcCd),_FBI::FBILEN_SYMBOL));
 	memcpy(p->StkCd, m_zStkCd, min(strlen(m_zStkCd), _FBI::FBILEN_SYMBOL));
 
 	sprintf(p->DealSeq, "%0*d", _FBI::FBILEN_DEAL_SEQ, pInfo->DealSeq);
 	sprintf(p->DealStatus, "%02d", pInfo->DealStatus);
+	p->ETX[0] = _FBI::ETX;
+	*(p->ETX + 1) = 0x00;
+
 	switch (pInfo->DealStatus)
 	{
 	case _FBI::DEAL_STATUS_ORD:
@@ -751,12 +770,15 @@ void CDealManager::UpdateDeal(_FBI::ST_DEAL_INFO* pInfo)
 		}
 	}
 
-	SendToClient(p);
+	SendToClient(p, 0);
 }
 
 
-BOOL CDealManager::SendToClient(_FBI::PT_DEAL_STATUS* pPacket)
+BOOL CDealManager::SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt)
 {
+	if (nRecurCnt > 10)
+		return FALSE;
+
 	int nLen = sizeof(_FBI::PT_DEAL_STATUS);
 	char zSendBuffer[1024] = { 0, };
 	memcpy(zSendBuffer, (char*)pPacket, nLen);
@@ -767,8 +789,15 @@ BOOL CDealManager::SendToClient(_FBI::PT_DEAL_STATUS* pPacket)
 	if (res <= 0)
 	{
 		g_log.log(ERR, "DEAL UPDATE 전송 오류(%s)", m_pClient->GetMsg());
+		Sleep(1000);
+		if (InitClientConnect())
+		{
+			nRecurCnt++;
+			return SendToClient(pPacket, nRecurCnt);
+		}
 		return FALSE;
 	}
+	nRecurCnt = 0;
 	g_log.log(INFO, "Send To Client DEAL UPDATE(%.*s)", nLen, zSendBuffer);
 	return TRUE;
 }
@@ -786,7 +815,7 @@ BOOL CDealManager::InitClientConnect()
 
 	if (!m_pClient->Begin(zIP, atoi(zPort), 10))
 	{
-		g_log.log(ERR, "%s", m_pClient->GetMsg());
+		g_log.log(ERR, "[Connect To ClientAgent Error]%s", m_pClient->GetMsg());
 		return FALSE;
 	}
 	else {

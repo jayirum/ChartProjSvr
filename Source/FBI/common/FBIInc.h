@@ -19,9 +19,9 @@ namespace _FBI
 		, DEAL_STATUS_DONE		//	완료 5
 	};	
 
-#define DEAL_RSLT_UP	'U'
-#define DEAL_RSLT_DOWN	'D'
-#define DEAL_RSLT_EVEN	'E'
+	const char DEAL_RSLT_UP = 'U';
+	const char DEAL_RSLT_DOWN = 'D';
+	const char DEAL_RSLT_EVEN = 'E';
 
 	enum EN_DEAL_SETTLE {
 		SETTLE_LOSE = 0
@@ -128,11 +128,14 @@ namespace _FBI
 
 	struct PT_DEAL_STATUS
 	{
+		char STX[1];
+		char Len[4];
 		char ArtcCd[FBILEN_SYMBOL];
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
 		char DealStatus[1];	// 1:주문가능/2:대기/3:차트/4:결과중/5:완료
 		char OrdResult[1];	// 1:DOWN / 2:UP / 3:EVEN
 		char Time[8];				// 각 status 시작시간
+		char ETX[1];
 	};
 }
