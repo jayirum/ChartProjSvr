@@ -6237,3 +6237,14 @@ Source/Test/Project1/Project1.vcxproj
 Source/Test/Project1/Project1.vcxproj.filters
 Source/Test/Project1/Source.cpp
 Source/Test/Project1/TimeFunctions.cpp
+Source/FBI/SendTimer/TCPClient/TCPClient.vcxproj.user
+Source/FBI/SendTimer/TCPClient/TCPClient.vcxproj.filters
+Source/FBI/SendTimer/TCPClient/TCPClient.vcxproj
+Source/FBI/SendTimer/TCPClient/TCPClient.sln
+Source/FBI/SendTimer/TCPClient/main.cpp
+Source/FBI/SendTimer/TCPClient/Debug/TCPClient.exe
+Source/FBI/SendTimer/TCPClient.zip
+Source/FBI/SendTimer/Release/SendTimer.exe
+Source/FBI/SendTimer/ReadMe.txt
+Source/FBI/SendTimer/Debug/SendTimer.exe
+Source/FBI/SendTimer/bin/TCPClient.exe
