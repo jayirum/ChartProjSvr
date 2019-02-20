@@ -6228,3 +6228,12 @@ Source/_Log/FBI_DealManager.exe_20190207.log1
 Source/Strategy_FB/IRUMSig_FB_TCP/.vs/IRUMSig_FB/v14/.suo
 Source/Strategy_FB/IRUMSig_FB_TCP/.vs/IRUMSig_FB/v14/.suo
 Source/Strategy_FB/IRUMSig_FB_TCP/.vs/IRUMSig_FB/v14/.suo
+Source/_Bin/ChartMaker.ini
+Source/_Bin/FBI_ChartMaker.exe
+Source/_Bin/FBI_ChartShmQueue.exe
+Source/_Bin/FBI_DealManager.ini
+Source/Strategy_FB/IRUMSig_FB_TCP/.vs/IRUMSig_FB/v14/.suo
+Source/Test/Project1/Project1.vcxproj
+Source/Test/Project1/Project1.vcxproj.filters
+Source/Test/Project1/Source.cpp
+Source/Test/Project1/TimeFunctions.cpp
