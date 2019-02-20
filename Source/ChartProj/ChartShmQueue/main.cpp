@@ -83,12 +83,12 @@ int  _Start()
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-	char zStkCdQry[1024];
-	if(!CUtil::GetConfig(g_zConfig, "SQL", "GET_SHM_ARTC_CODE", zStkCdQry))
-	{
-		g_log.log(ERR, "CONFIG파일 [SQL] GET_SHM_ARTC_CODE 의 쿼리가 없음");
-		return 0;
-	}
+	//char zStkCdQry[1024];
+	//if(!CUtil::GetConfig(g_zConfig, "SQL", "GET_SHM_ARTC_CODE", zStkCdQry))
+	//{
+	//	g_log.log(ERR, "CONFIG파일 [SQL] GET_SHM_ARTC_CODE 의 쿼리가 없음");
+	//	return 0;
+	//}
 	
 	CDBPoolAdo			*pDBPool;
 	pDBPool = new CDBPoolAdo(ip, id, pwd, name);
@@ -100,25 +100,25 @@ int  _Start()
 	}
 	CDBHandlerAdo db(pDBPool->Get());
 	char zQ[1024];
-	sprintf(zQ, "%s", zStkCdQry);
-	if (!db->QrySelect(zQ))
+	sprintf(zQ, "EXEC AA_GET_SYMBOL");
+	if (!db->ExecQuery(zQ))
 	{
 		g_log.log(LOGTP_ERR, "SELECT error(%s)(%s)", db->GetError(), zQ);
 		return 0;
 	}
 
-	char zArtc[32] = { 0, }, zCode[128] = { 0, };
+	char zArtc[32] = { 0, };
 	std::list<CCreateSaveShm*> lstSymbol;
 
 	while (db->IsNextRow())
 	{
-		if (!db->GetStr("ARTC_CD", zCode))
+		if (!db->GetStr("ARTC_CD", zArtc))
 		{
 			g_log.log(ERR, "ARTC 가 없음.");
 			db->Next();
 			continue;
 		}
-		ir_cvtcode_uro_6e(zCode, zArtc);
+		//ir_cvtcode_uro_6e(zCode, zArtc);
 		CCreateSaveShm* p = new CCreateSaveShm(zArtc);
 		if (!p->Initialize())
 		{

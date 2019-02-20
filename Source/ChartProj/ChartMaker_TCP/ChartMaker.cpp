@@ -208,12 +208,12 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pIn;
 	char temp[32];
 	BOOL bRet;
-	char zSymbol[32];
-	sprintf(zSymbol, "%.*s", sizeof(p->ShortCode), p->ShortCode);
+	//char zSymbol[32];
+	//sprintf(zSymbol, "%.*s", sizeof(p->ShortCode), p->ShortCode);
 
-	ir_cvtcode_uro_6e(zSymbol, temp);
-	memset(p->ShortCode, 0x20, sizeof(p->ShortCode));
-	memcpy(p->ShortCode, temp, strlen(temp));
+	//ir_cvtcode_uro_6e(zSymbol, temp);
+	//memset(p->ShortCode, 0x20, sizeof(p->ShortCode));
+	//memcpy(p->ShortCode, temp, strlen(temp));
 	ST_SHM_CHART_UNIT recvUnit;
 	memset(&recvUnit, 0x20, sizeof(recvUnit));
 
@@ -329,6 +329,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
 			memcpy(pChart, &recvUnit, sizeof(ST_SHM_CHART_UNIT));
 			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
+			memcpy(pChart->stk_cd, m_zSymbol, strlen(m_zSymbol));
 			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
 		}
 		return;
@@ -383,6 +384,7 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			ST_SHM_CHART_UNIT* pChart = new ST_SHM_CHART_UNIT;
 			memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
 			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
+			memcpy(pChart->stk_cd, m_zSymbol, strlen(m_zSymbol));
 			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
 			//g_log.log(INFO, "[%.*s](O:%.*s)(H:%.*s)(L:%.*s)(C:%.*s)",
 			//	LEN_CHART_NM, existUnit.Nm,

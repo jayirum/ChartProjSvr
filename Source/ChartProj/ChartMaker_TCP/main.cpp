@@ -117,8 +117,10 @@ int  _Start()
 		
 
 
-	while (!InitApiClient())
+	while (!InitApiClient() )
 	{
+		if (!g_bContinue)
+			return 0;
 		g_log.log(NOTIFY, "Failed to connect to API server");
 		Sleep(10000);
 		continue;
@@ -191,7 +193,7 @@ static unsigned WINAPI RecvMDThread(LPVOID lp)
 void RecvMDThreadFn()
 {
 	ST_PACK2CHART_EX* pSise;
-	char zSymbol[128], zTemp[128];
+	char zSymbol[128];
 
 	while (g_bContinue)
 	{
@@ -230,9 +232,9 @@ void RecvMDThreadFn()
 			memcpy(pSise->Time, tm, sizeof(pSise->Time));
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
-			ir_cvtcode_uro_6e(zSymbol, zTemp);
+			//ir_cvtcode_uro_6e(zSymbol, zTemp);
 
-			std::string sSymbol = zTemp;
+			std::string sSymbol = zSymbol;
 
 			//printf("%s\n", zSymbol);
 			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
@@ -271,6 +273,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 				
 				sprintf(zQ, "EXEC CHART_SAVE "
 					"'%.*s', "	//@I_GROUP_KEY	VARCHAR(5)--// CLN71
+					"'%.*s', "	//@I_STK_CD
 					"'%.*s', "	//, @I_CHART_NM	VARCHAR(20)
 					"'%.*s', "	//, @I_PREV_NM		VARCHAR(20)
 					"'%.*s', "	//@I_CHART_GB	CHAR(1)--// +,-, 0
@@ -285,6 +288,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 					"'%.*s' "	//@I_SMA_SHORT_5	VARCHAR(20)
 					,
 					LEN_GROUP_KEY, zGroupKey,
+					sizeof(p->stk_cd), p->stk_cd,
 					sizeof(p->Nm), p->Nm,
 					sizeof(p->prevNm), p->prevNm,
 					sizeof(p->gb), p->gb,
@@ -343,17 +347,27 @@ BOOL DBOpen()
 	return TRUE;
 }
 
+/*
 
+ALTER PROCEDURE [dbo].[AA_GET_SYMBOL]
+-- Add the parameters for the stored procedure here
+AS
+BEGIN
+-- SET NOCOUNT ON added to prevent extra result sets from
+-- interfering with SELECT statements.
+SET NOCOUNT ON;
+
+SELECT API_CD,STK_CD,STK_NM,ARTC_CD,DOT_CNT,TICK_SIZE FROM AA_STK_MST WHERE USE_YN = 'Y'
+
+SET NOCOUNT OFF	 
+*/
 BOOL LoadSymbol()
 {
 
 	CDBHandlerAdo db(g_ado->Get());
 	char zStkCdQry[1024];
-	if (!CUtil::GetConfig(g_zConfig, "SQL", "GET_SYMBOL_INFO", zStkCdQry))
-	{
-		g_log.log(ERR, "CONFIG파일 [SQL] GET_SYMBOL_INFO 의 쿼리가 없음");
-		return 0;
-	}
+	strcpy(zStkCdQry, "EXEC AA_GET_SYMBOL");
+
 	if (!db->ExecQuery(zStkCdQry))
 	{
 		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zStkCdQry, db->GetError());
