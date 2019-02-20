@@ -16,10 +16,10 @@ char* _FBI::dealstatus(const int status, char* pzStatus)
 		strcpy(pzStatus, "대기");
 		break;
 	case DEAL_STATUS_CHARTWAIT:
-		strcpy(pzStatus, "차트대기");
+		strcpy(pzStatus, "차트");
 		break;
 	case DEAL_STATUS_RESULTING:
-		strcpy(pzStatus, "결과산출");
+		strcpy(pzStatus, "결과");
 		break;
 	case DEAL_STATUS_DONE:
 		strcpy(pzStatus, "완료");

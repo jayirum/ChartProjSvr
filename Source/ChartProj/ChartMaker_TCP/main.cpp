@@ -69,25 +69,21 @@ HANDLE				g_hRecvThread = NULL, g_hSaveThread = NULL;
 unsigned int		g_unRecvThread = 0, g_unSaveThread = 0;
 std::map<std::string, CChartMaker*>	g_mapSymbol;
 
-
+char SERVICENAME[128], DISPNAME[128], DESC[128];
 
 int  _Start()
 {
 	char	msg[512] = { 0, };
-	CHAR	szDir[_MAX_PATH];
+	char szDir[_MAX_PATH];
 	char szNotificationServer[32], szNotificationPort[32];
 
-	//	GET LOG DIR
-	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
-
-	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
 
 	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
+
+
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "Version[%s]%s", __DATE__, __APP_VERSION);
@@ -165,6 +161,7 @@ int  _Start()
 }
 
 
+
 BOOL	InitMemPool()
 {
 	g_pMemPool = new CMemPool(MEM_PRE_ALLOC, MEM_MAX_ALLOC, MEM_BLOCK_SIZE);
@@ -194,7 +191,7 @@ static unsigned WINAPI RecvMDThread(LPVOID lp)
 void RecvMDThreadFn()
 {
 	ST_PACK2CHART_EX* pSise;
-	char zSymbol[128];
+	char zSymbol[128], zTemp[128];
 
 	while (g_bContinue)
 	{
@@ -233,7 +230,10 @@ void RecvMDThreadFn()
 			memcpy(pSise->Time, tm, sizeof(pSise->Time));
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
-			std::string sSymbol = zSymbol;
+			ir_cvtcode_uro_6e(zSymbol, zTemp);
+
+			std::string sSymbol = zTemp;
+
 			//printf("%s\n", zSymbol);
 			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
@@ -305,7 +305,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 				}
 				else
 				{
-					g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
+					//g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
 				}
 					
 				delete p;
@@ -378,8 +378,6 @@ BOOL LoadSymbol()
 		//	db->Next();
 		//	continue;
 		//}
-			
-
 
 		std::string symbol = zSymbol;
 
@@ -442,42 +440,56 @@ BOOL WINAPI ControlHandler ( DWORD dwCtrlType )
 int main(int argc, LPSTR *argv)
 {
 	g_bDebug = FALSE;
-  
-	if ( (argc > 1) &&
-         ((*argv[1] == '-') || (*argv[1] == '/')) )   
-    {  
-        if ( _stricmp( "install", argv[1]+1 ) == 0 )  
-        {  
-            install();  
-        }  
-        else if ( _stricmp( "remove", argv[1]+1 ) == 0 || _stricmp( "delete", argv[1]+1 ) == 0 )  
-        {  
-            uninstall();  
-        }  
-        else if ( _stricmp( "debug", argv[1]+1 ) == 0 )  
-        {  
-            g_bDebug = TRUE;
-				SetConsoleCtrlHandler( ControlHandler, TRUE ); 
-				InitializeCriticalSection(&g_Console);
-				
-				_Start();
 
-				DeleteCriticalSection (&g_Console);
-				printf("Stopped.\n"); 
-				return 0;  
-        }  
-        else  
-        { 
-			  return 0;
-        } 
-    } 
-	SERVICE_TABLE_ENTRY stbl[] = 
+	CHAR	szDir[_MAX_PATH];
+
+	//	GET LOG DIR
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+
+	CUtil::GetConfig(g_zConfig, "SERVICE", "SERVICE_NAME", SERVICENAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DISP_NAME", DISPNAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DESC", DESC);
+
+
+	if ((argc > 1) &&
+		((*argv[1] == '-') || (*argv[1] == '/')))
 	{
-		{SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
-		{NULL, NULL}
+		if (_stricmp("install", argv[1] + 1) == 0)
+		{
+			install();
+		}
+		else if (_stricmp("remove", argv[1] + 1) == 0 || _stricmp("delete", argv[1] + 1) == 0)
+		{
+			uninstall();
+		}
+		else if (_stricmp("debug", argv[1] + 1) == 0)
+		{
+			g_bDebug = TRUE;
+			SetConsoleCtrlHandler(ControlHandler, TRUE);
+			InitializeCriticalSection(&g_Console);
+
+			_Start();
+
+			DeleteCriticalSection(&g_Console);
+			printf("Stopped.\n");
+			return 0;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	SERVICE_TABLE_ENTRY stbl[] =
+	{
+		{ SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
+		{ NULL, NULL }
 	};
 
-	if(!StartServiceCtrlDispatcher(stbl))
+	if (!StartServiceCtrlDispatcher(stbl))
 	{
 		return  -1;
 	}

@@ -1,4 +1,6 @@
 #pragma once
+
+#include "../../IRUM_UTIL/TcpClient.h"
 #include "../../IRUM_UTIL/BaseThread.h"
 #include "../../IRUM_UTIL/adofunc.h"
 #include "../common/FBIInc.h"
@@ -22,22 +24,22 @@ DEAL_MANAGER 가 로딩할 때 DEAL_SEQ와 각 시작시간과 DEAL_STATUS, DURATION 를 가져
 */
 
 
-class CChartMap
-{
-public:
-	CChartMap();
-	~CChartMap();
-
-	VOID Save(char* pChartData);
-	_FBI::PT_API_CHART* GetFirstChart(_Out_ std::string *psChartNm);
-	_FBI::PT_API_CHART* GetNextChart(_In_ std::string sPrevChartNm, _Out_ std::string *psChartNm);
-	VOID DeleteAfterOrerProc(_In_ std::string sChartNm);
-	//std::string GetFirstChartNm() { return m_sFirstChartNm; }
-private:
-	std::map<std::string, _FBI::PT_API_CHART*>	m_mapChart;
-	CRITICAL_SECTION							m_csChart;
-	//std::string m_sFirstChartNm;
-};
+//class CChartMap
+//{
+//public:
+//	CChartMap();
+//	~CChartMap();
+//
+//	VOID Save(char* pChartData);
+//	_FBI::PT_API_CHART* GetFirstChart(_Out_ std::string *psChartNm);
+//	_FBI::PT_API_CHART* GetNextChart(_In_ std::string sPrevChartNm, _Out_ std::string *psChartNm);
+//	VOID DeleteAfterOrerProc(_In_ std::string sChartNm);
+//	//std::string GetFirstChartNm() { return m_sFirstChartNm; }
+//private:
+//	std::map<std::string, _FBI::PT_API_CHART*>	m_mapChart;
+//	CRITICAL_SECTION							m_csChart;
+//	//std::string m_sFirstChartNm;
+//};
 
 class CDealManager : public CBaseThread
 {
@@ -63,11 +65,14 @@ public:
 	VOID DealErase(int nDealSeq);
 	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
 
+	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket);
+
 	static unsigned WINAPI Thread_ResultProcByChart(LPVOID lp);
 	
 private:
 	char	m_zStkCd[32], m_zArtcCd[32];
 	CDBPoolAdo		*m_pDBPool;
+	CTcpClient		*m_pClient;
 	
 	HANDLE			m_hRsltProc;
 	unsigned int	m_unRsltProc;

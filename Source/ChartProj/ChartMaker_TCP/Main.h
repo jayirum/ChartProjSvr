@@ -5,10 +5,10 @@
 */
 
 
-#define	SERVICENAME		"IRUM_ChartMaker"
-#define DISPNAME		"IRUM_ChartMaker"
-#define DESC			"차트 데이터를 만든다."
-#define EXENAME			"ChartMaker.exe"
+//#define	SERVICENAME		"FBI_ChartMaker"
+//#define DISPNAME		"FBI_ChartMaker"
+//define DESC			"차트 데이터를 만든다."
+#define EXENAME			"FBI_ChartMaker.exe"
 
 
 #define MEM_BLOCK_SIZE	512

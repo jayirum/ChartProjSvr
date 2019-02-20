@@ -1,14 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-// This is not a Service //
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 
 #pragma warning(disable:4786)
 #pragma warning(disable:4503)
@@ -60,18 +49,19 @@ char		g_zConfig[_MAX_PATH];
 CMemPool	g_memPool(_FBI::MEM_PRE_ALLOC, _FBI::MEM_MAX_ALLOC, _FBI::MEM_BLOCK_SIZE);
 char		g_zMyName[128];
 
+char SERVICENAME[128], DISPNAME[128], DESC[128];
+
 int  _Start()
 {
 	char	msg[512] = { 0, };
 	CHAR	szDir[_MAX_PATH] = { 0 };
 
-	char szNotificationServer[32], szNotificationPort[32], zMyModule[512];
-	CUtil::GetMyModuleAndDir(szDir, zMyModule, g_zConfig);
+	char szNotificationServer[32], szNotificationPort[32];
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
 
-	g_log.OpenLogEx(szDir, zMyModule, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
+	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "Version[%s] %s", __DATE__, __APP_VERSION);
@@ -133,16 +123,62 @@ filename servername
 */
 int main(int argc, LPSTR *argv)
 {
-	g_bDebug = TRUE;
-	//if (argc < 2)
-	//{
-	//	printf("You must input the Front Server Name like Lion\n");
-	//	return 0;
-	//}
+	g_bDebug = FALSE;
 
-	strcpy(g_zMyName, argv[0]);
+	char	msg[512] = { 0, };
+	CHAR	szDir[_MAX_PATH];
 
-	_Start();
+	//	GET LOG DIR
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+
+	CUtil::GetConfig(g_zConfig, "SERVICE", "SERVICE_NAME", SERVICENAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DISP_NAME", DISPNAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DESC", DESC);
+
+
+
+	if ((argc > 1) &&
+		((*argv[1] == '-') || (*argv[1] == '/')))
+	{
+		if (_stricmp("install", argv[1] + 1) == 0)
+		{
+			install();
+		}
+		else if (_stricmp("remove", argv[1] + 1) == 0 || _stricmp("delete", argv[1] + 1) == 0)
+		{
+			uninstall();
+		}
+		else if (_stricmp("debug", argv[1] + 1) == 0)
+		{
+			g_bDebug = TRUE;
+			SetConsoleCtrlHandler(ControlHandler, TRUE);
+			InitializeCriticalSection(&g_Console);
+
+			_Start();
+
+			DeleteCriticalSection(&g_Console);
+			printf("Stopped.\n");
+			return 0;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	SERVICE_TABLE_ENTRY stbl[] =
+	{
+		{ SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
+		{ NULL, NULL }
+	};
+
+	if (!StartServiceCtrlDispatcher(stbl))
+	{
+		return  -1;
+	}
 
 	return 0;
 }

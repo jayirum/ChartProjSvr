@@ -48,28 +48,13 @@ CLogMsg g_log;
 
 //#define __APP_VERSION "v1.0"
 //#define __APP_VERSION "20170801_QUEUE_VERSION"
+char SERVICENAME[128], DISPNAME[128], DESC[128];
 
 int  _Start()
 {
 	char	msg[512] = { 0, };
 	CHAR	szDir[_MAX_PATH] = { 0 };
 
-	//	GET LOG DIR
-	CProp prop;
-	if (!prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY))
-	{
-		printf("registry open error\n");
-		return 0;
-	}
-	
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
-	if (szDir[0] == 0)
-	{
-		printf("registry GetValue error\n");
-		return 0;
-	}
-
-	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	g_log.OpenLog(szDir, EXENAME);
 
@@ -182,6 +167,19 @@ BOOL WINAPI ControlHandler ( DWORD dwCtrlType )
 
 int main(int argc, LPSTR *argv)
 {
+	CHAR	szDir[_MAX_PATH];
+
+	//	GET LOG DIR
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+
+	CUtil::GetConfig(g_zConfig, "SERVICE", "SERVICE_NAME", SERVICENAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DISP_NAME", DISPNAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DESC", DESC);
+
 	g_bDebug = FALSE;
   
 	if ( (argc > 1) &&

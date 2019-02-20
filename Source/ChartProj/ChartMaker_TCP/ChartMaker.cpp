@@ -3,8 +3,6 @@
 #include "../../IRUM_util/IRUM_Common.h"
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "../../IRUM_UTIL/Util.h"
-#include "../../IRUM_UTIL/LogMsg.h"
-#include "../../IRUM_UTIL/util.h"
 #include "../../IRUM_UTIL/ChartUtils.h"
 //#include "C:\ta-lib\c\include\ta_libc.h"
 
@@ -30,6 +28,14 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 	m_chartNmType = (CHARTNAME_TYPE)atoi(zChartNmTp);
 	
 	m_chartUtil = new CChartShmUtil(m_chartNmType);
+
+	char szDir[128];
+	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
+	m_logData.OpenLog(szDir, "ChartShm");
+
+	CUtil::GetConfig(g_zConfig, "DEBUG", "LOG_DATA", szDir);
+	g_log.log(INFO, "LOG_DATA:%c", szDir[0]);
+	m_bLogData = (szDir[0] == 'Y') ? TRUE : FALSE;
 
 	ResumeThread();
 
@@ -202,7 +208,12 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pIn;
 	char temp[32];
 	BOOL bRet;
+	char zSymbol[32];
+	sprintf(zSymbol, "%.*s", sizeof(p->ShortCode), p->ShortCode);
 
+	ir_cvtcode_uro_6e(zSymbol, temp);
+	memset(p->ShortCode, 0x20, sizeof(p->ShortCode));
+	memcpy(p->ShortCode, temp, strlen(temp));
 	ST_SHM_CHART_UNIT recvUnit;
 	memset(&recvUnit, 0x20, sizeof(recvUnit));
 
@@ -214,7 +225,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	char szChartNm[LEN_SHM_STRUCT_KEY + 1];
 
 	m_chartUtil->ComposeChartName(p->Date, p->Time, tp, szChartNm);
-	g_log.log(INFO, "[DATE:%.8s][TIME:%.8s][CHART:%s][TICK:%.*s]", p->Date, p->Time, szChartNm, LEN_PRC, p->Close);
+	//if(m_bLogData)
+	//	m_logData.log(DATA, "[DATE:%.8s][TIME:%.8s][CHART:%s][TICK:%.*s]", p->Date, p->Time, szChartNm, LEN_PRC, p->Close);
 	//return;
 
 	///////////////////////////////////////////////////////////////////////////////////////
@@ -268,10 +280,10 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			return;
 		}
 		printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
-		//if (strcmp(m_zSymbol, "6BZ7") == 0) {
-		//	g_log.log(LOGTP_SUCC, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
-		//		szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
-		//}
+		if(m_bLogData)
+			m_logData.log(DATA, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+				szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
+		
 		return;
 	}
 
@@ -292,6 +304,17 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 
 		// 시가를 받은 경우 직전차트의 SMA 를 구해서 저장한다.
 		// Chart_SMA(tp, szGroupKey, szChartNm, (char*)&recvUnit);
+
+		// 시가를 받은 경우 직전차트 기록
+		if (m_bLogData)
+		{
+			ST_SHM_CHART_UNIT prevChart;
+			if (m_shmQ.DataGet(szGroupKey, recvUnit.prevNm, (char*)&prevChart)) {
+				m_logData.log(DATA_DT, "");
+				m_logData.log(DATA, "[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+					szGroupKey, LEN_CHART_NM, prevChart.Nm, prevChart.open, prevChart.high, prevChart.low, prevChart.close, prevChart.cntr_qty);
+			}
+		}
 
 		if (!m_shmQ.DataInsert(szGroupKey, (char*)&recvUnit))
 		{
@@ -361,13 +384,13 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			memcpy(pChart, &existUnit, sizeof(ST_SHM_CHART_UNIT));
 			memcpy(pChart->Reserved, szGroupKey, LEN_GROUP_KEY);
 			PostThreadMessage(m_dwMainThreadId, WM_SAVE_CHART, 0, (LPARAM)pChart);
-			g_log.log(INFO, "[%.*s](O:%.*s)(H:%.*s)(L:%.*s)(C:%.*s)",
-				LEN_CHART_NM, existUnit.Nm,
-				LEN_PRC, existUnit.open,
-				LEN_PRC, existUnit.high,
-				LEN_PRC, existUnit.low,
-				LEN_PRC, existUnit.close
-			);
+			//g_log.log(INFO, "[%.*s](O:%.*s)(H:%.*s)(L:%.*s)(C:%.*s)",
+			//	LEN_CHART_NM, existUnit.Nm,
+			//	LEN_PRC, existUnit.open,
+			//	LEN_PRC, existUnit.high,
+			//	LEN_PRC, existUnit.low,
+			//	LEN_PRC, existUnit.close
+			//);
 		}	//	szGroupKey, debug.Nm, debug.prevNm, atoi(debug.seq), atof(debug.open), atof(debug.close), debug.gb);
 	}
 }

@@ -5,10 +5,10 @@
 */
 
 
-#define	SERVICENAME		"IRUM_ChartShmQueue"
-#define DISPNAME		"IRUM_ChartShmQueue"
-#define DESC			"차트용 SHM을 구성"
-#define EXENAME			"ChartShmQueue.exe"
+//#define	SERVICENAME		"FBI_ChartShmQueue"
+//#define DISPNAME		"FBI_ChartShmQueue"
+//#define DESC			"차트용 SHM을 구성"
+#define EXENAME			"FBI_ChartShmQueue.exe"
 
 
 //////////////////////////////////////////////////////////////////////////

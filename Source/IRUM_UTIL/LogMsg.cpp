@@ -180,6 +180,9 @@ VOID CLogMsg::log(LOGMSG_TP tp, char* pMsg, ...)
 	}
 }
 
+
+
+
 VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 {
 	if (p->tp == DEBUG_)
@@ -205,34 +208,48 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 				UNLOCK();
 				return;
 			}
-
 			
-
 			GetLocalTime(&st);
-			if (p->tp == LOGTP_SUCC)	strcpy(buff, "[I]");
-			if (p->tp == INFO)			strcpy(buff, "[I]");
-			if (p->tp == LOGTP_ERR)		strcpy(buff, "[E]");
-			if (p->tp == ERR)			strcpy(buff, "[E]");
-			if (p->tp == LOGTP_FATAL)	strcpy(buff, "[F]");
-			if (p->tp == DEBUG_)			strcpy(buff, "[D]");
-			if (p->tp == NOTIFY)
+
+			if (p->tp == DATA_DT)
 			{
-				strcpy(buff, "[N]");
-				nNotify = 1;
+				sprintf(buff, "[%02d:%02d:%02d.%03d]============================================\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+				_write(m_fd, buff, strlen(buff));
+				m_pool->Restore(p);
 			}
-
-			sprintf(buff + 3, "[%02d:%02d:%02d.%03d]%.*s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, DEF_LOG_LEN - 20, p->msg);
-			_write(m_fd, buff, strlen(buff));
-			printf("%.100s", buff);
-			m_pool->Restore(p);
-			
-			//notification send to Server
-			if (nNotify==1)
+			else if (p->tp == DATA)
 			{
-				sprintf(p->msg, "%s;%s;%s", m_szNotifyServerOwnHostName, m_szNotifyServerOwnApplicationName,buff);
-				//fn_SendMessage(tmpbuff, 10);
-				PostThreadMessage(m_csmNotifyThread.getMyThreadID(), WM_LOGMSG_LOG, (WPARAM)0, (LPARAM)p);
+				sprintf(buff, "%.*s\n",  DEF_LOG_LEN - 20, p->msg);
+				_write(m_fd, buff, strlen(buff));
+				m_pool->Restore(p);
+			}
+			else
+			{
+				if (p->tp == LOGTP_SUCC)	strcpy(buff, "[I]");
+				if (p->tp == INFO)			strcpy(buff, "[I]");
+				if (p->tp == LOGTP_ERR)		strcpy(buff, "[E]");
+				if (p->tp == ERR)			strcpy(buff, "[E]");
+				if (p->tp == LOGTP_FATAL)	strcpy(buff, "[F]");
+				if (p->tp == DEBUG_)			strcpy(buff, "[D]");
+				if (p->tp == NOTIFY)
+				{
+					strcpy(buff, "[N]");
+					nNotify = 1;
+				}
 
+				sprintf(buff + 3, "[%02d:%02d:%02d.%03d]%.*s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, DEF_LOG_LEN - 20, p->msg);
+				_write(m_fd, buff, strlen(buff));
+				printf("%.100s", buff);
+				m_pool->Restore(p);
+
+				//notification send to Server
+				if (nNotify == 1)
+				{
+					sprintf(p->msg, "%s;%s;%s", m_szNotifyServerOwnHostName, m_szNotifyServerOwnApplicationName, buff);
+					//fn_SendMessage(tmpbuff, 10);
+					PostThreadMessage(m_csmNotifyThread.getMyThreadID(), WM_LOGMSG_LOG, (WPARAM)0, (LPARAM)p);
+
+				}
 			}
 		}
 		__except (ReportException(GetExceptionCode(), "LogMsg::logMsg", m_szMsg))

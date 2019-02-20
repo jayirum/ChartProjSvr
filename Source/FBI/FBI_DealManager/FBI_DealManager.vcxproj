@@ -155,9 +155,11 @@
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\QueueShm.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="..\common\FBIInc.cpp" />
     <ClCompile Include="DealManager.cpp" />
@@ -173,9 +175,11 @@
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h" />
     <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\QueueShm.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="..\common\FBIInc.h" />
     <ClInclude Include="DealManager.h" />

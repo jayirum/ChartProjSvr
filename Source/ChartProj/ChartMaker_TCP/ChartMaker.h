@@ -11,6 +11,7 @@
 #include "../../IRUM_UTIL/QueueShm.h"
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/ChartShmUtil.h"
+#include "../../IRUM_UTIL/LogMsg.h"
 
 #define MAX_CHARTTP_CNT	20
 
@@ -61,4 +62,7 @@ private:
 
 	CHARTNAME_TYPE	m_chartNmType;
 	CChartShmUtil	*m_chartUtil;
+
+	CLogMsg			m_logData;
+	BOOL			m_bLogData;
 };

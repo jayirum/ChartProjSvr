@@ -96,17 +96,18 @@ BOOL CFBIMainProc::LoadStkCode()
 		while (db->IsNextRow())
 		{
 			char zStCd[128];	db->GetStr("STK_CD", zStCd);
-			char zArtcCd[128];	db->GetStr("STK_CD", zArtcCd);
+			char zArtcCd[128];	db->GetStr("ARTC_CD", zArtcCd);
 			//TODO
-			if (strncmp(zStCd, "CL", 2) != 0)
-			{
-				db->Next();
-				continue;
-			}
+			//if (strncmp(zStCd, "GC", 2) != 0)
+			//{
+			//	db->Next();
+			//	continue;
+			//}
 
 
 			CDealManager* p = new CDealManager(zStCd, zArtcCd);
-			p->Initialize();
+			if (!p->Initialize())
+				continue;
 
 			EnterCriticalSection(&m_csDM);
 			m_mapDealManager[zStCd] = p;

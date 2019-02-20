@@ -57,7 +57,7 @@ namespace _FBI
 	
 	const int RT_SUCCESS = 0;
 
-	const int TIMEOUT_CHECK_DEAL = 500;	// 100;	// miliseconds
+	const int TIMEOUT_CHECK_DEAL = 100;	// miliseconds
 
 
 	enum EN_DATETP { DATETP_TRADE = 0, DATETP_NEXT } ;
@@ -131,7 +131,8 @@ namespace _FBI
 		char ArtcCd[FBILEN_SYMBOL];
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
-		char DealStatus[2];
+		char DealStatus[1];	// 1:주문가능/2:대기/3:차트/4:결과중/5:완료
+		char OrdResult[1];	// 1:DOWN / 2:UP / 3:EVEN
 		char Time[8];				// 각 status 시작시간
 	};
 }

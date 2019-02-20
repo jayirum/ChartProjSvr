@@ -20,7 +20,7 @@
 #define DEF_LOG_LEN 4096
 
 
-enum LOGMSG_TP { LOGTP_SUCC, LOGTP_ERR, INFO,ERR, DEBUG_, ENTER_, NOTIFY, LOGTP_FATAL = 9};
+enum LOGMSG_TP { LOGTP_SUCC, LOGTP_ERR, INFO,ERR, DEBUG_, ENTER_, NOTIFY,  LOGTP_FATAL = 9, DATA, DATA_DT};
 
 #define INFO_BUFFER_SIZE 32767
 #define WM_LOGMSG_LOG	WM_USER + 555
@@ -84,6 +84,7 @@ public:
 	BOOL	OpenLog(char* psPath, char* pFileName);	
 	BOOL	OpenLogEx(char* psPath, char* pFileName, char* szIP, int nPort, char* szApplicationName);
 	VOID	log(LOGMSG_TP, char* pMsg, ...);
+	//VOID	logD(char* pMsg, ...);
 	VOID	enter();
 	//VOID	setNotifyServerIP(char* szIP) { strcpy(m_szNotifyServerIP, szIP);m_csmNotifyThread.setNotifyServerIP(m_szNotifyServerIP); }
 	//VOID	setNotifyServerPort(int nPort) { m_nNotifyServerPort = nPort; m_csmNotifyThread.setNotifyServerPort(m_nNotifyServerPort); }
