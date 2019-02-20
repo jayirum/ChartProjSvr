@@ -6248,3 +6248,6 @@ Source/FBI/SendTimer/Release/SendTimer.exe
 Source/FBI/SendTimer/ReadMe.txt
 Source/FBI/SendTimer/Debug/SendTimer.exe
 Source/FBI/SendTimer/bin/TCPClient.exe
+Source/_Bin/FBI_ChartShmQueue.ini
+Source/A-bot/A-bot.sln
+Source/A-bot/Debug/AnalyseCor.exe
