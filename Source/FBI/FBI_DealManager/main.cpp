@@ -277,7 +277,7 @@ void install()
 	SERVICE_DESCRIPTION lpDes;
 	char Desc[64];
 	strcpy(Desc, SERVICENAME);
-	strcat(Desc, " 서비스!");
+	strcat(Desc, " Service");
 
 	hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hScm == NULL)
@@ -294,18 +294,21 @@ void install()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스 프로그램이 같은 디렉토리에 없습니다");
-		printf("서비스 프로그램이 같은 디렉토리에 없습니다\n");
 		printf("There is no service process in same directory");
 		return;
 	}
 
 	////	종속 서비스
-	//	char szDependency[64];
-	// 	memset(szDependency, 0x00, sizeof(szDependency));	
-	// 	CProp prop;
-	// 	prop.SetBaseKey(HKEY_LOCAL_MACHINE, REG_FRONTSERVER);
-	// 	strcpy(szDependency, prop.GetValue("Dependency"));
-	// 	prop.Close();
+	CHAR	szDir[_MAX_PATH];
+	char szDependency[64] = { 0, };
+
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DEPENDENCY", szDependency);
+
 
 	hSrv = CreateService(hScm, SERVICENAME, DISPNAME,
 		SERVICE_ALL_ACCESS,
@@ -315,22 +318,19 @@ void install()
 		SrvPath,
 		NULL,
 		NULL,
-		NULL, //szDependency,
+		szDependency,
 		NULL,
 		NULL);
 
 	if (hSrv == NULL)
 	{
-		printf("서비스를 설치하지 못 했습니다 : %d\n", GetLastError());
-		printf("Failed to install service : %d\n", GetLastError());
+		printf("Failed to install the service : %d\n", GetLastError());
 	}
 	else
 	{
 		lpDes.lpDescription = Desc;
 		ChangeServiceConfig2(hSrv, SERVICE_CONFIG_DESCRIPTION, &lpDes);
-		//log.LogEventInf(-1, "서비스를 성공적으로 설치했습니다.");
-		printf("서비스를 성공적으로 설치했습니다.\n");
-		printf("succeeded in installing service\n");
+		printf("Succeeded in installing the service.(dependency:%s)\n", szDependency);
 		CloseServiceHandle(hSrv);
 	}
 	CloseServiceHandle(hScm);

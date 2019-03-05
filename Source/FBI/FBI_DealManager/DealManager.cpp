@@ -770,7 +770,9 @@ void CDealManager::UpdateDeal(_FBI::ST_DEAL_INFO* pInfo)
 		}
 	}
 
-	SendToClient(p, 0);
+	// 결과로 변경되는건 전송하지 않는다. 왜냐하면 다음 DEAL 이 바로 시작하기 때문에.
+	if(pInfo->DealStatus!= _FBI::DEAL_STATUS_RESULTING)
+		SendToClient(p, 0);
 }
 
 
@@ -810,8 +812,8 @@ BOOL CDealManager::InitClientConnect()
 
 	m_pClient = new CTcpClient("DealManager");
 	char zIP[32], zPort[32];
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_IP", zIP);
-	CUtil::GetConfig(g_zConfig, "API_SOCKET_INFO", "SISE_PORT", zPort);
+	CUtil::GetConfig(g_zConfig, "DEAL_UPDATE", "IP", zIP);
+	CUtil::GetConfig(g_zConfig, "DEAL_UPDATE", "PORT", zPort);
 
 	if (!m_pClient->Begin(zIP, atoi(zPort), 10))
 	{
