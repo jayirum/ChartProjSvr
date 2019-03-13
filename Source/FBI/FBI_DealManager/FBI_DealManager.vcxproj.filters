@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">

@@ -13,12 +13,13 @@ extern char		g_zConfig[_MAX_PATH];
 extern CMemPool	g_memPool;
 
 
-CDealManager::CDealManager(char* pzStkCd, char* pzArtcCd) : CBaseThread(pzStkCd)
+CDealManager::CDealManager(char* pzStkCd, char* pzArtcCd, int nIdx) : CBaseThread(pzStkCd)
 {
 	strcpy(m_zStkCd, pzStkCd);
 	strcpy(m_zArtcCd, pzArtcCd);
 	m_pClient = NULL;
 	m_chart = NULL;
+	m_nIdx = nIdx;
 }
 
 
@@ -42,7 +43,7 @@ BOOL CDealManager::Initialize()
 	if (!m_pDBPool)
 	{
 		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-		if (!m_pDBPool->Init(2))
+		if (!m_pDBPool->Init(3))
 		{
 			g_log.log( ERR/*NOTIFY*/, "(%s)Thread DB OPEN FAILED.(%s)(%s)(%s)", m_zStkCd, ip, id, pwd);
 			return FALSE;
@@ -61,6 +62,11 @@ BOOL CDealManager::Initialize()
 	ResumeThread();
 	
 	m_hRsltProc = (HANDLE)_beginthreadex(NULL, 0, &Thread_ResultProcByChart, this, 0, &m_unRsltProc);
+
+	if (IsTimesaveClass()) {
+		m_hTimeSave = (HANDLE)_beginthreadex(NULL, 0, &Thread_TimeSave, this, 0, &m_unTimeSave);
+		m_bTimeSaveRun = TRUE;
+	}
 	
 	return TRUE;
 }
@@ -85,6 +91,8 @@ BOOL CDealManager::InitChartShm()
 
 VOID CDealManager::Finalize()
 {
+	m_bTimeSaveRun = FALSE;
+
 	SAFE_DELETE(m_pDBPool);
 
 	std::map<int, _FBI::ST_DEAL_INFO*>::iterator it;
@@ -126,6 +134,8 @@ BOOL CDealManager::LoadDealInfo()
 		g_log.log(ERR/*NOTIFY*/, "Load DealInfo Error(%s)", zQ);
 		return FALSE;
 	}
+
+	
 	while (db->IsNextRow())
 	{
 		// hh:mm:ss
@@ -181,8 +191,8 @@ BOOL CDealManager::LoadDealInfo()
 		else
 			strcpy(pInfo->Date, zNextDt);
 
-		g_log.log(INFO, "[SEQ:%d](%s)(%s)(%s)(%s)", 
-			pInfo->DealSeq,pInfo->Date, pInfo->tm_order, pInfo->tm_wait, pInfo->tm_chartwait);
+		//g_log.log(INFO, "[SEQ:%d](%s)(%s)(%s)(%s)", 
+		//	pInfo->DealSeq,pInfo->Date, pInfo->tm_order, pInfo->tm_wait, pInfo->tm_chartwait);
 		EnterCriticalSection(&m_csDeal);
 		m_mapDeal[pInfo->DealSeq] = pInfo;
 		LeaveCriticalSection(&m_csDeal);
@@ -190,7 +200,7 @@ BOOL CDealManager::LoadDealInfo()
 		db->Next();
 	}
 	db->Close();
-	g_log.log(INFO, "Succeeded in DealInfo[%s]", m_zArtcCd);
+	g_log.log(INFO, "Succeeded in DealInfo[%s][Count:%d]", m_zArtcCd, m_mapDeal.size());
 	return TRUE;
 }
 
@@ -378,6 +388,10 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 				cPack->DealStatus[0] = '5';
 				cPack->OrdResult[0] = *UpDown;
 				memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
+
+				// yyyymmddhhmm => hh:mm
+				sprintf(cPack->CandleTime, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
+				
 				cPack->ETX[0] = _FBI::ETX;
 				*(cPack->ETX + 1) = 0x00;
 
@@ -393,6 +407,60 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 
 	} // while(pThis->m_bContinue)
 
+	return 0;
+}
+
+// 1ÃÊ¸¶´Ù DB UPDATE
+unsigned WINAPI CDealManager::Thread_TimeSave(LPVOID lp)
+{
+	//g_log.log(INFO, "TIME SAVE Thread Start....");
+
+	CDealManager* p = (CDealManager*)lp;
+	int nCnt = 0;
+	//SYSTEMTIME st;
+	//char zTime[32];
+	BOOL bStart = FALSE;
+
+	while (p->m_bTimeSaveRun)
+	{
+		Sleep(100);
+
+		if (++nCnt == 5 && bStart)
+		{
+			//GetLocalTime(&st);
+			//sprintf(zTime, "%02d:%02d", st.wHour, st.wMinute);
+
+			//	DB UPDATE
+			CDBHandlerAdo db(p->m_pDBPool->Get());
+			char zQ[1024];
+
+			sprintf(zQ, "AA_UPDATE_ORD_TM");
+
+			if (FALSE == db->ExecQuery(zQ))
+			{
+				g_log.log(ERR/*NOTIFY*/, "Update Curr Time error(%s)", zQ);
+				Sleep(1000);
+				db->Close();
+				continue;
+			}
+			//else
+			//	g_log.log(INFO, "Update Curr Time ok(%s)", zQ);
+			nCnt = 0;
+		}
+
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			switch (msg.message)
+			{
+			case _FBI::WM_DEAL_STATUS:
+				//g_log.log(INFO, "Peek Message to time Save Thread");
+				bStart = TRUE;
+				nCnt = 0;
+				break;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -555,6 +623,12 @@ BOOL CDealManager::DealOrd(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo)
 		pInfo->DealStatus = _FBI::DEAL_STATUS_ORD;
 		UpdateDeal(pInfo);
 		m_mapDeal[pInfo->DealSeq] = pInfo;
+
+		if (IsTimesaveClass()) {
+			PostThreadMessage(m_unTimeSave, _FBI::WM_DEAL_STATUS, 0, 0);
+			//g_log.log(INFO, "Post Message to time Save Thread");
+		}
+
 		return TRUE;
 		//char* pData = g_memPool.get();
 		//memcpy(pData, pInfo, sizeof(_FBI::ST_DEAL_INFO));
@@ -765,7 +839,7 @@ void CDealManager::UpdateDeal(_FBI::ST_DEAL_INFO* pInfo)
 		}
 		else
 		{
-			g_log.log(INFO, "Update DB DEAL_MST OK[%s][SEQ:%d][%s]", m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
+			//g_log.log(INFO, "Update DB DEAL_MST OK[%s][SEQ:%d][%s]", m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
 			break;
 		}
 	}
@@ -800,11 +874,12 @@ BOOL CDealManager::SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt)
 		return FALSE;
 	}
 	nRecurCnt = 0;
-	g_log.log(INFO, "Send To Client DEAL UPDATE(%.*s)", nLen, zSendBuffer);
+	//g_log.log(INFO, "Send To Client DEAL UPDATE(%.*s)", nLen, zSendBuffer);
 	return TRUE;
 }
 
-//TODO
+
+
 BOOL CDealManager::InitClientConnect()
 {
 	if (m_pClient)

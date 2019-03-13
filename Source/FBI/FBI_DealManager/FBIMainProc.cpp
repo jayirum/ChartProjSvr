@@ -84,7 +84,8 @@ BOOL CFBIMainProc::LoadStkCode()
 {
 	CDBHandlerAdo db(m_pDBPool->Get());
 	char zQ[1024];
-	//sprintf(zQ, "SELECT STK_CD FROM AA_STK_MST WHERE USE_YN='Y'");
+	int nIdx = 0;
+
 	sprintf(zQ, "EXEC AA_GET_SYMBOL");
 
 	if (FALSE == db->ExecQuery(zQ))
@@ -97,15 +98,8 @@ BOOL CFBIMainProc::LoadStkCode()
 		{
 			char zStCd[128];	db->GetStr("STK_CD", zStCd);
 			char zArtcCd[128];	db->GetStr("ARTC_CD", zArtcCd);
-			//TODO
-			//if (strncmp(zStCd, "GC", 2) != 0)
-			//{
-			//	db->Next();
-			//	continue;
-			//}
-
-
-			CDealManager* p = new CDealManager(zStCd, zArtcCd);
+			
+			CDealManager* p = new CDealManager(zStCd, zArtcCd, nIdx++);
 			if (!p->Initialize()) {
 				delete p;
 				db->Next();

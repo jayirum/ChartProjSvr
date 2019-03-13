@@ -44,7 +44,7 @@ DEAL_MANAGER 가 로딩할 때 DEAL_SEQ와 각 시작시간과 DEAL_STATUS, DURATION 를 가져
 class CDealManager : public CBaseThread
 {
 public:
-	CDealManager(char* pzStkCd, char* pzArtcCd);
+	CDealManager(char* pzStkCd, char* pzArtcCd, int nIdx);
 	~CDealManager();
 
 	BOOL Initialize();
@@ -68,19 +68,23 @@ public:
 	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt);
 
 	static unsigned WINAPI Thread_ResultProcByChart(LPVOID lp);
-	
+	static unsigned WINAPI Thread_TimeSave(LPVOID lp);
+	BOOL IsTimesaveClass() { return (m_nIdx == 0); }
+
 private:
 	char	m_zStkCd[32], m_zArtcCd[32];
 	CDBPoolAdo		*m_pDBPool;
 	CTcpClient		*m_pClient;
 	
-	HANDLE			m_hRsltProc;
-	unsigned int	m_unRsltProc;
+	HANDLE			m_hRsltProc, m_hTimeSave;
+	unsigned int	m_unRsltProc, m_unTimeSave;
 
 	std::map<int, _FBI::ST_DEAL_INFO*>	m_mapDeal;	// deal seq, deal info
 	CRITICAL_SECTION					m_csDeal;
 
 	//CChartMap							m_chartMap;
-	CChartShmUtil						*m_chart;
+	CChartShmUtil	*m_chart;
+	int				m_nIdx;
+	BOOL			m_bTimeSaveRun;
 };
 
