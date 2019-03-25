@@ -1,15 +1,19 @@
 #include "Main.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
 
 
 int main(int argc, LPSTR *argv)
 {
 	if (argc == 4)
 	{
-		char sGroupKey[5], sTimeFrame[3],sDateTime[13];
-		sprintf(sGroupKey, "%s", argv[1]);
+		char sGroupKey[32], sTimeFrame[32],sDateTime[13], zStkCd[32];
+		sprintf(zStkCd, "%s", argv[1]);
 		sprintf(sTimeFrame, "%s", argv[2]);
 		sprintf(sDateTime, "%s", argv[3]);
 		QueueShmViewer v1;
+
+		GET_GROUP_KEY(zStkCd, (int)atoi(sTimeFrame), sGroupKey);
+
 		v1.GroupKeyViewer(sGroupKey, sTimeFrame, sDateTime);
 		return 0;
 	}

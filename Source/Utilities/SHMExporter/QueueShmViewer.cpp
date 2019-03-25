@@ -1,11 +1,12 @@
 #include "QueueShmViewer.h"
 #include "CLogFileViewer.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
 void FileWriter(string sFilename, string sData);
 string FilePathFinder();
 string FileNameFinder();
 CLogFileViewer g_log;
 
-
+CChartShmUtil g_chartUtil(CHARTNAME_TP_FAR);
 
 int QueueShmViewer::GroupKeyViewer(char* psGroupKey, char* pzTimeFrame, char* pDateTime)
 {
@@ -56,7 +57,7 @@ int QueueShmViewer::GroupKeyViewer(char* psGroupKey, char* pzTimeFrame, char* pD
 	}
 	if (bFound == FALSE)
 	{
-		g_log.log(LOGTP_SUCC, "Group Key with timeframe not found.");
+		g_log.log(LOGTP_SUCC, "Group Key(%s) with timeframe not found.", psGroupKey);
 		sprintf(zTempWriteData, "notepad %s", zLogFileName);
 		system(zTempWriteData);
 
@@ -65,7 +66,7 @@ int QueueShmViewer::GroupKeyViewer(char* psGroupKey, char* pzTimeFrame, char* pD
 	sprintf(zGroupKey, "%s", zTempString);
 	if (!GetCurrStructKey(zGroupKey, zStructKey))
 	{
-		g_log.log(LOGTP_SUCC, "Not able to find current structure key. Exiting.");
+		g_log.log(LOGTP_SUCC, "Not able to find current structure key(%s). Exiting.", zStructKey);
 		sprintf(zTempWriteData, "notepad %s", zLogFileName);
 		system(zTempWriteData);
 		return 0;
