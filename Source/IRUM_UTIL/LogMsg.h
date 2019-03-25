@@ -92,6 +92,7 @@ public:
 	//VOID	setNotifyOwnApplicationName(char* szApplicationName) { strcpy(m_szNotifyServerOwnApplicationName, szApplicationName); }
 
 
+	char	m_szFileName[_MAX_PATH];
 private:
 	VOID	logMsg(ST_LOGMSG* p);
 	//BOOL	fn_SendMessage(char* szMessage, int nTimeOut);
@@ -109,7 +110,7 @@ private:
 //private:
 	int		m_fd;
 	char	m_szPath	[_MAX_PATH];
-	char	m_szFileName[_MAX_PATH];
+	//char	m_szFileName[_MAX_PATH];
 	char	m_szPureFileName[_MAX_PATH];
 	char	m_szDate	[8+1];
 	char	m_szMsg[1024];

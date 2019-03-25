@@ -168,6 +168,41 @@ VOID CChartShmUtil::ReleaseChart()
 }
 
 
+// ORG
+//BOOL CChartShmUtil::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChartNm,
+//	_Out_ ST_SHM_CHART_UNIT& chart)
+//{
+//	if (!m_bOpen)
+//	{
+//		sprintf(m_zMsg, "Please call [OpenChart] function first");
+//		return FALSE;
+//	}
+//	char zGroupKey[128] = { 0, };
+//
+//	GET_GROUP_KEY(pzSymbol, (int)ChartTp, zGroupKey);
+//
+//	int nLoop = 0;
+//
+//	//////////////////////////////////////////////////////////////////////////////////////////////////////
+//	// Get the current chart
+//	BOOL bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
+//
+//	// retry 2 times
+//	while (FALSE == bExist)
+//	{
+//		Sleep(10);
+//		if (++nLoop > 2) {
+//			// There is no chart of the current time. Something is wrong.
+//			sprintf(m_zMsg, "[%s][%s] No Chart.", zGroupKey, pzChartNm);
+//			return FALSE;
+//		}
+//		bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
+//
+//	} // if(!bExist)
+//
+//	return bExist;
+//}
+
 
 BOOL CChartShmUtil::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChartNm,
 	_Out_ ST_SHM_CHART_UNIT& chart)
@@ -185,20 +220,17 @@ BOOL CChartShmUtil::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChart
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Get the current chart
-	BOOL bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
+	int nCode;
+	char zErr[128] = { 0, };
+	BOOL bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart, &nCode, zErr);
 
 	// retry 2 times
-	while (FALSE == bExist)
+	if (FALSE == bExist)
 	{
-		Sleep(10);
-		if (++nLoop > 2) {
-			// There is no chart of the current time. Something is wrong.
-			sprintf(m_zMsg, "[%s][%s] No Chart even if receive curr price.", zGroupKey, pzChartNm);
-			return FALSE;
-		}
-		bExist = m_pShmQ->DataGet(zGroupKey, pzChartNm, (char*)&chart);
 
-	} // if(!bExist)
+		sprintf(m_zMsg, "[%s][%s] No Chart(%s)", zGroupKey, pzChartNm, zErr);
+		return FALSE;
+	}
 
 	return bExist;
 }

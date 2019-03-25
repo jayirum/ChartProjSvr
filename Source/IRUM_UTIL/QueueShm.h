@@ -80,6 +80,7 @@ public:
 	BOOL	DataUpdate(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, char *pStructData);// 2004-09-19
 
 	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData);
+	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData, int *pErrCode, char* pErrMsg);
 	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, /*out*/char *pStructData);
 	int		DataGetArray(char *pGroupKey, BOOL bAll, int nCnt, /*out*/char *pData);
 	int		GetCurrDataCnt(char *pGroupKey) { return GetCurrStructCnt(pGroupKey); }

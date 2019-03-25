@@ -174,7 +174,7 @@ INT CTcpClient::SendData( char* pInBuf, int nBufLen,  int *o_ErrCode )
 		Ret = send(m_sock, pInBuf, nBufLen, 0);
 		if (Ret > 0) {
 			*o_ErrCode = 0;
-			printf("<SEND:%d>(%.*s)\n", Ret, Ret, pInBuf);
+			//printf("<SEND:%d>(%.*s)\n", Ret, Ret, pInBuf);
 			break;
 		}
 		

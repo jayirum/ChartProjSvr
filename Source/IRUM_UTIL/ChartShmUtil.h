@@ -7,7 +7,7 @@
 
 
 //DEF-SHART SHM, DEF-CHARTSHM
-#define CHART_TP_CNT		20
+#define CHART_TP_CNT		10	// 1분, 5분, ...  20
 #define MAX_CHART_TP_CNT	CHART_TP_CNT
 #define MAX_SYMBOL_PER_ARTC	2		//	품목당 2개의 월물(종목)에 대해서만 지원한다.
 #define MAX_GROUPKEY_CNT	MAX_SYMBOL_PER_ARTC * CHART_TP_CNT

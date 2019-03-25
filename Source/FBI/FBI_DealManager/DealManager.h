@@ -86,5 +86,6 @@ private:
 	CChartShmUtil	*m_chart;
 	int				m_nIdx;
 	BOOL			m_bTimeSaveRun;
+	char			m_zNextCandleTm[32];
 };
 
