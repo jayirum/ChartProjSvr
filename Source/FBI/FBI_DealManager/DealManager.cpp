@@ -321,10 +321,10 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 			bRet = pThis->m_chart->GetChartData(pThis->m_zStkCd, TP_1MIN, zChartNm, chartData);
 			if (bRet)
 				break;
-
-			g_log.log(ERR, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
-				, pThis->m_zStkCd, pDeal->tm_end, zChartNm, pThis->m_chart->getmsg());
-			printf("chart error-----------------------------------------------\n");
+			if (i == 0) {
+				g_log.log(ERR, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
+					, pThis->m_zStkCd, pDeal->tm_end, zChartNm, pThis->m_chart->getmsg());
+			}
 			Sleep(100);
 		}
 		if (!bRet)
