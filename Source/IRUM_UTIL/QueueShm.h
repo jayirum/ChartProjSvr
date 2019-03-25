@@ -9,6 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#pragma warning(disable:4996)
 #pragma optimize("t", on)
 
 #include <windows.h>

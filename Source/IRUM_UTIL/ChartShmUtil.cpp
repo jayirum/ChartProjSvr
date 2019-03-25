@@ -227,7 +227,6 @@ BOOL CChartShmUtil::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pzChart
 	// retry 2 times
 	if (FALSE == bExist)
 	{
-
 		sprintf(m_zMsg, "[%s][%s] No Chart(%s)", zGroupKey, pzChartNm, zErr);
 		return FALSE;
 	}

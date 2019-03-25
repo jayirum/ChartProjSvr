@@ -313,7 +313,7 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 		// CHART 를 가져온다.
 		ZeroMemory(&chartData, sizeof(chartData));
 		BOOL bRet;
-		for (int i = 0; i < 30; i++)
+		for (int i = 0; i < 100; i++)
 		{
 			bRet = pThis->m_chart->GetChartData(pThis->m_zStkCd, TP_1MIN, zChartNm, chartData);
 			if (bRet)
@@ -326,7 +326,7 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 		}
 		if (!bRet)
 		{
-			g_log.log(ERR, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
+			g_log.log(NOTIFY, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
 				, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
 		//	g_memPool.release((char*)pDeal);
 			*UpDown = 'E';
