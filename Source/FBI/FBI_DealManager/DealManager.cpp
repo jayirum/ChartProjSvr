@@ -294,6 +294,7 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 	int nComp;
 	char UpDown[2] = { 0 , };
 	char zOpen[32], zClose[32];
+	_FBI::ST_DEAL_INFO recvData;
 	while(GetMessage(&msg, NULL, 0,0))
 	{
 		if (msg.message == _FBI::WM_TERMINATE)
@@ -305,14 +306,16 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 		// Have enough time to get the lastest chart data
 		Sleep(3000);
 
-		_FBI::ST_DEAL_INFO * pDeal = (_FBI::ST_DEAL_INFO *)msg.lParam;
+		memcpy(&recvData, (_FBI::ST_DEAL_INFO*)msg.lParam, sizeof(_FBI::ST_DEAL_INFO));
+		_FBI::ST_DEAL_INFO * pDeal = (_FBI::ST_DEAL_INFO *)&recvData;	// msg.lParam;
+		g_memPool.release((char*)msg.lParam);
 
 		nDealSeq = pDeal->DealSeq;
 		pThis->m_chart->ComposeChartName(pDeal->Date, pDeal->tm_end, TP_1MIN, zChartNm);
 
 		// CHART 를 가져온다.
 		ZeroMemory(&chartData, sizeof(chartData));
-		BOOL bRet;
+		BOOL bRet=FALSE;
 		for (int i = 0; i < 100; i++)
 		{
 			bRet = pThis->m_chart->GetChartData(pThis->m_zStkCd, TP_1MIN, zChartNm, chartData);
@@ -332,9 +335,14 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 			*UpDown = 'E';
 			strcpy(zOpen, "0");
 			strcpy(zClose, "0");
+			g_memPool.release((char*)pDeal);
+			continue;
 		}
 		else
 		{
+			g_log.log(INFO, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Ok(%s)"
+				, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
+
 			// Deal 정보와 비교한다.
 			nComp = strncmp(chartData.open, chartData.close, sizeof(chartData.open));
 			if (nComp > 0)			*UpDown = 'D';
@@ -408,12 +416,12 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 				// delete DealInfo
 				pThis->DealErase(nDealSeq);
 				break;
-			}
-		} // for (int i = 0; i < 3; i++)
+			} // else of if (FALSE == db->ExecQuery(zQ))
+		} // for (int i = 0; i < 3; i++) for DB
 
-		g_memPool.release((char*)pDeal);
+		//g_memPool.release((char*)pDeal);
 
-	} // while(pThis->m_bContinue)
+	} // while(GetMessage(&msg, NULL, 0,0))
 
 	return 0;
 }
@@ -696,8 +704,8 @@ BOOL CDealManager::DealChartWait(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo)
 	else if (pInfo->DealStatus == _FBI::DEAL_STATUS_WAIT)
 	{
 		// update.
-		g_log.log(INFO, "[DEAL_MANAGE(%s)(SEQ:%d)/차트/(현재:%s)(DEAL차트시간:%s%s)(상태:%s)]차트시간 지나고 현재 <대기>이므로 <차트>로 UPDATE",
-			pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_chartwait, _FBI::dealstatus(pInfo->DealStatus, status));
+		//g_log.log(INFO, "[DEAL_MANAGE(%s)(SEQ:%d)/차트/(현재:%s)(DEAL차트시간:%s%s)(상태:%s)]차트시간 지나고 현재 <대기>이므로 <차트>로 UPDATE",
+		//	pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_chartwait, _FBI::dealstatus(pInfo->DealStatus, status));
 
 		pInfo->DealStatus = _FBI::DEAL_STATUS_CHARTWAIT;
 		UpdateDeal(pInfo);
