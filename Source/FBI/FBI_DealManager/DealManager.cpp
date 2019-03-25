@@ -331,11 +331,9 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 		{
 			g_log.log(NOTIFY, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
 				, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
-		//	g_memPool.release((char*)pDeal);
 			*UpDown = 'E';
 			strcpy(zOpen, "0");
 			strcpy(zClose, "0");
-			g_memPool.release((char*)pDeal);
 			continue;
 		}
 		else
