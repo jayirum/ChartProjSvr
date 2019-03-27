@@ -239,7 +239,7 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 
 				sprintf(buff + 3, "[%02d:%02d:%02d.%03d]%.*s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, DEF_LOG_LEN - 20, p->msg);
 				_write(m_fd, buff, strlen(buff));
-				printf("%.100s", buff);
+				printf("%.100s\n", buff);
 				m_pool->Restore(p);
 
 				//notification send to Server

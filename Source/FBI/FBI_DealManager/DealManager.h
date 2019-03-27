@@ -41,6 +41,8 @@ DEAL_MANAGER 가 로딩할 때 DEAL_SEQ와 각 시작시간과 DEAL_STATUS, DURATION 를 가져
 //	//std::string m_sFirstChartNm;
 //};
 
+//#define INTERVAL_IMALIVE	10
+
 class CDealManager : public CBaseThread
 {
 public:
@@ -63,7 +65,7 @@ public:
 	BOOL DealChartWait(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
 	BOOL DealResulting(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo);
 	VOID DealErase(int nDealSeq);
-	void UpdateDeal(_FBI::ST_DEAL_INFO* pInfo);
+	void UpdateDealStatus(_FBI::ST_DEAL_INFO* pInfo);
 
 	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt);
 
@@ -86,6 +88,8 @@ private:
 	CChartShmUtil	*m_chart;
 	int				m_nIdx;
 	BOOL			m_bTimeSaveRun;
-	char			m_zNextCandleTm[32];
+	//char			m_zNextCandleTm[32];
+
+	int				m_nImAlive;
 };
 
