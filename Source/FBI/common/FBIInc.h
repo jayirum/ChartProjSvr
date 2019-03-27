@@ -122,6 +122,7 @@ namespace _FBI
 		char	tm_wait[8+1];		//hh:mm:ss
 		char	tm_chartwait[8+1];	//hh:mm:ss
 		char	tm_end[8 + 1];
+		char	tm_chart[5 + 1];
 		EN_DEAL_SATTUS		DealStatus;
 		int		DurationMin;
 	};
