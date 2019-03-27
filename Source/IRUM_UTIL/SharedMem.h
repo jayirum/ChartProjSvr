@@ -10,9 +10,12 @@
 #endif // _MSC_VER > 1000
 
 #pragma optimize("t", on)
+#pragma warning(disable:4996)
 
 #include <windows.h>
 #include <stdio.h>
+
+
 
 /*
 	m_pShm
@@ -28,6 +31,8 @@ typedef struct _INIT_DATA
 	long lStructSize;
 	long lStructKeySize;
 	long lMaxStructCnt;
+
+	//long lGroupIndexSize;
 } INIT_DATA;
 #define INIT_DATA_SIZE	sizeof(INIT_DATA)
 
@@ -54,13 +59,19 @@ public:
 
 	int		Create(HANDLE hFile, DWORD dwSize, LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	int		Create(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCTSTR lpMutexName);
+	int		CreateEx(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	BOOL	Open(LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	void	Close();
 
 	BOOL	SetInitSize(long lMaxGroupCnt, long lGroupKeySize, long lHeaderSize, long lStructSize, long lStructKeySize, long lMaxStructCnt);
-	
+	BOOL	SetInitSizeEx(INIT_DATA* pInitData);
+
 	BOOL	GetData(char *pGroupKey, char *pStructKey, /*out*/char *pStructData);
+	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData, int *pErrCode, char* pErrMsg);
+	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData);
 	BOOL	GetData(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, /*out*/char *pStructData);
+	int		GetCurrData(char *pGroupKey,/*out*/char *pStructData);
+
 	int		GetDataArray(char *pGroupKey, BOOL bAll, int nCnt, /*out*/char *pData);
 	BOOL	UpdateData(char *pGroupKey, char *pStructKey, char *pStructData);
 	BOOL	UpdateData(char *pGroupKey, char *pStructKey, 

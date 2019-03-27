@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ChartMaker.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\Log.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtilFixed.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChartMaker.h" />
+    <ClInclude Include="Main.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\Log.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\MemPool.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\Prop.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\Util.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartUtils.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtilFixed.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{17d69040-a46c-4aa5-ad22-429349c40575}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ChartMaker.ini" />
+  </ItemGroup>
+</Project>
