@@ -228,6 +228,29 @@ VARIANT CADOFunc::GetValue(LONG lField)
 }
 
 
+//VOID CADOFunc::GetValueEx2(LPCTSTR pszField, VARIANT* pRet)
+//{
+//	VariantCopy(pRet, &m_pRs->Fields->Item[_bstr_t(pszField)]->Value);
+//}
+
+char* CADOFunc::GetStrWithLen(LPCTSTR pszField, int nMaxLen, char* pzOut)
+{
+	_variant_t vVal;
+
+	try {
+		VariantCopy(&vVal, &m_pRs->Fields->Item[_bstr_t(pszField)]->Value);
+	}
+	//__except (ReportException(GetExceptionCode(), "CADOFunc::GetStrWithLen", pzOut))
+	catch(...)
+	{
+		sprintf(m_szMessage, "GetStrWithLen try catch error");
+		return NULL;
+	}
+	//strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); 
+	sprintf(pzOut, "%.*s", nMaxLen, (LPCSTR)(_bstr_t)vVal);
+	return pzOut;
+}
+
 
 char* CADOFunc::GetStr(LPCTSTR pszField, char* pzOut)
 {
@@ -239,6 +262,7 @@ char* CADOFunc::GetStr(LPCTSTR pszField, char* pzOut)
 	strcpy(pzOut, (LPCSTR)(_bstr_t)vVal);
 	return pzOut;
 }
+
 
 
 int CADOFunc::GetStrEx(LPCTSTR pszField, char* pzOut, int * pnLen)
@@ -273,6 +297,8 @@ BOOL CADOFunc::GetValueEx(LPCTSTR pszField, VARIANT* pRet)
 	}
 	return bRet;
 }
+
+
 
 BOOL CADOFunc::GetRows(VARIANT *pRecordArray)
 {

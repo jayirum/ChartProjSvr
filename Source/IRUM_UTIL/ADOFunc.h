@@ -52,7 +52,9 @@ public:
 
 	VARIANT GetValue(LPCTSTR pszField);
 	BOOL GetValueEx(LPCTSTR pszField, VARIANT* pRet);
+	//VOID GetValueEx2(LPCTSTR pszField, VARIANT* pRet);
 	char* GetStr(LPCTSTR pszField, char* pzOut);// { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
+	char* GetStrWithLen(LPCTSTR pszField, int nMaxLen, char* pzOut);
 	int GetStrEx(LPCTSTR pszField, char* pzOut, int * pnLen);// { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
 	long GetLong(LPCTSTR pszField) { return (long)(_variant_t)GetValue(pszField); }
 	double GetDbl(LPCTSTR pszField) { return (double)(_variant_t)GetValue(pszField); }

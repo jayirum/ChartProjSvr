@@ -96,14 +96,26 @@ BOOL CFBIMainProc::LoadStkCode()
 	{
 		while (db->IsNextRow())
 		{
-			char zStCd[128];	db->GetStr("STK_CD", zStCd);
-			char zArtcCd[128];	db->GetStr("ARTC_CD", zArtcCd);
+			//Sleep(100);
+			char zStCd[128];	
+			char zArtcCd[128];
+
+			if (db->GetStrWithLen("STK_CD", 10, zStCd) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadSymbol(STK_CD) Error(%s)", db->GetError());
+				return FALSE;
+			}
+
+			if (db->GetStrWithLen("ARTC_CD", 10, zArtcCd) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadSymbol(ARTC_CD) Error(%s)", db->GetError());
+				return FALSE;
+			}
 			
 			CDealManager* p = new CDealManager(zStCd, zArtcCd, nIdx++);
 			if (!p->Initialize()) {
 				delete p;
-				db->Next();
-				continue;
+				return FALSE;
 			}
 
 			EnterCriticalSection(&m_csDM);
