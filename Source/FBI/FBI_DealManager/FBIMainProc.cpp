@@ -114,7 +114,16 @@ BOOL CFBIMainProc::LoadStkCode()
 			
 			CDealManager* p = new CDealManager(zStCd, zArtcCd, nIdx++);
 			if (!p->Initialize()) {
+				CDBHandlerAdo db2(m_pDBPool->Get());
+				sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 실패.프로세스종료.' ", zStCd);
+				if (FALSE == db2->ExecQuery(zQ))
+				{
+					g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
+				}
+
+				g_log.log(NOTIFY, "[%s] Initialize failed", zStCd);
 				delete p;
+				exit(0);
 				return FALSE;
 			}
 
@@ -122,8 +131,16 @@ BOOL CFBIMainProc::LoadStkCode()
 			m_mapDealManager[zStCd] = p;
 			LeaveCriticalSection(&m_csDM);
 
-			g_log.log(LOGTP_SUCC, "LoadSymbol(%s)", zStCd);
+			g_log.log(NOTIFY, "LoadSymbol(%s)", zStCd);
 			printf("LoadSymbol(%s)\n", zStCd);
+
+			CDBHandlerAdo db2(m_pDBPool->Get());
+			sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 성공.' ", zStCd);
+			if (FALSE == db2->ExecQuery(zQ))
+			{
+				g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
+			}
+			db2->Close();
 
 			db->Next();
 		}

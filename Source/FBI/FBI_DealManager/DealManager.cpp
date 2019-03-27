@@ -70,6 +70,7 @@ BOOL CDealManager::Initialize()
 		m_bTimeSaveRun = TRUE;
 	}
 	
+
 	return TRUE;
 }
 
@@ -214,8 +215,11 @@ BOOL CDealManager::LoadDealInfo()
 
 VOID CDealManager::ThreadFunc()
 {
-	if (!LoadDealInfo())
-		return ;
+	// Terminate this proces
+	if (!LoadDealInfo()) {
+		exit(0);
+		return;
+	}
 
 	while (!InitClientConnect() )
 	{
