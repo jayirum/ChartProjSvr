@@ -383,8 +383,19 @@ BOOL LoadSymbol()
 	int nDotCnt = 0;
 	while (db->IsNextRow())
 	{
-		db->GetStr("ARTC_CD", zArtc);
-		db->GetStr("STK_CD", zSymbol);
+		if (db->GetStrWithLen("STK_CD", 10, zSymbol) == NULL)
+		{
+			g_log.log(NOTIFY, "LoadSymbol(STK_CD) Error(%s)", db->GetError());
+			return FALSE;
+		}
+
+		if (db->GetStrWithLen("ARTC_CD", 10, zArtc) == NULL)
+		{
+			g_log.log(NOTIFY, "LoadSymbol(ARTC_CD) Error(%s)", db->GetError());
+			return FALSE;
+		}
+
+
 		nDotCnt = db->GetLong("DOT_CNT");
 
 		//TODO

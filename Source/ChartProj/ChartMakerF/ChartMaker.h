@@ -7,10 +7,7 @@
 
 #include <string>
 #include "../../IRUM_UTIL/BaseThread.h"
-#include "../../IRUM_UTIL/MemPool.h"
-#include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/ChartShmUtilFixed.h"
-#include "../../IRUM_UTIL/LogMsg.h"
 
 #define MAX_CHARTTP_CNT	20
 
@@ -31,8 +28,6 @@ public:
 	BOOL	InitChartSHM();
 	VOID	CloseChartShm();
 
-	BOOL	InitMemPool();
-	VOID	CloseMemPool();
 	unsigned int GetChartThreadId() {return m_dwWorkThreadID;}
 private:
 	BOOL	IsMySymbol(char* pSise);
@@ -43,11 +38,8 @@ private:
 	static unsigned WINAPI WorkThread(LPVOID lp);
 
 private:
-	//char			m_zShmNm[128], m_zMutexNm[128];
 	char			m_zSymbol[128];
 	char			m_zArtc[128];
-	CMemPool*		m_pMemPool;
-	//CSharedMem		m_shmChart;
 	
 	unsigned		m_dwMainThreadId;
 	std::string		m_sLastChartNm[MAX_CHARTTP_CNT], m_sPrevChartNm[MAX_CHARTTP_CNT];
@@ -62,6 +54,5 @@ private:
 	CHARTNAME_TYPE	m_chartNmType;
 	CChartShmUtilFixed	*m_chartUtil;
 
-	CLogMsg			m_logData;
 	BOOL			m_bLogData;
 };

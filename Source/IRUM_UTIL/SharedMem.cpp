@@ -602,9 +602,9 @@ int CSharedMem::GetCurrData(char *pGroupKey,/*out*/char *pStructData)
 
 	long lCurrStructCnt = *(long*)pStruct;
 	if (lCurrStructCnt == 0)
-		return -3;
+		return 0;
 
-	char *pCurrData = (char*)(pStruct + INIT_STRUCT_DATA_SIZE + (m_lStructSize * lCurrStructCnt-1));
+	char *pCurrData = (char*)(pStruct + INIT_STRUCT_DATA_SIZE + (m_lStructSize * (lCurrStructCnt-1)));
 	CopyMemory(pStructData, pCurrData, m_lStructSize);
 	return 1;
 }

@@ -266,7 +266,7 @@ BOOL CChartShmUtilFixed::GetLastChartData(char *pzSymbol, CHART_TP ChartTp, _Out
 {
 	if (!m_bOpen)
 	{
-		sprintf(m_zMsg, "Please call [OpenChart] function first");
+		g_log.log(ERR, "[GetLastChartData]Please call [OpenChart] function first");
 		return FALSE;
 	}
 
@@ -276,11 +276,14 @@ BOOL CChartShmUtilFixed::GetLastChartData(char *pzSymbol, CHART_TP ChartTp, _Out
 	GET_GROUP_KEY(pzSymbol, (int)ChartTp, zGroupKey);
 
 	int nRet = m_pShm->GetCurrData(zGroupKey, (char*) pChart);
-	if ( nRet < 0 )
+	if (nRet < 0)
 	{
 		g_log.log(ERR, "GetLastChartData Error[%d]", nRet);
 		return FALSE;
 	}
+	else if (nRet == 0)
+		return FALSE;
+
 	return TRUE;
 }
 

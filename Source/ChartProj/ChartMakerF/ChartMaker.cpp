@@ -4,7 +4,8 @@
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "../../IRUM_UTIL/Util.h"
 #include "../../IRUM_UTIL/ChartUtils.h"
-//#include "C:\ta-lib\c\include\ta_libc.h"
+#include "../../IRUM_UTIL/LogMsg.h"
+#include "../../IRUM_UTIL/MemPool.h"
 
 
 extern CLogMsg g_log;
@@ -16,12 +17,9 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 {
 	m_bSaveChart = bSaveChart;
 	m_dwMainThreadId = dwMainThreadId;
-	//m_pMemPool = pMemPool;
 	strcpy(m_zSymbol, pzSymbol);
 	strcpy(m_zArtc, pzArtcCode);
 	m_nDotCnt = nDotCnt;
-	//GET_SHM_NM(pzArtcCode, m_zShmNm);
-	//GET_SHM_LOCK_NM(pzArtcCode, m_zMutexNm);
 
 	char zChartNmTp[32] = { 0, };
 	CUtil::GetConfig(g_zConfig, "CHARTNAME_TYPE", "TYPE", zChartNmTp);
@@ -29,13 +27,10 @@ CChartMaker::CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned
 	
 	m_chartUtil = new CChartShmUtilFixed(m_chartNmType);
 
-	char szDir[128];
-	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
-	m_logData.OpenLog(szDir, "ChartShm");
-
-	CUtil::GetConfig(g_zConfig, "DEBUG", "LOG_DATA", szDir);
-	g_log.log(INFO, "LOG_DATA:%c", szDir[0]);
-	m_bLogData = (szDir[0] == 'Y') ? TRUE : FALSE;
+	char zDebug[32] = { 0, };
+	CUtil::GetConfig(g_zConfig, "DEBUG", "LOG_DATA", zDebug);
+	g_log.log(INFO, "LOG_DATA:%c", zDebug[0]);
+	m_bLogData = (zDebug[0] == 'Y') ? TRUE : FALSE;
 
 	ResumeThread();
 
@@ -55,7 +50,6 @@ CChartMaker::~CChartMaker()
 	CloseHandle(m_hWorkDie);
 	CloseHandle(m_hWorkThread);
 	m_hDie = m_hThread = NULL;
-	CloseMemPool();
 }
 
 BOOL CChartMaker::IsMySymbol(char* pSise)
@@ -72,7 +66,7 @@ BOOL CChartMaker::InitChartSHM()
 	//	OPEN SHM	
 	if (!m_chartUtil->OpenChart(m_zArtc))
 	{
-		g_log.log(LOGTP_FATAL, "CHART SHM OPEN 에러((symbol:%s)(%s)", m_zSymbol, m_chartUtil->getmsg());
+		g_log.log(NOTIFY, "CHART SHM OPEN 에러(symbol:%s)(%s)", m_zSymbol, m_chartUtil->getmsg());
 		return FALSE;
 	}
 	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_chartUtil->GetShmName());
@@ -99,37 +93,15 @@ BOOL CChartMaker::InitChartSHM()
 
 
 
-BOOL CChartMaker::InitMemPool()
-{
-	m_pMemPool = new CMemPool(MEMPOOL_PRE_ALLOC, MEMPOOL_MAX_ALLOC, MEMPOOL_BLOCK_SIZE);
-
-	if (m_pMemPool->available() == 0)
-	{
-		return FALSE;
-	}
-	return TRUE;
-}
-VOID CChartMaker::CloseMemPool()
-{
-	SAFE_DELETE(m_pMemPool);
-}
-
 VOID CChartMaker::ThreadFunc()
 {
 	//printf("thread:%d\n", GetCurrentThreadId());
 	if (!InitChartSHM())
 	{
-		g_log.log(LOGTP_ERR, ">>>>>> SHM OPEN ERROR <<<<<<<<<");
 		SetEvent(m_hWorkDie);
 		return;
 	}
 
-	if( !InitMemPool())
-	{
-		g_log.log(LOGTP_ERR, ">>>>>> Mempool OPEN ERROR <<<<<<<<<");
-		SetEvent(m_hWorkDie);
-		return;
-	}
 
 	//char zMarketDataBuff[1024] = { 0, };
 	int nSymbolLen = strlen(m_zSymbol);
@@ -142,7 +114,6 @@ VOID CChartMaker::ThreadFunc()
 			break;
 		}
 		else if (dwRet == WAIT_ABANDONED_0) {
-			//g_log.log(LOGTP_ERR, "[THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
 			Sleep(1000);
 		}
 		
@@ -154,18 +125,6 @@ VOID CChartMaker::ThreadFunc()
 			case WM_CHART_ALL_KILL:
 				g_log.log(LOGTP_SUCC, "[THREAD ID:%d] Recv Kill Msg", GetMyThreadID());
 				break;
-			//case WM_CHART_DATA:
-			//{
-			//	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)msg.lParam;		// MEM POOL
-			//	if (strncmp(m_zSymbol, p->ShortCode, nSymbolLen) != 0) {
-			//		g_pMemPool->release((char*)msg.lParam); // main 에서 넘어온 메모리
-			//		continue;
-			//	}
-
-			//	PostThreadMessage(m_dwWorkThreadID, WM_RECV_API_MD, msg.wParam, msg.lParam);
-
-			//	break;
-			//}
 			} // switch (msg.message)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
@@ -193,7 +152,7 @@ unsigned WINAPI CChartMaker::WorkThread(LPVOID lp)
 				{
 					p->ChartProc((void*)pData, (int)i);
 				}
-				p->m_pMemPool->release(pData);
+				g_pMemPool->release(pData);
 			} //if (msg.message == WM_SEND_STRATEGY)
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
@@ -225,9 +184,6 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	char szChartNm[LEN_SHM_STRUCT_KEY + 1];
 
 	m_chartUtil->ComposeChartName(p->Date, p->Time, tp, szChartNm);
-	//if(m_bLogData)
-	//	m_logData.log(DATA, "[DATE:%.8s][TIME:%.8s][CHART:%s][TICK:%.*s]", p->Date, p->Time, szChartNm, LEN_PRC, p->Close);
-	//return;
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// chart unit 구성
@@ -276,12 +232,12 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		printf("GroupInsert(%s)(%s)\n", m_zSymbol, szGroupKey);
 		if(!m_chartUtil->DataInsert(szGroupKey, (char*)&recvUnit))
 		{
-			g_log.log(LOGTP_ERR, "DataInsert ERROR-1!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
+			g_log.log(ERR, "DataInsert ERROR-1!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
 			return;
 		}
 		printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		if(m_bLogData)
-			m_logData.log(DATA, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+			g_log.log(DATA, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 				szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
 		
 		return;
@@ -310,8 +266,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 		{
 			ST_SHM_CHART_UNIT prevChart;
 			if (m_chartUtil->DataGet(szGroupKey, recvUnit.prevNm, (char*)&prevChart)) {
-				m_logData.log(DATA_DT, "");
-				m_logData.log(DATA, "[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+				g_log.log(DATA_DT, "");
+				g_log.log(DATA, "[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 					szGroupKey, LEN_CHART_NM, prevChart.Nm, prevChart.open, prevChart.high, prevChart.low, prevChart.close, prevChart.cntr_qty);
 			}
 		}
