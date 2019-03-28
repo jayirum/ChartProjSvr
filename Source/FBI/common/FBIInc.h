@@ -53,7 +53,8 @@ namespace _FBI
 	const int WM_TERMINATE = WM_USER + 513;
 	const int WM_RECV_API_CHART = WM_USER + 514;
 	const int WM_DEAL_STATUS = WM_USER + 515;
-	const int WM_RESULT_START = WM_USER + 515;
+	const int WM_RESULT_START = WM_USER + 516;
+	const int WM_ORD_RECV = WM_USER + 517;
 	
 	const int RT_SUCCESS = 0;
 
@@ -139,5 +140,12 @@ namespace _FBI
 		char Time[8];				// 각 status 시작시간
 		char CandleTime[5];			// hh:mm
 		char ETX[1];
+	};
+
+
+	struct ST_ORD_INFO
+	{
+		char StkCd[FBILEN_SYMBOL];
+		char DealSeq[FBILEN_DEAL_SEQ];
 	};
 }

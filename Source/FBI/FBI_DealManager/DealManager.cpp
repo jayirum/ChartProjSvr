@@ -833,7 +833,6 @@ void CDealManager::UpdateDealStatus(_FBI::ST_DEAL_INFO* pInfo)
 	sprintf(p->DealStatus, "%02d", pInfo->DealStatus);
 
 	//if(m_zNextCandleTm[0]!=NULL)
-	memcpy(p->CandleTime, pInfo->tm_chart, sizeof(pInfo->tm_chart));
 
 	p->ETX[0] = _FBI::ETX;
 	*(p->ETX + 1) = 0x00;
@@ -857,6 +856,7 @@ void CDealManager::UpdateDealStatus(_FBI::ST_DEAL_INFO* pInfo)
 		return;
 	}
 
+	memcpy(p->CandleTime, pInfo->tm_chart, sizeof(pInfo->tm_chart));
 	//DB UPDATE
 	for (int i = 0; i < 3; i++)
 	{

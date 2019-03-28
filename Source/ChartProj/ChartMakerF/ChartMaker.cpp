@@ -81,10 +81,11 @@ BOOL CChartMaker::InitChartSHM()
 		{
 			sprintf(temp, "%.*s", sizeof(chart.Nm), chart.Nm);
 			m_sLastChartNm[i] = temp;
+			g_log.log(INFO, "[%s]Last Chart(%s)", m_zSymbol, temp);
 		}
 		else
 		{
-			//
+			g_log.log(INFO, "[%s]There is no Last Chart", m_zSymbol);
 		}
 	}
 	return TRUE;

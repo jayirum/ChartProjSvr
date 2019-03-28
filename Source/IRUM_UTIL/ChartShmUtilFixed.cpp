@@ -278,7 +278,7 @@ BOOL CChartShmUtilFixed::GetLastChartData(char *pzSymbol, CHART_TP ChartTp, _Out
 	int nRet = m_pShm->GetCurrData(zGroupKey, (char*) pChart);
 	if (nRet < 0)
 	{
-		g_log.log(ERR, "GetLastChartData Error[%d]", nRet);
+		//g_log.log(ERR, "GetLastChartData Error[%d]", nRet);
 		return FALSE;
 	}
 	else if (nRet == 0)

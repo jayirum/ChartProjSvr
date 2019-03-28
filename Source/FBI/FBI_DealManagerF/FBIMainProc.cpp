@@ -131,7 +131,7 @@ BOOL CFBIMainProc::LoadStkCode()
 			m_mapDealManager[zStCd] = p;
 			LeaveCriticalSection(&m_csDM);
 
-			g_log.log(NOTIFY, "LoadSymbol(%s)", zStCd);
+			g_log.log(INFO, "LoadSymbol(%s)", zStCd);
 			printf("LoadSymbol(%s)\n", zStCd);
 
 			CDBHandlerAdo db2(m_pDBPool->Get());

@@ -6,7 +6,7 @@
     <LocalDebuggerCommandArguments>-debug</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerWorkingDirectory>../../_bin/</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>../../_Bin</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>-debug</LocalDebuggerCommandArguments>
   </PropertyGroup>
