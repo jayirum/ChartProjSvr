@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="DealManagerTenOp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -127,6 +130,9 @@
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="DealManagerTenOp.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

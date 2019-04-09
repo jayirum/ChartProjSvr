@@ -164,6 +164,7 @@
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
     <ClCompile Include="..\common\FBIInc.cpp" />
     <ClCompile Include="DealManager.cpp" />
+    <ClCompile Include="DealManagerTenOp.cpp" />
     <ClCompile Include="FBIMainProc.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -184,6 +185,7 @@
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
     <ClInclude Include="..\common\FBIInc.h" />
     <ClInclude Include="DealManager.h" />
+    <ClInclude Include="DealManagerTenOp.h" />
     <ClInclude Include="FBIMainProc.h" />
     <ClInclude Include="Main.h" />
   </ItemGroup>

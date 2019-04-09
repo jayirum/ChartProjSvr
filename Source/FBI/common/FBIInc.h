@@ -10,6 +10,11 @@ namespace _FBI
 	const char TM_DEAL_START[] = "08:00:00";
 	const char TM_DEAL_END[] = "06:00:00";
 
+	enum EN_DEAL_TP {
+		DEAL_TP_ONE_OP = 0
+		,DEAL_TP_TEN_OP
+	};
+
 	enum EN_DEAL_SATTUS {
 		DEAL_STATUS_NONSTART = 0//	미시작
 		, DEAL_STATUS_ORD		//	주문가능 1
@@ -18,6 +23,21 @@ namespace _FBI
 		, DEAL_STATUS_RESULTING	//	결과산출 4
 		, DEAL_STATUS_DONE		//	완료 5
 	};	
+	enum EN_DEAL_SATTUS_TENOP {
+		DEAL_STATUS_NONSTART_TENOP = 0//	미시작
+		, DEAL_STATUS_ORD_1		//	주문가능 1
+		, DEAL_STATUS_ORD_2		//	주문가능 2
+		, DEAL_STATUS_ORD_3		//	주문가능 3
+		, DEAL_STATUS_ORD_4		//	주문가능 4
+		, DEAL_STATUS_ORD_5		//	주문가능 5
+		, DEAL_STATUS_ORD_6		//	주문가능 6
+		, DEAL_STATUS_ORD_7		//	주문가능 7
+		, DEAL_STATUS_ORD_8		//	주문가능 8
+		, DEAL_STATUS_WAIT_TENOP		//	대기 9
+		, DEAL_STATUS_CHARTWAIT_TENOP	//	차트대기 10
+		, DEAL_STATUS_RESULTING_TENOP	//	결과산출 11
+		, DEAL_STATUS_DONE_TENOP		//	완료 12
+	};
 
 	const char DEAL_RSLT_UP = 'U';
 	const char DEAL_RSLT_DOWN = 'D';
@@ -64,6 +84,7 @@ namespace _FBI
 	enum EN_DATETP { DATETP_TRADE = 0, DATETP_NEXT } ;
 
 	char* dealstatus(const int status, char* pzStatus);
+	char* dealstatusTenOp(const int status, char* pzStatus);
 	char* packlen(int len, char* out);
 	char* rsltCode(int code, char* out);
 	char* now(char* out);
@@ -128,6 +149,28 @@ namespace _FBI
 		int		DurationMin;
 	};
 
+	struct ST_DEAL_INFO_TENOP
+	{
+		char	ArtcCd[FBILEN_SYMBOL];
+		int		DealSeq;
+		int		DateTp;
+		char	Date[8 + 1];
+		char	tm_order1[8 + 1];	//hh:mm:ss
+		char	tm_order2[8 + 1];	//hh:mm:ss
+		char	tm_order3[8 + 1];	//hh:mm:ss
+		char	tm_order4[8 + 1];	//hh:mm:ss
+		char	tm_order5[8 + 1];	//hh:mm:ss
+		char	tm_order6[8 + 1];	//hh:mm:ss
+		char	tm_order7[8 + 1];	//hh:mm:ss
+		char	tm_order8[8 + 1];	//hh:mm:ss
+		char	tm_wait[8 + 1];		//hh:mm:ss
+		char	tm_chartwait[8 + 1];	//hh:mm:ss
+		char	tm_end[8 + 1];
+		char	tm_chart[5 + 1];
+		EN_DEAL_SATTUS_TENOP		DealStatus;
+		int		DurationMin;
+	};
+
 	struct PT_DEAL_STATUS
 	{
 		char STX[1];
@@ -136,6 +179,7 @@ namespace _FBI
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
 		char DealStatus[1];			// 1:주문가능/2:대기/3:차트/4:결과중/5:완료
+									// DEALSTATUS_TENOP 도 포함
 		char OrdResult[1];			// 1:DOWN / 2:UP / 3:EVEN
 		char Time[8];				// 각 status 시작시간
 		char CandleTime[5];			// hh:mm

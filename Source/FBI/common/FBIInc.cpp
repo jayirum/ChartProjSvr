@@ -31,6 +31,56 @@ char* _FBI::dealstatus(const int status, char* pzStatus)
 	return pzStatus;
 }
 
+char* _FBI::dealstatusTenOp(const int status, char* pzStatus)
+{
+	switch (status)
+	{
+	case DEAL_STATUS_NONSTART:
+		strcpy(pzStatus, "미시작");
+		break;
+	case DEAL_STATUS_ORD_1:
+		strcpy(pzStatus, "주문_1");
+		break;
+	case DEAL_STATUS_ORD_2:
+		strcpy(pzStatus, "주문_2");
+		break;
+	case DEAL_STATUS_ORD_3:
+		strcpy(pzStatus, "주문_3");
+		break;
+	case DEAL_STATUS_ORD_4:
+		strcpy(pzStatus, "주문_4");
+		break;
+	case DEAL_STATUS_ORD_5:
+		strcpy(pzStatus, "주문_5");
+		break;
+	case DEAL_STATUS_ORD_6:
+		strcpy(pzStatus, "주문_6");
+		break;
+	case DEAL_STATUS_ORD_7:
+		strcpy(pzStatus, "주문_7");
+		break;
+	case DEAL_STATUS_ORD_8:
+		strcpy(pzStatus, "주문_8");
+		break;
+	case DEAL_STATUS_WAIT_TENOP:
+		strcpy(pzStatus, "대기");
+		break;
+	case DEAL_STATUS_CHARTWAIT_TENOP:
+		strcpy(pzStatus, "차트");
+		break;
+	case DEAL_STATUS_RESULTING_TENOP:
+		strcpy(pzStatus, "결과");
+		break;
+	case DEAL_STATUS_DONE_TENOP:
+		strcpy(pzStatus, "완료");
+		break;
+	default:
+		strcpy(pzStatus, "UNKNOWN");
+		break;
+	}
+	return pzStatus;
+}
+
 
 char* _FBI::packlen(int len, char* out)
 {

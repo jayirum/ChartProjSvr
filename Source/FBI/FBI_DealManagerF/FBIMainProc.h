@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include "DealManager.h"
+#include "DealManagerTenOp.h"
 
 
 // CFBIMainProc dialog
@@ -46,4 +47,7 @@ private:
 	std::map<std::string, CDealManager*>	m_mapDealManager;	//STK_CD
 	CRITICAL_SECTION						m_csDM;
 	
+	std::map<std::string, CDealManagerTenOp*>	m_mapDealManagerTenOp;	//STK_CD
+	CRITICAL_SECTION							m_csDMTenOp;
+
 };
