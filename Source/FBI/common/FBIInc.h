@@ -14,6 +14,8 @@ namespace _FBI
 		DEAL_TP_ONE_OP = 0
 		,DEAL_TP_TEN_OP
 	};
+	const char DEAL_TP_ONE_OP_C = '0';
+	const char DEAL_TP_TEN_OP_C = '1';
 
 	enum EN_DEAL_SATTUS {
 		DEAL_STATUS_NONSTART = 0//	미시작
@@ -175,6 +177,7 @@ namespace _FBI
 	{
 		char STX[1];
 		char Len[4];
+		char DealTp[1];				// 0:시가종가, 1:주문가종가
 		char ArtcCd[FBILEN_SYMBOL];
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];

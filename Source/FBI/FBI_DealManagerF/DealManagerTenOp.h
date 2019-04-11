@@ -11,7 +11,7 @@
 class CDealManagerTenOp : public CBaseThread
 {
 public:
-	CDealManagerTenOp(char* pzStkCd, char* pzArtcCd)//, int nIdx);
+	CDealManagerTenOp(char* pzStkCd, char* pzArtcCd, int nIdx);
 	~CDealManagerTenOp();
 
 	BOOL Initialize();
@@ -36,8 +36,8 @@ public:
 	BOOL SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt);
 
 	static unsigned WINAPI Thread_ResultProcByChart(LPVOID lp);
-	//static unsigned WINAPI Thread_TimeSave(LPVOID lp);
-	//BOOL IsTimesaveClass() { return (m_nIdx == 0); }
+	static unsigned WINAPI Thread_TimeSave(LPVOID lp);
+	BOOL IsTimesaveClass() { return (m_nIdx == 0); }
 
 private:
 	char	m_zStkCd[32], m_zArtcCd[32];
@@ -52,7 +52,7 @@ private:
 
 	//CChartMap							m_chartMap;
 	CChartShmUtilFixed	*m_chartShm;
-	//int				m_nIdx;
+	int				m_nIdx;
 	BOOL			m_bTimeSaveRun;
 	//char			m_zNextCandleTm[32];
 

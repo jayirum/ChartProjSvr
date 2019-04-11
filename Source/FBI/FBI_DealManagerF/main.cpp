@@ -46,6 +46,7 @@ CRITICAL_SECTION	g_Console;
 BOOL		g_bContinue = TRUE;	// flag whether continue process or not
 CLogMsg		g_log;
 char		g_zConfig[_MAX_PATH];
+BOOL		g_bDebugLog=FALSE;
 CMemPool	g_memPool(_FBI::MEM_PRE_ALLOC, _FBI::MEM_MAX_ALLOC, _FBI::MEM_BLOCK_SIZE);
 char		g_zMyName[128];
 
@@ -67,8 +68,9 @@ int  _Start()
 	g_log.log(LOGTP_SUCC, "Version[%s] %s", __DATE__, __APP_VERSION);
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 
-
-
+	CUtil::GetConfig(g_zConfig, "DEBUG", "LOG_DEBUG", msg);
+	if (msg[0] == 'Y')	g_bDebugLog = TRUE;
+	
 	//---------------------------------------------
 	//---------------------------------------------
 	g_hDieEvent = CreateEvent(&sa, TRUE, FALSE, NULL);

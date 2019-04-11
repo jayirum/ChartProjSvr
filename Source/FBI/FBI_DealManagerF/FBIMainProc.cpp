@@ -22,6 +22,7 @@ CFBIMainProc::CFBIMainProc():CBaseThread("FBIMain", TRUE)
 	//m_pApiClient = NULL;
 	
 	InitializeCriticalSection(&m_csDM);
+	InitializeCriticalSection(&m_csDMTenOp);
 }
 
 CFBIMainProc::~CFBIMainProc()
@@ -48,35 +49,23 @@ BOOL CFBIMainProc::Initialize()
 		}
 	}
 
+	
 	if (!LoadStkCode()) {
 		g_log.log(ERR/*NOTIFY*/, "LoadStkCode Error. Terminate Application");
 		return FALSE;
 	}
 
-	//InitApiSocket();
-
 	ResumeThread();
-
-	// create recv thread
-	//m_hApiTick = (HANDLE)_beginthreadex(NULL, 0, &Thread_ApiChart, this, 0, &m_unApiTick);
-
-	// create save thread
-	//m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveChart, this, 0, &m_unSaveData);
 
 	return TRUE;
 }
 
 void CFBIMainProc::Finalize()
 {
-	//PostThreadMessage(m_unApiTick, _FBI::WM_TERMINATE, 0, 0);
-	//PostThreadMessage(m_unSaveData, _FBI::WM_TERMINATE, 0, 0);
-
-	//SAFE_CLOSEHANDLE(m_hApiTick);
-	//SAFE_CLOSEHANDLE(m_hSaveData);
-
 	SAFE_DELETE(m_pDBPool);
 	ClearDealMap();
 	DeleteCriticalSection(&m_csDM);
+	DeleteCriticalSection(&m_csDMTenOp);
 }
 
 
@@ -96,10 +85,11 @@ BOOL CFBIMainProc::LoadStkCode()
 	{
 		while (db->IsNextRow())
 		{
+
 			//Sleep(100);
 			char zStCd[128];	
 			char zArtcCd[128];
-
+			
 			if (db->GetStrWithLen("STK_CD", 10, zStCd) == NULL)
 			{
 				g_log.log(NOTIFY, "LoadSymbol(STK_CD) Error(%s)", db->GetError());
@@ -111,9 +101,16 @@ BOOL CFBIMainProc::LoadStkCode()
 				g_log.log(NOTIFY, "LoadSymbol(ARTC_CD) Error(%s)", db->GetError());
 				return FALSE;
 			}
-			
+
+			//TODO
+			//if (strncmp(zArtcCd, "CL", 2) != 0) {
+			//	db->Next();
+			//	continue;
+			//}
 			//////////////////////////////////////////////////////////////////////////////
-			CDealManager* p = new CDealManager(zStCd, zArtcCd, nIdx++);
+
+			//TODO
+			CDealManager* p = new CDealManager(zStCd, zArtcCd, nIdx);
 			if (!p->Initialize()) {
 				CDBHandlerAdo db2(m_pDBPool->Get());
 				sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 실패.프로세스종료.' ", zStCd);
@@ -133,7 +130,8 @@ BOOL CFBIMainProc::LoadStkCode()
 			LeaveCriticalSection(&m_csDM);
 
 			//////////////////////////////////////////////////////////////////////////////
-			CDealManagerTenOp* pTenOp = new CDealManagerTenOp(zStCd, zArtcCd, nIdx++);
+			//TODO
+			CDealManagerTenOp* pTenOp = new CDealManagerTenOp(zStCd, zArtcCd, nIdx);
 			if (!pTenOp->Initialize()) 
 			{
 				CDBHandlerAdo db3(m_pDBPool->Get());
@@ -153,7 +151,7 @@ BOOL CFBIMainProc::LoadStkCode()
 			m_mapDealManagerTenOp[zStCd] = pTenOp;
 			LeaveCriticalSection(&m_csDMTenOp);
 
-
+			
 			g_log.log(INFO, "LoadSymbol(%s)", zStCd);
 			printf("LoadSymbol(%s)\n", zStCd);
 
@@ -164,10 +162,12 @@ BOOL CFBIMainProc::LoadStkCode()
 				g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
 			}
 			db2->Close();
-
+			
 			db->Next();
-		}
-	}
+			nIdx++;
+
+		} // while (db->IsNextRow())
+	} // else
 	db->Close();
 	g_log.log(INFO, "Succeeded in LoadStkCode...");
 	return TRUE;
@@ -185,6 +185,16 @@ VOID CFBIMainProc::ClearDealMap()
 	}
 	m_mapDealManager.clear();
 	LeaveCriticalSection(&m_csDM);
+
+	std::map<std::string, CDealManagerTenOp*>::iterator itTenOp;
+	EnterCriticalSection(&m_csDMTenOp);
+	for (itTenOp = m_mapDealManagerTenOp.begin(); itTenOp != m_mapDealManagerTenOp.end(); ++itTenOp)
+	{
+		CDealManagerTenOp* s = (*itTenOp).second;
+		delete s;
+	}
+	m_mapDealManagerTenOp.clear();
+	LeaveCriticalSection(&m_csDMTenOp);
 }
 
 void CFBIMainProc::ThreadFunc()
