@@ -7,12 +7,12 @@
 
 
 //DEF-SHART SHM, DEF-CHARTSHM
-#define CHART_TP_CNT		10	// 1분, 5분, ...  20
+#define CHART_TP_CNT		5				//10	// 1분, 5분, ...  20
 #define MAX_CHART_TP_CNT	CHART_TP_CNT
-#define MAX_SYMBOL_PER_ARTC	2		//	품목당 2개의 월물(종목)에 대해서만 지원한다.
+#define MAX_SYMBOL_PER_ARTC	1				//2		//	품목당 2개의 월물(종목)에 대해서만 지원한다.
 #define MAX_GROUPKEY_CNT	MAX_SYMBOL_PER_ARTC * CHART_TP_CNT
-#define MAX_CHART_UNIT_CNT	1000	//	한 GROUP당 (한종목, 한차트당 'CLU7 00')
-#define MAX_ARTC_CNT		10		//	10개의 품목만 
+#define MAX_CHART_UNIT_CNT	1440			//	한 GROUP당 (한종목, 한차트당 'CLU7 00' 1분차트 * 60 * 24)
+#define MAX_ARTC_CNT		10				//	10개의 품목만 
 #define GET_TICKCHART_NM(seq,out){ sprintf(out, "%0*d", LEN_CHART_NM, seq);}
 #define GET_GROUP_KEY(symbol, CHART_TP, out) { sprintf(out, "%-*.*s%02d", LEN_SYMBOL, LEN_SYMBOL, symbol, CHART_TP) ; }
 
@@ -92,7 +92,7 @@ public:
 	BOOL	IsSavedEnoughDataCnt(_In_ char* pGroupKey, _In_ int nBaseCnt);
 
 	char*	getmsg() { return m_zMsg; }
-
+	char*	getShmMsg() { return m_pShm->GetErr(); }
 	
 private:
 	char	m_zArtc[128];

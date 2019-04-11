@@ -72,20 +72,25 @@ BOOL CChartMaker::InitChartSHM()
 	g_log.log(LOGTP_SUCC, "SHM OPEN 성공(%s)", m_chartUtil->GetShmName());
 
 	char temp[32];
-	for (int i = TP_1MIN; i < TP_DAY; i++)
+	//for (int i = TP_1MIN; i < TP_DAY; i++)
+	int i = TP_1MIN;
 	{
 		ST_SHM_CHART_UNIT chart;
 
 		char zStructKey[LEN_CHART_NM + 1] = { 0, };
+		char zGroupKey[LEN_CHART_NM + 1] = { 0, };
+
+		GET_GROUP_KEY(m_zSymbol, (int)i, zGroupKey);
+		
 		if (m_chartUtil->GetLastChartData(m_zSymbol, (CHART_TP)i, &chart))
 		{
 			sprintf(temp, "%.*s", sizeof(chart.Nm), chart.Nm);
 			m_sLastChartNm[i] = temp;
-			g_log.log(INFO, "[%s]Last Chart(%s)", m_zSymbol, temp);
+			g_log.log(INFO, "[%s]Last Chart(%s)", zGroupKey, temp);
 		}
 		else
 		{
-			g_log.log(INFO, "[%s]There is no Last Chart", m_zSymbol);
+			g_log.log(INFO, "[%s]There is no Last Chart", zGroupKey);
 		}
 	}
 	return TRUE;
@@ -167,13 +172,10 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 {
 	ST_PACK2CHART_EX* p = (ST_PACK2CHART_EX*)pIn;
 	char temp[32];
-	BOOL bRet;
-	//char zSymbol[32];
-	//sprintf(zSymbol, "%.*s", sizeof(p->ShortCode), p->ShortCode);
+	BOOL bGroupExists = FALSE;
+	BOOL bChartExists = FALSE;
+	BOOL bNewChart = FALSE;
 
-	//ir_cvtcode_uro_6e(zSymbol, temp);
-	//memset(p->ShortCode, 0x20, sizeof(p->ShortCode));
-	//memcpy(p->ShortCode, temp, strlen(temp));
 	ST_SHM_CHART_UNIT recvUnit;
 	memset(&recvUnit, 0x20, sizeof(recvUnit));
 
@@ -208,6 +210,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	{
 		m_sPrevChartNm[tp] = m_sLastChartNm[tp];
 		m_sLastChartNm[tp] = szChartNm;
+
+		bNewChart = TRUE;
 	}
 
 	// recvUnit 에 packet 정보를 저장
@@ -223,7 +227,8 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 	memcpy(recvUnit.dotcnt, temp, strlen(temp));
 
 	// group(SYMBOL+TP) 을 찾아서 없으면 insert. 즉, 최초 저장 (Find Group)
-	if (!m_chartUtil->GroupFind(szGroupKey))
+	bGroupExists = m_chartUtil->GroupFind(szGroupKey);
+	if (!bGroupExists)
 	{
 		if (!m_chartUtil->GroupInsert(szGroupKey))
 		{
@@ -236,21 +241,28 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			g_log.log(ERR, "DataInsert ERROR-1!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
 			return;
 		}
-		printf("DataInsert-1(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
 		if(m_bLogData)
-			g_log.log(DATA, "Insert Group/Data[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+			g_log.log(DATA, "Insert Group+Data[[%s]][[NM:%.*s]][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 				szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open, recvUnit.high, recvUnit.low, recvUnit.close, recvUnit.cntr_qty);
 		
+		//-----//
 		return;
+		//-----//
 	}
 
-	// 데이터를 찾는다. 
+	// 데이터를 찾는다. // Get data using chart name (struct key)
 	ST_SHM_CHART_UNIT existUnit;
-	bRet = m_chartUtil->DataGet(szGroupKey, szChartNm, (char*)&existUnit); // Get data using chart name (struct key)
+	bChartExists = m_chartUtil->DataGet(szGroupKey, szChartNm, (char*)&existUnit);
 	
 	// 데이터가 없다. insert. 즉, 시가 입력이라는 얘기이다.
-	if (!bRet)
+	if (!bChartExists)
 	{
+		if (!bNewChart)
+		{
+			g_log.log(ERR, "차트명(%s)(%s)의 차트가 없는데, 해당차트명 최초데이터가 아니다.", szGroupKey, szChartNm);
+			return;
+		}
+
 		memcpy(recvUnit.open, p->Close, sizeof(p->Close));
 		memcpy(recvUnit.low, p->Close, sizeof(p->Close));
 		memcpy(recvUnit.high, p->Close, sizeof(p->Close));
@@ -268,17 +280,25 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 			ST_SHM_CHART_UNIT prevChart;
 			if (m_chartUtil->DataGet(szGroupKey, recvUnit.prevNm, (char*)&prevChart)) {
 				g_log.log(DATA_DT, "");
-				g_log.log(DATA, "[%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
+				g_log.log(DATA, "[차트완료][%s][NM:%.*s][O:%.20s][H:%.20s][L:%.20s][C:%.20s](Q:%.20s)",
 					szGroupKey, LEN_CHART_NM, prevChart.Nm, prevChart.open, prevChart.high, prevChart.low, prevChart.close, prevChart.cntr_qty);
 			}
 		}
 
 		if (!m_chartUtil->DataInsert(szGroupKey, (char*)&recvUnit))
 		{
-			g_log.log(LOGTP_ERR, "DataInsert ERROR-2!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
+			g_log.log(LOGTP_ERR, "[시가입력오류](%s)(%s)(%s)", 
+				szGroupKey, szChartNm, m_chartUtil->getShmMsg());
 			return;
 		}
-		//printf("DataInsert-2(%s)(%s)(%s)\n", m_zSymbol, szGroupKey, szChartNm);
+		if (m_bLogData)
+		{
+			ST_SHM_CHART_UNIT prevChart;
+			if (m_chartUtil->DataGet(szGroupKey, recvUnit.prevNm, (char*)&prevChart)) {
+				g_log.log(DATA_DT, "");
+				g_log.log(DATA, "[시가입력][%s][NM:%.*s][O:%.20s]",szGroupKey, LEN_CHART_NM, recvUnit.Nm, recvUnit.open);
+			}
+		}
 
 		// DB 저장
 		if (m_bSaveChart)
@@ -327,10 +347,9 @@ VOID	CChartMaker::ChartProc(VOID* pIn, int tp)
 
 
 	//SHM 반영
-	bRet = m_chartUtil->DataUpdate(szGroupKey, szChartNm, (char*)&existUnit);
-
-	if (!bRet) {
-		g_log.log(LOGTP_ERR, "DataUpdate ERROR!!!(%s)(%s)(%s)", m_zSymbol, szGroupKey, szChartNm);
+	if (!m_chartUtil->DataUpdate(szGroupKey, szChartNm, (char*)&existUnit)) 
+	{
+		g_log.log(LOGTP_ERR, "DataUpdate ERROR!!!(%s)(%s))(%s)", szGroupKey, szChartNm, m_chartUtil->getShmMsg());
 		return;
 	}
 	else {

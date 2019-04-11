@@ -226,8 +226,6 @@ BOOL CChartShmUtilFixed::GetChartData(char *pzSymbol, CHART_TP ChartTp, char* pz
 	int nCode;
 	char zErr[512] = { 0, };
 	BOOL bExist = m_pShm->DataGet(zGroupKey, pzChartNm, (char*)&chart, &nCode, zErr);
-
-	// retry 2 times
 	if (FALSE == bExist)
 	{
 		sprintf(m_zMsg, "[%s][%s] No Chart(%s)", zGroupKey, pzChartNm, zErr);

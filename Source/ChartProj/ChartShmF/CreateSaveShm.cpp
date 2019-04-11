@@ -78,6 +78,7 @@ long lMaxStructCnt;
 #define INIT_DATA_SIZE	sizeof(INIT_DATA)*/
 BOOL CCreateSaveShm::Create()
 {
+	char zSize[1024];
 	INIT_DATA	shmData;
 	ZeroMemory(&shmData, sizeof(shmData));
 	shmData.lMaxGroupCnt = MAX_SYMBOL_PER_ARTC * CHART_TP_CNT;			// 차트종류만큼 
@@ -86,12 +87,12 @@ BOOL CCreateSaveShm::Create()
 	shmData.lStructSize = sizeof(_ST_SHM_CHART_UNIT);
 	shmData.lStructKeySize = LEN_SHM_STRUCT_KEY;
 	shmData.lMaxStructCnt = MAX_CHART_UNIT_CNT;
-	
+
 	//	CREATE SHM
 	int nTotSize = m_shmChart.CreateEx(NULL, &shmData, m_zShmNm, m_zMutexNm);
-	if (nTotSize<1)
+	if (nTotSize < 1)
 	{
-		sprintf(m_zMsg,"[SHM CREATE ERROR](%s)(%s)(%s)", m_zShmNm, m_zMutexNm, m_shmChart.GetErr());
+		sprintf(m_zMsg, "[SHM CREATE ERROR](%s)(%s)(%s)", m_zShmNm, m_zMutexNm, m_shmChart.GetErr());
 		g_log.log(LOGTP_ERR, "%s", m_zMsg);
 		return FALSE;
 	}
@@ -123,11 +124,20 @@ BOOL CCreateSaveShm::Create()
 		//	return FALSE;
 		//}
 	}
-	//int Size = shmData.lMaxGroupCnt*CHART_TP_CNT*MAX_CHART_UNIT_CNT * sizeof(ST_SHM_CHART_UNIT);
-	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = Total Group Cnt(Symbol:%d)*ChartCnt(%d)*Unit Per Chart%d)*UNIT Size(%d) = %d (%10.2f MB)",
-		m_zShmNm, m_zMutexNm,
-		MAX_SYMBOL_PER_ARTC, CHART_TP_CNT, MAX_CHART_UNIT_CNT, sizeof(ST_SHM_CHART_UNIT),
-		nTotSize, (double)nTotSize /1024./1024.);
+
+	int nTempSize = shmData.lMaxGroupCnt * MAX_CHART_UNIT_CNT * shmData.lStructSize;
+	sprintf(zSize,
+		"\t\tGroupCount(%d)=Symbol Per Artc(%d) * ChartTpCount(%d)\n"
+		"\t\tMaxChart(Struct) Per Group = (%d), StructSize = (%d)\n"
+		"\t\t(1)Group has (%d)Struct ==> (%d)Group * (%d)MaxStruct * (%d)StructSize = (%d)\n"
+		"\t\tTotal Size = (%.2f) MB",
+		shmData.lMaxGroupCnt, MAX_SYMBOL_PER_ARTC, CHART_TP_CNT,
+		MAX_CHART_UNIT_CNT, shmData.lStructSize,
+		MAX_CHART_UNIT_CNT, shmData.lMaxGroupCnt, MAX_CHART_UNIT_CNT, shmData.lStructSize, nTempSize,
+		(double)nTotSize / 1024. / 1024.
+	);
+
+	sprintf(m_zMsg, "[%s] Succeeded in creating SHM\n%s", m_zArtc, zSize);
 
 	g_log.log(LOGTP_SUCC, m_zMsg);
 	printf("%s\n", m_zMsg);

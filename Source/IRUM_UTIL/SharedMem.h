@@ -15,7 +15,16 @@
 #include <windows.h>
 #include <stdio.h>
 
+enum {
+	CODE_SUCCESS	=0,
+	CODE_NO_SHM_PTR,
+	CODE_NO_GROUP_PTR,
+	CODE_NOEXIST_STRUCT_PTR,
+	CODE_NOEXIST_GROUPKEY,	
+	CODE_NOEXIST_STRUCTKEY,
+	CODE_OVER_MAXSTRUCT_CNT
 
+};
 
 /*
 	m_pShm
@@ -116,6 +125,7 @@ public:
 	void	Unlock();
 	void	SetErrMsg(int nErrCode, char* msg);
 	inline	char*	GetErr(){return m_szErr;};
+	char*	CodeMsg();
 
 //	BOOL	SetTransaction( CShmTransaction* pTrans, char* pGroupKey );
 
@@ -128,6 +138,8 @@ protected:
 	void	swap(char *a, char *b, size_t width);
 	void	shortsort(char *lo, char *hi, size_t width);
 	void	Qsort(void *base, size_t num, size_t width);
+
+	long	m_lLastErrCode;
 
 	char	*m_pShm;
 	char	*m_pGroup;
@@ -142,7 +154,7 @@ protected:
 	long	m_lStructKeySize;
 	long	m_lMaxGroupCnt;
 	long	m_lMaxStructCnt;
-	char	m_szErr[512];
+	char	m_szErr[512], m_zCode[128];;
 	BOOL	m_bCompareGroup;
 	BOOL	m_bAscGroup;
 	BOOL	m_bAscData;

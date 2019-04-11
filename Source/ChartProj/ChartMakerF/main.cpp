@@ -399,7 +399,7 @@ BOOL LoadSymbol()
 		nDotCnt = db->GetLong("DOT_CNT");
 
 		//TODO
-		//if (strncmp(zArtc, "6A", 2) != 0) {
+		//if (strncmp(zArtc, "CL", 2) != 0) {
 		//	db->Next();
 		//	continue;
 		//}
