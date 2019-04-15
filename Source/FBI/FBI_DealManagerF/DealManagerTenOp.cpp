@@ -153,7 +153,7 @@ BOOL CDealManagerTenOp::LoadDealInfo()
 	while (db->IsNextRow())
 	{
 		// hh:mm:ss
-		if (db->GetStrWithLen("TM_ORD1", 10, zOrderStartTm) == NULL)
+		if (db->GetStrWithLen("TM_ORD_START", 10, zOrderStartTm) == NULL)
 		{
 			g_log.log(ERR, "[TENOP]LoadDealInfo TM_ORD_START Error(%s)", db->GetError());
 			return FALSE;
@@ -198,7 +198,7 @@ BOOL CDealManagerTenOp::LoadDealInfo()
 		_FBI::ST_DEAL_INFO_TENOP* pInfo = new _FBI::ST_DEAL_INFO_TENOP;
 		ZeroMemory(pInfo, sizeof(_FBI::ST_DEAL_INFO_TENOP));
 		pInfo->DealSeq = db->GetLong("DEAL_SEQ");
-		db->GetStrWithLen("TM_ORD1", 8, pInfo->tm_order1);		// hh:mm:ss
+		db->GetStrWithLen("TM_ORD_START", 8, pInfo->tm_order1);		// hh:mm:ss
 		db->GetStrWithLen("TM_ORD2", 8, pInfo->tm_order2);		// hh:mm:ss
 		db->GetStrWithLen("TM_ORD3", 8, pInfo->tm_order3);		// hh:mm:ss
 		db->GetStrWithLen("TM_ORD4", 8, pInfo->tm_order4);		// hh:mm:ss
@@ -387,10 +387,6 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 		}
 		else
 		{
-			if (nRetriedCnt > 0) {
-				g_log.log(INFO, "[TENOP][RETRY:%d][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Ok(%s)"
-					, nRetriedCnt, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
-			}
 			// Deal 정보와 비교한다.
 			nComp = strncmp(chartData.open, chartData.close, sizeof(chartData.open));
 			if (nComp > 0)			*UpDown = 'D';
@@ -398,6 +394,12 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 			else if (nComp < 0)		*UpDown = 'U';
 			sprintf(zOpen, "%.*s", sizeof(chartData.open), chartData.open);
 			sprintf(zClose, "%.*s", sizeof(chartData.close), chartData.close);
+
+			if (nRetriedCnt > 0)
+			{
+				g_log.log(INFO, "[TENOP]Get Chartdata Ok[RETRY:%d][%s](END_TM:%s)(CHART_NM:%s)(Open:%s)(Close:%s)"
+					, nRetriedCnt, pThis->m_zStkCd, pDeal->tm_end, zChartNm, zOpen, zClose);
+			}
 		}
 
 		//DB UPDATE
@@ -422,7 +424,8 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 				, zClose
 				, zChartNm
 			);
-			if(g_bDebugLog) g_log.log(INFO, "[TENOP][Result](%s)", zQ);
+			if(g_bDebugLog) 
+				g_log.log(INFO, "[TENOP][Result](%s)", zQ);
 			if (FALSE == db->ExecQuery(zQ))
 			{
 				g_log.log(ERR/*NOTIFY*/, "[TENOP]Result Error(AA_ORD_RESULT_TENOP) error(%s)", zQ);

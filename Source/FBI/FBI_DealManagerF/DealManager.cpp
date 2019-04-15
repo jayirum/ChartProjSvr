@@ -470,7 +470,7 @@ unsigned WINAPI CDealManager::Thread_TimeSave(LPVOID lp)
 	{
 		Sleep(100);
 
-		if (++nCnt == 5 && bStart)
+		if (++nCnt == 5 && bStart)	// 500 ms 마다 호출하기 위해
 		{
 			//	DB UPDATE
 			CDBHandlerAdo db(p->m_pDBPool->Get());
@@ -482,6 +482,10 @@ unsigned WINAPI CDealManager::Thread_TimeSave(LPVOID lp)
 				db->Close();
 				continue;
 			}
+			//else
+			//	g_log.log(INFO, "call AA_UPDATE_ORD_TM");
+
+			nCnt = 0;
 		}
 
 		MSG msg;
