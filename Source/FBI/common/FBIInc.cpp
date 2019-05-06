@@ -2,6 +2,14 @@
 #include <stdio.h>
 
 
+void _FBI::Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out)
+{
+	char z[128];
+	sprintf(z, "%0*.*f", nTotLen, nDotLen, in);
+	*out = z;
+}
+
+
 char* _FBI::dealstatus(const int status, char* pzStatus)
 {
 	switch (status)

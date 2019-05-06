@@ -4,6 +4,7 @@
 #pragma warning( disable : 4996 )
 
 #include <Windows.h>
+#include <string>
 
 namespace _FBI
 {
@@ -54,6 +55,7 @@ namespace _FBI
 
 	const int FBILEN_SYMBOL		= 10;
 	const int FBILEN_PRC		= 10;
+	const int FBIDOT_CNT		= 5;
 	const int FBILEN_VOLUME		= 10;
 	const int FBILEN_BUFFER		= 1024;
 	const int FBILEN_USERID		= 20;
@@ -72,11 +74,13 @@ namespace _FBI
 	const int MEM_MAX_ALLOC		= 1000;
 
 	
-	const int WM_TERMINATE = WM_USER + 513;
-	const int WM_RECV_API_CHART = WM_USER + 514;
-	const int WM_DEAL_STATUS = WM_USER + 515;
-	const int WM_RESULT_START = WM_USER + 516;
-	const int WM_ORD_RECV = WM_USER + 517;
+	const int WM_TERMINATE		= WM_USER + 513;
+	const int WM_RECV_API_CHART	= WM_USER + 514;
+	const int WM_DEAL_STATUS	= WM_USER + 515;
+	const int WM_RESULT_START	= WM_USER + 516;
+	const int WM_ORD_RECV		= WM_USER + 517;
+	const int WM_RECV_ORD		= WM_ORD_RECV;
+	const int WM_RECV_PRC		= WM_USER + 518;
 	
 	const int RT_SUCCESS = 0;
 
@@ -95,6 +99,7 @@ namespace _FBI
 	// date->yyyymmdd, time -> hh:mm:ss
 	char* chartName(char* psDate, char* psTime, _Out_ char* pzChartNm);
 
+	void Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out);
 
 	struct HEADER
 	{
@@ -194,5 +199,22 @@ namespace _FBI
 	{
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
+	};
+
+
+	struct ST_SLORD
+	{
+		int			OrdNo;
+		std::string sOrdPrc;
+		int			nTickCnt;
+		std::string sWinPrc;
+		std::string sLosePrc;
+	};
+
+	struct ST_STK_INFO
+	{
+		std::string	Symbol;
+		double		dTickSize;
+		int			nDotCnt;
 	};
 }
