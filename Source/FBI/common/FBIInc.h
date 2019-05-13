@@ -11,6 +11,15 @@ namespace _FBI
 	const char TM_DEAL_START[] = "08:00:00";
 	const char TM_DEAL_END[] = "06:00:00";
 
+
+	enum EN_ORD_STATUS {
+		ORD_STATUS_ORD = 0
+		,ORD_STATUS_LOSE
+		,ORD_STATUS_WIN
+		,ORD_STATUS_EVEN
+		,ORD_STATUS_CNCL
+	};
+
 	enum EN_DEAL_TP {
 		DEAL_TP_ONE_OP = 0
 		,DEAL_TP_TEN_OP
@@ -81,6 +90,7 @@ namespace _FBI
 	const int WM_ORD_RECV		= WM_USER + 517;
 	const int WM_RECV_ORD		= WM_ORD_RECV;
 	const int WM_RECV_PRC		= WM_USER + 518;
+	const int WM_ORD_FIRED		= WM_USER + 519;
 	
 	const int RT_SUCCESS = 0;
 
@@ -100,6 +110,7 @@ namespace _FBI
 	char* chartName(char* psDate, char* psTime, _Out_ char* pzChartNm);
 
 	void Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out);
+	int ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen);
 
 	struct HEADER
 	{
@@ -201,20 +212,31 @@ namespace _FBI
 		char DealSeq[FBILEN_DEAL_SEQ];
 	};
 
-
+	// FBI_Order ==> FBI_DealManagerSL
 	struct ST_SLORD
 	{
-		int			OrdNo;
-		std::string sOrdPrc;
-		int			nTickCnt;
-		std::string sWinPrc;
-		std::string sLosePrc;
+		int		OrdNo;
+		int		nOrdStatus;
+		double	dOrdPrc;
+		char	cUpDn;
+		int		nTickCnt;
+		double	dWinPrc;
+		double	dLosePrc;
+		BOOL	bMain;
 	};
 
 	struct ST_STK_INFO
 	{
-		std::string	Symbol;
+		std::string	sArtcCd;
+		std::string	sStkCd;
 		double		dTickSize;
-		int			nDotCnt;
+		long		lDotCnt;
+	};
+
+
+	struct ST_PRC_INFO
+	{
+		std::string	sStkCd;
+		double		dPrc;
 	};
 }

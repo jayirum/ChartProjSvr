@@ -1,13 +1,15 @@
 #pragma once
 
-
-#include "../../IRUM_UTIL/TcpClient.h"
-#include "../../IRUM_UTIL/adofunc.h"
+#include "../../IRUM_UTIL/BaseThread.h"
+#include "../../IRUM_UTIL/ADOFunc.h"
+#include "../../IRUM_UTIL/SmartMessage.h"
 #include <map>
 #include <string>
-#include "DealManager.h"
-#include "DealManagerTenOp.h"
+#include <list>
+#include "StkOrd.h"
 
+
+typedef std::map<std::string, CStkOrd*>::iterator	IT_MAP;
 
 // CFBIMainProc dialog
 class CFBIMainProc : public CBaseThread
@@ -23,30 +25,33 @@ public:
 
 private:
 	VOID ThreadFunc();
-	//static unsigned WINAPI Thread_ApiChart(LPVOID lp);
-	static unsigned WINAPI Thread_SaveChart(LPVOID lp);
+	static unsigned WINAPI Thread_SaveResult(LPVOID lp);
 
+	long __stdcall CallBackSMPrc(int index, char* WorkThread, char* Message);
+	long __stdcall CallBackSMOrd(int index, char* WorkThread, char* Message);
 
-	BOOL	LoadStkCode();
+	BOOL	LoadStkInfo();
+	BOOL	CreateStkOrders();
+	BOOL	InitializeSM();
+	VOID	DeInitializeSM();
 	VOID	ClearDealMap();
-	//void	InitApiSocket();
-	//void	CloseApiSocket();
 
-	//void	testChart();
+	//IT_MAP* GetMapIterator() { return new IT_MAP; }
+	//VOID	ReleaseMapIterator(IT_MAP* pIt) { delete pIt; }
+	//CStkOrd* CStkOrdFactory(const std::string *sStkCd) { return new CStkOrd(*sStkCd); }
 
 private:
 	CDBPoolAdo		*m_pDBPool;
+	CSmartMessage	*m_pSM;
 
-	//char			m_zApiIP[32];
-	//char			m_zApiPort[32];
-		
 	HANDLE			m_hSaveData;
 	unsigned int	m_unSaveData;
 
-	std::map<std::string, CDealManager*>	m_mapDealManager;	//STK_CD
-	CRITICAL_SECTION						m_csDM;
-	
-	std::map<std::string, CDealManagerTenOp*>	m_mapDealManagerTenOp;	//STK_CD
-	CRITICAL_SECTION							m_csDMTenOp;
+	std::list<_FBI::ST_STK_INFO>	m_lstStkInfo;
+	std::map<std::string, CStkOrd*>	m_mapStkOrd;
+	CRITICAL_SECTION				m_csStkOrd;
 
+	CSmartMessage	m_smPrc;
+	CSmartMessage	m_smOrd;
+	
 };
