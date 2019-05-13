@@ -24,9 +24,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -72,13 +69,16 @@
     <ClCompile Include="StkOrd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
-      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h">
       <Filter>Common</Filter>
@@ -128,5 +128,14 @@
     <ClInclude Include="StkOrd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FBI_DealManagerSL.ini" />
   </ItemGroup>
 </Project>
