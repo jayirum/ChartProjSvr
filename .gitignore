@@ -6256,3 +6256,10 @@ Source/_Bin/FBI_DealManagerF.exe
 Source/_Bin/FBI_ChartMakerF.exe
 Source/_Bin/FBI_ChartMakerF.ini
 Source/_Bin/FBI_DealManagerF.ini
+*.~dpr
+Source/Test/DllTest/Debug/DllTest.exe
+Source/Test/DllTest/Debug/DllTest2.exe
+Source/Test/DllTest/Debug/SmartMessage.dll
+Source/Test/DllTest/DllTest2/Debug/DllTest.exe
+Source/SmartMessage/SmartMessage.dll
+Source/SmartMessage/SmartMessage/SmartMessage.dll
