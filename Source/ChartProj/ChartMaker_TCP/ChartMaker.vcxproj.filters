@@ -9,9 +9,6 @@
     <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_INC\IRUM_Common.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -36,9 +33,20 @@
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtil.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\ChartCommon.h" />
     <ClInclude Include="ChartMaker.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
@@ -48,9 +56,6 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_INC\IRUM_Common.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Log.h">
@@ -77,6 +82,18 @@
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartUtils.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtil.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -85,5 +102,8 @@
     <Filter Include="Common">
       <UniqueIdentifier>{17d69040-a46c-4aa5-ad22-429349c40575}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ChartMaker.ini" />
   </ItemGroup>
 </Project>

@@ -10,9 +10,21 @@
 #endif // _MSC_VER > 1000
 
 #pragma optimize("t", on)
+#pragma warning(disable:4996)
 
 #include <windows.h>
 #include <stdio.h>
+
+enum {
+	CODE_SUCCESS	=0,
+	CODE_NO_SHM_PTR,
+	CODE_NO_GROUP_PTR,
+	CODE_NOEXIST_STRUCT_PTR,
+	CODE_NOEXIST_GROUPKEY,	
+	CODE_NOEXIST_STRUCTKEY,
+	CODE_OVER_MAXSTRUCT_CNT
+
+};
 
 /*
 	m_pShm
@@ -28,6 +40,8 @@ typedef struct _INIT_DATA
 	long lStructSize;
 	long lStructKeySize;
 	long lMaxStructCnt;
+
+	//long lGroupIndexSize;
 } INIT_DATA;
 #define INIT_DATA_SIZE	sizeof(INIT_DATA)
 
@@ -54,13 +68,19 @@ public:
 
 	int		Create(HANDLE hFile, DWORD dwSize, LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	int		Create(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCTSTR lpMutexName);
+	int		CreateEx(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	BOOL	Open(LPCTSTR lpShmName, LPCTSTR lpMutexName);
 	void	Close();
 
 	BOOL	SetInitSize(long lMaxGroupCnt, long lGroupKeySize, long lHeaderSize, long lStructSize, long lStructKeySize, long lMaxStructCnt);
-	
+	BOOL	SetInitSizeEx(INIT_DATA* pInitData);
+
 	BOOL	GetData(char *pGroupKey, char *pStructKey, /*out*/char *pStructData);
+	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData, int *pErrCode, char* pErrMsg);
+	BOOL	DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData);
 	BOOL	GetData(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, /*out*/char *pStructData);
+	int		GetCurrData(char *pGroupKey,/*out*/char *pStructData);
+
 	int		GetDataArray(char *pGroupKey, BOOL bAll, int nCnt, /*out*/char *pData);
 	BOOL	UpdateData(char *pGroupKey, char *pStructKey, char *pStructData);
 	BOOL	UpdateData(char *pGroupKey, char *pStructKey, 
@@ -105,6 +125,7 @@ public:
 	void	Unlock();
 	void	SetErrMsg(int nErrCode, char* msg);
 	inline	char*	GetErr(){return m_szErr;};
+	char*	CodeMsg();
 
 //	BOOL	SetTransaction( CShmTransaction* pTrans, char* pGroupKey );
 
@@ -117,6 +138,8 @@ protected:
 	void	swap(char *a, char *b, size_t width);
 	void	shortsort(char *lo, char *hi, size_t width);
 	void	Qsort(void *base, size_t num, size_t width);
+
+	long	m_lLastErrCode;
 
 	char	*m_pShm;
 	char	*m_pGroup;
@@ -131,7 +154,7 @@ protected:
 	long	m_lStructKeySize;
 	long	m_lMaxGroupCnt;
 	long	m_lMaxStructCnt;
-	char	m_szErr[512];
+	char	m_szErr[512], m_zCode[128];;
 	BOOL	m_bCompareGroup;
 	BOOL	m_bAscGroup;
 	BOOL	m_bAscData;

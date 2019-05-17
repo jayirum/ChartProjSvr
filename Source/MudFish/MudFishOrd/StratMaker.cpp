@@ -205,6 +205,8 @@ unsigned WINAPI CStratMaker::StratThread(LPVOID lp)
 {
 	CUtil::logOutput("WORKER THREAD ID : %d", GetCurrentThreadId());
 	CStratMaker* p = (CStratMaker*)lp;
+	int nLen;
+	char* pData;
 	while (WaitForSingleObject(p->m_hWorkDie, 1) != WAIT_OBJECT_0)
 	{
 		//CHECK Market Close 
@@ -213,22 +215,33 @@ unsigned WINAPI CStratMaker::StratThread(LPVOID lp)
 		MSG msg;
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			char* pData = (char*)msg.lParam;
+			
 
 			// 시세처리
-			if (msg.message == WM_RECV_API_MD)
+			switch (msg.message)
 			{
-				int nLen = (int)msg.wParam;
+			case WM_RECV_API_MD:
+				pData = (char*)msg.lParam;
+				nLen = (int)msg.wParam;
 				p->StratProc(pData);
+				p->m_pMemPool->release(pData);
+				break;
+				
+			case WM_CLOSE_POSITION:
+				p->ClosePosition();
+				break;
 			}
-			p->m_pMemPool->release(pData);
+			
 		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	} // while (TRUE)
 
 	return 0;
 }
 
-
+VOID CStratMaker::ClosePosition()
+{
+	MarketCloseClr();
+}
 
 VOID CStratMaker::StratProc(char* pMarketData)
 {

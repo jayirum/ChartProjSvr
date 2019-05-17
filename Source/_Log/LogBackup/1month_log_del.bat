@@ -1,0 +1,1 @@
+forfiles /p D:\ChartProjSvr\Source\_Log\LogBackup /m *.zip /d -30 /c "cmd /c del @FILE"

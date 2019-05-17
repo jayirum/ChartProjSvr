@@ -34,6 +34,8 @@ CSharedMem::CSharedMem()
 	m_pFirstStruct = NULL;
 	m_pFindData = NULL;
 
+	m_lLastErrCode = CODE_SUCCESS;
+
 	ZeroMemory(m_szErr, sizeof(m_szErr));
 }
 
@@ -174,6 +176,81 @@ int CSharedMem::Create(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCT
 }
 
 
+int CSharedMem::CreateEx(HANDLE hFile, INIT_DATA *shmData, LPCTSTR lpShmName, LPCTSTR lpMutexName)
+{
+	int nIndexSize = (shmData->lGroupKeySize + GROUP_POINTER_SIZE) * shmData->lMaxGroupCnt;
+	int nDataSize = shmData->lMaxGroupCnt * (INIT_STRUCT_DATA_SIZE + (shmData->lStructSize * shmData->lMaxStructCnt));
+	int nTotSize = INIT_DATA_SIZE + nIndexSize + nDataSize + shmData->lHeaderSize;
+
+	m_pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
+	if (m_pSD == NULL)
+	{
+		SetErrMsg(GetLastError(), "Create SharedMem Error : ");
+		Close();
+		return -1;
+	}
+	if (!InitializeSecurityDescriptor(m_pSD, SECURITY_DESCRIPTOR_REVISION))
+	{
+		SetErrMsg(GetLastError(), "Create SharedMem Error : ");
+		Close();
+		return -1;
+	}
+	if (!SetSecurityDescriptorDacl(m_pSD, TRUE, (PACL)NULL, FALSE))
+	{
+		SetErrMsg(GetLastError(), "Create SharedMem Error : ");
+		Close();
+		return -1;
+	}
+
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(sa);
+	sa.lpSecurityDescriptor = m_pSD;
+	sa.bInheritHandle = TRUE;
+
+	m_hShm = CreateFileMapping(hFile, &sa, PAGE_READWRITE, 0, nTotSize, lpShmName);
+	if (m_hShm == NULL)
+	{
+		SetErrMsg(GetLastError(), "Create SharedMem Error : ");
+		Close();
+		return -1;
+	}
+
+	if (GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		SetErrMsg(GetLastError(), "Create SharedMem Error : ");
+		Close();
+		return 0;
+	}
+
+	m_pShm = (char*)MapViewOfFile(m_hShm, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	if (m_pShm == NULL)
+	{
+		SetErrMsg(GetLastError(), "MapViewOfFile Error : ");
+		Close();
+		return -1;
+	}
+
+	ZeroMemory(m_pShm, INIT_DATA_SIZE);
+
+	m_hMutex = CreateMutex(&sa, FALSE, lpMutexName);
+	if (m_hMutex == NULL)
+	{
+		SetErrMsg(GetLastError(), "Mutex Open Error : ");
+		Close();
+		return -1;
+	}
+
+	if (!SetInitSizeEx(shmData))
+		return -1;
+
+	if (!ClearData(TRUE, TRUE, TRUE))
+		return -1;
+
+	return nTotSize;
+}
+
+
+
 BOOL CSharedMem::Open(LPCTSTR lpShmName, LPCTSTR lpMutexName)
 {
 	m_hShm = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, lpShmName);
@@ -308,6 +385,49 @@ BOOL CSharedMem::SetInitSize(long lMaxGroupCnt, long lGroupKeySize, long lHeader
 	return TRUE;
 }
 
+
+
+BOOL CSharedMem::SetInitSizeEx(INIT_DATA* pInitData)
+{
+	if (!m_pShm)	return false;
+
+	INIT_DATA initData;
+	CopyMemory((void*)&initData, m_pShm, INIT_DATA_SIZE);
+
+	initData.lMaxGroupCnt = pInitData->lMaxGroupCnt;
+	initData.lGroupKeySize = pInitData->lGroupKeySize;
+	initData.lHeaderSize = pInitData->lHeaderSize;
+	initData.lStructSize = pInitData->lStructSize;
+	initData.lStructKeySize = pInitData->lStructKeySize;
+	initData.lMaxStructCnt = pInitData->lMaxStructCnt;
+	CopyMemory(m_pShm, (void*)&initData, INIT_DATA_SIZE);
+
+	m_lMaxGroupCnt = pInitData->lMaxGroupCnt;
+	m_lGroupKeySize = pInitData->lGroupKeySize;
+	m_lGroupIndexSize = m_lGroupKeySize + GROUP_POINTER_SIZE;
+	m_lHeaderSize = pInitData->lHeaderSize;
+	m_lStructSize = pInitData->lStructSize;
+	m_lStructKeySize = pInitData->lStructKeySize;
+	m_lMaxStructCnt = pInitData->lMaxStructCnt;
+
+	if (m_lMaxGroupCnt <= 0)
+		m_pGroup = NULL;
+	else
+		m_pGroup = m_pShm + INIT_DATA_SIZE;
+
+	if (m_lHeaderSize <= 0)
+		m_pHeader = NULL;
+	else
+		m_pHeader = m_pShm + INIT_DATA_SIZE + (m_lGroupIndexSize * m_lMaxGroupCnt);
+
+	if (m_lMaxStructCnt <= 0)
+		m_pStruct = NULL;
+	else
+		m_pStruct = m_pShm + INIT_DATA_SIZE + (m_lGroupIndexSize * m_lMaxGroupCnt) + m_lHeaderSize;
+
+	return TRUE;
+}
+
 BOOL CSharedMem::GetData(char *pGroupKey, char *pStructKey, char *pStructData)
 {
 	if(!m_pShm) return FALSE;
@@ -324,6 +444,43 @@ BOOL CSharedMem::GetData(char *pGroupKey, char *pStructKey, char *pStructData)
 
 	return TRUE;
 }
+
+BOOL CSharedMem::DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData)
+{
+	int nErrCode;
+	char pErrMsg[128];
+	return DataGet(pGroupKey, pStructKey, pStructData, &nErrCode, pErrMsg);
+}
+
+BOOL CSharedMem::DataGet(char *pGroupKey, char *pStructKey, /*out*/char *pStructData, int *pErrCode, char* pErrMsg)
+{
+	if (!m_pShm) {
+		*pErrCode = 1;
+		m_lLastErrCode = CODE_NO_SHM_PTR;
+		sprintf(m_szErr, "DataGet Err(%s)", CodeMsg());
+		sprintf(pErrMsg, "SHM is not set up");
+		return FALSE;
+	}
+
+	char *pStruct = SearchStructPointer(pGroupKey);
+	if (!pStruct) {
+		*pErrCode = 2;
+		sprintf(pErrMsg, "SearchStructPointer Error(GROUP_KEY:%s)", pGroupKey);
+		return FALSE;
+	}
+
+	char *pData = SearchDataPointer(pStruct, pStructKey);
+	if (!pData) {
+		*pErrCode = 3;
+		sprintf(pErrMsg, "SearchDataPointer Error(STRUCT_KEY:%s)", pStructKey);
+		return FALSE;
+	}
+
+	CopyMemory(pStructData, pData, m_lStructSize);
+
+	return TRUE;
+}
+
 
 BOOL CSharedMem::GetData(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, /*out*/char *pStructData)
 {
@@ -363,7 +520,11 @@ BOOL CSharedMem::UpdateData(char *pGroupKey, char *pStructKey, char *pStructData
 }
 BOOL CSharedMem::SetData(char *pGroupKey, char *pStructKey, char *pStructData)
 {
-	if(!m_pShm) return FALSE;
+	if (!m_pShm) {
+		m_lLastErrCode = CODE_NO_SHM_PTR;
+		sprintf(m_szErr, "SetData Err(%s)", CodeMsg());
+		return FALSE;
+	}
 	
 	char *pStruct = SearchStructPointer(pGroupKey);
 	if(!pStruct) return FALSE;
@@ -417,12 +578,17 @@ BOOL CSharedMem::AddData(char *pGroupKey, char *pStructData, BOOL bStructSort)
 	if(!m_pShm) return FALSE;
 
 	char *pStruct = SearchStructPointer(pGroupKey);
-	if(!pStruct) 
+	if (!pStruct) {
+		sprintf(m_szErr, "AddData Failed(%s)", CodeMsg());
 		return FALSE;
+	}
 
 	long lCurrStructCnt = *(long*)pStruct;
-	if(lCurrStructCnt >= m_lMaxStructCnt) 
+	if (lCurrStructCnt >= m_lMaxStructCnt) {
+		m_lLastErrCode = CODE_OVER_MAXSTRUCT_CNT;
+		sprintf(m_szErr, "AddData Failed(%s)", CodeMsg());
 		return FALSE;
+	}
 
 	char *pAddData = (char*)(pStruct + INIT_STRUCT_DATA_SIZE + (m_lStructSize * lCurrStructCnt));
 	CopyMemory(pAddData, pStructData, m_lStructSize);
@@ -436,6 +602,24 @@ BOOL CSharedMem::AddData(char *pGroupKey, char *pStructData, BOOL bStructSort)
 	}
 
 	return TRUE;
+}
+
+// 가장 최근 데이터 반환
+int CSharedMem::GetCurrData(char *pGroupKey,/*out*/char *pStructData)
+{
+	if (!m_pShm) return -1;
+
+	char *pStruct = SearchStructPointer(pGroupKey);
+	if (!pStruct)
+		return -2;
+
+	long lCurrStructCnt = *(long*)pStruct;
+	if (lCurrStructCnt == 0)
+		return 0;
+
+	char *pCurrData = (char*)(pStruct + INIT_STRUCT_DATA_SIZE + (m_lStructSize * (lCurrStructCnt-1)));
+	CopyMemory(pStructData, pCurrData, m_lStructSize);
+	return 1;
 }
 
 BOOL CSharedMem::InsertDataArray(char *pGroupKey, int nCnt, char *pStructData, BOOL bStructSort)
@@ -946,11 +1130,19 @@ int	CSharedMem::GetCurrStructCnt(char *pGroupKey)
 
 char* CSharedMem::SearchGroupPointer(char *pGroupKey)
 {
-	if(!m_pGroup) return NULL;
+	if (!m_pGroup) {
+		m_lLastErrCode = CODE_NO_GROUP_PTR;
+		return NULL;
+	}
 
 	m_bCompareGroup = TRUE;
 	long lCurrGroupCnt = *(long*)m_pShm;
 	char *pGroup = (char*)Search(pGroupKey, m_pGroup, lCurrGroupCnt, m_lGroupIndexSize);
+	if (!pGroup) {
+		m_lLastErrCode = CODE_NOEXIST_GROUPKEY;
+		//sprintf(m_szErr, "SearchGroupPointer Err(%s)", CodeMsg());
+	}
+
 	return pGroup;
 }
 
@@ -962,6 +1154,10 @@ char* CSharedMem::SearchStructPointer(char *pGroupKey)
 
 	char **ppStruct = (char**)(pGroup + m_lGroupKeySize);
 	char *pStruct = (char*)((long)m_pShm + (long)*ppStruct);
+	if (!pStruct) {
+		m_lLastErrCode = CODE_NOEXIST_STRUCT_PTR;
+		//sprintf(m_szErr, "SearchStructPointer Err(%s)", CodeMsg());
+	}
 	return pStruct;
 }
 
@@ -970,6 +1166,9 @@ char* CSharedMem::SearchDataPointer(char *pStruct, char *pStructKey)
 	m_bCompareGroup = FALSE;
 	long lCurrStructCnt = *(long*)pStruct;
 	char *pData = (char*)Search(pStructKey, pStruct + INIT_STRUCT_DATA_SIZE, lCurrStructCnt, m_lStructSize);
+	if(!pData)
+		m_lLastErrCode = CODE_NOEXIST_STRUCTKEY;
+
 	return pData;
 }
 
@@ -1199,4 +1398,20 @@ void CSharedMem::swap(char *a, char *b, size_t width)
             *a++ = *b;
             *b++ = tmp;
         }
+}
+char*	CSharedMem::CodeMsg()
+{
+	switch (m_lLastErrCode)
+	{
+	case CODE_SUCCESS: sprintf(m_zCode, "[%d]SUCCESS", m_lLastErrCode); break;
+	case CODE_NO_SHM_PTR: sprintf(m_zCode, "[%d]CODE_NO_SHM_PTR", m_lLastErrCode); break;
+	case CODE_NO_GROUP_PTR: sprintf(m_zCode, "[%d]CODE_NO_GROUP_PTR", m_lLastErrCode); break;
+	case CODE_NOEXIST_GROUPKEY: sprintf(m_zCode, "[%d]CODE_NOEXIST_GROUPKEY", CODE_NOEXIST_GROUPKEY); break;
+	case CODE_NOEXIST_STRUCT_PTR: sprintf(m_zCode, "[%d]CODE_NOEXIST_STRUCT_PTR", CODE_NOEXIST_STRUCT_PTR); break;
+	case CODE_NOEXIST_STRUCTKEY: sprintf(m_zCode, "[%d]CODE_NOEXIST_STRUCTKEY", CODE_NOEXIST_STRUCTKEY); break;
+	case CODE_OVER_MAXSTRUCT_CNT: sprintf(m_zCode, "[%d]CODE_OVER_MAXSTRUCT_CNT", CODE_OVER_MAXSTRUCT_CNT); break;
+	default:break;
+	}
+
+	return m_zCode;
 }

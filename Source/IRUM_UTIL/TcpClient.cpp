@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "TcpClient.h"
-#include "../IRUM_INC/IRUM_Common.h"
+#include "IRUM_Common.h" //todo after completion - remove ../NEW/
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -101,7 +101,7 @@ VOID CTcpClient::ThreadFunc()
 VOID CTcpClient::RecvThread()
 {
 	char zRecvBuff[LEN_BUFF_SIZE];
-	printf("TcpClent thread:%d\n", m_dwThreadID);
+	//printf("TcpClent thread:%d\n", m_dwThreadID);
 
 	while (Is_TimeOfStop() == FALSE)
 	{
@@ -126,9 +126,12 @@ VOID CTcpClient::RecvThread()
 				strncmp(p->Code, CDAPI_CNTR_REAL, 6) == 0
 				)
 			{
-				OutputDebugString(zRecvBuff);
-				OutputDebugString("\n");
+				//OutputDebugString(zRecvBuff);
+				//OutputDebugString("\n");
 			}
+			//OutputDebugString(zRecvBuff);
+			//OutputDebugString("\n");
+
 			//printf("[RECV](%.*s)\n", Ret, zRecvBuff);
 			m_pktHandler.AddPkt(zRecvBuff, Ret);			
 		}
@@ -171,7 +174,7 @@ INT CTcpClient::SendData( char* pInBuf, int nBufLen,  int *o_ErrCode )
 		Ret = send(m_sock, pInBuf, nBufLen, 0);
 		if (Ret > 0) {
 			*o_ErrCode = 0;
-			printf("<SEND:%d>(%.*s)\n", Ret, Ret, pInBuf);
+			//printf("<SEND:%d>(%.*s)\n", Ret, Ret, pInBuf);
 			break;
 		}
 		

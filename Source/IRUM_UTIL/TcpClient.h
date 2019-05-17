@@ -1,7 +1,7 @@
 #pragma once
 
-#include "PktHandler.h"
-#include "BaseThread.h"
+#include "PktHandler.h" //todo after completion - remove ../
+#include "BaseThread.h" //todo after completion - remove ../
 #pragma warning(disable:4996)
 
 #pragma comment(lib, "ws2_32.lib")

@@ -1,0 +1,188 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+using Hippo;
+using Hippo.WindowsForm4;
+
+
+
+namespace RealtimeTest
+{
+
+
+    public partial class FormReal : Form
+    {
+        SeriesList seriesList = new SeriesList();
+
+        // 차트에 한번에 그려질 데이터 개수 결정
+        //double[] dataList = new double[20];
+        //const int ItemCnt = 100;
+       int nLastIdx = 0;
+        const int nMax = 10;
+
+        public FormReal()
+        {
+            InitializeComponent();
+        }
+
+        private void hHippoChart1_ChartSizeChanged(object sender, EventArgs e)
+        {
+            this.hHippoChart1.DrawChart();
+
+        }
+        
+
+        private void Draw(double addData)
+        {
+            // 기존 데이터 Shift
+            //for (int i = 0; i < dataList.Length; i++)
+            //{
+            //    if (i > 1)
+            //    {
+            //        dataList[i - 1] = dataList[i];
+            //    }
+            //}
+
+            //// 마지막 인덱스에 현재 생성한 데이터 입력
+            //dataList[dataList.Length - 1] = addData;
+
+            //// 데이터셋을 시리즈아이템에 입력
+            //for (int i = 0; i < dataList.Length; i++)
+            //{
+            //    seriesList.SeriesCollection[0].items[i].YValue = dataList[i];
+            //}
+
+            // 50개가 넘으면 지운다.
+            
+            SeriesItem sItem = new SeriesItem();
+            sItem.Name = "sItem" + nLastIdx.ToString();
+            sItem.YValue = addData;
+            seriesList.SeriesCollection[0].items.Add(sItem);
+
+            if (seriesList.SeriesCollection[0].items.Count == 50+1)
+            {
+                seriesList.SeriesCollection[0].items.RemoveAt(0);
+                seriesList.SeriesCollection.RemoveAt(0);
+            }
+
+            // 그리기
+            hHippoChart1.DrawChart();
+
+            nLastIdx++;
+        }
+        
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.timer1.Start();
+        }
+
+        private void FormReal_Load_1(object sender, EventArgs e)
+        {
+            this.timer1.Interval = 1000;
+
+            SeriesList sList = new SeriesList();
+            sList.ChartType = ChartType.Line;
+
+            sList.AxisFactor.YAxis.SetAxisStep(0, 1200, 200);
+
+            // 마커
+            AxisMarker mk2 = new AxisMarker("상한선", 800);
+            mk2.TextFormat.Alignment = StringAlignment.Near;
+            sList.AxisFactor.YAxis.Markers.Add(mk2);
+
+            sList.SeriesCollection.Add(new Series());
+
+            //sList.AxisFactor.XAxis.Interval = 1;
+
+            this.hHippoChart1.RealTimeList.Add(new HippoRealTimeAttribute());
+
+            this.hHippoChart1.SeriesListDictionary.Add(sList);
+
+
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+
+            Random rr1 = new Random();
+
+            SeriesItem item = new SeriesItem(rr1.Next(999));
+
+            if (item.YValue > 800)
+            {
+                item.Balloon = new Balloon();
+                item.Balloon.Label.Text = "상한선 돌파!";
+            }
+
+            this.hHippoChart1.DrawRealTimeChart(20, item);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            this.hHippoChart1.SeriesListDictionary.Clear();
+            this.hHippoChart1.Designer.InnerBackColor = Color.White;
+            this.hHippoChart1.Titles.Label.Text = "";
+
+            SeriesList sList = new SeriesList();
+
+            sList.SeriesCollection.Add(new Series());
+
+            Random R = new Random();
+            for (int i = 0; i < 50 + 1; i++)
+            {
+                SeriesItem item = new SeriesItem();
+
+                item.XDateTimeValue = DateTime.Parse("2013-01-01").AddDays(i);
+
+                item.YStartValue = R.Next(1000, 1050) * i - 11 * i; // 시가
+                item.LowValue = R.Next(1000, 1050) * i - 12 * i; // 저가 
+                item.YValue = R.Next(1000, 1050) * i - 15 * i; // 종가
+                item.HighValue = R.Next(1000, 1200) * i - 10 * i; // 고가
+
+                if (i > 0 && i < 10)
+                {
+                    item.YStartValue = R.Next(750, 1000) * i - 33 * i; // 시가
+                    item.LowValue = R.Next(950, 1000) * i - 22 * i; // 저가 
+                    item.YValue = R.Next(950, 1000) * i - 30 * i; // 종가
+                    item.HighValue = R.Next(555, 1200) * i - 14 * i; // 고가
+                }
+
+                if (i > 30 && i < 50)
+                {
+                    item.YStartValue = R.Next(1100, 1200) * i - 40 * i; // 시가
+                    item.LowValue = R.Next(999, 1200) * i - 60 * i; // 저가 
+                    item.YValue = R.Next(1100, 1200) * i - 30 * i; // 종가
+                    item.HighValue = R.Next(888, 1200) * i - 10 * i; // 고가
+                }
+
+                sList.SeriesCollection[0].items.Add(item);
+            }
+
+            sList.ChartType = ChartType.CandleStick;
+            sList.AxisFactor.YAxis.Direction = AxisDirection.Right;
+            sList.AxisFactor.XAxis.DataType = AxisDataType.DateTime;
+            sList.AxisFactor.XAxis.DateTimeLabelType = DateTimeLabelType.Day;
+            sList.AxisFactor.XAxis.DateTimeFormat = "dd";
+
+            sList.AxisFactor.XAxis.IsShowTick = false;
+            sList.AxisFactor.XAxis.IsVisibleFigures = false;
+            sList.GraphArea.Grid.IsBackGridColor = false;
+            sList.AxisFactor.YAxis.AxisMagin = 50;
+
+            sList.AxisFactor.YAxis.IsZeroStartScale = false;
+
+            this.hHippoChart1.Titles.Label.Text = "주식 차트 기본 샘플";
+            this.hHippoChart1.Designer.InnerBackColor = Color.FromArgb(214, 226, 239);
+            this.hHippoChart1.LegendBox.Visible = false;
+            this.hHippoChart1.SeriesListDictionary.Add(sList);
+            this.hHippoChart1.DrawChart();
+        }
+    }
+}

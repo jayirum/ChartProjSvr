@@ -1,0 +1,30 @@
+[ IOCP - User 관리 ]
+
+# User의 요청 (로그인, 시세조회, Closing Event) 을 받으면
+  1) 유저map 에서 빼고
+  2) request map 에 넣는다.
+	- closing event 를 받으면 status 를 변경 시키고
+	- 다른 요청을 받으면 ref 를 증가 시킨다.
+
+# Closing 이벤트를 받으면 => OnClose
+  1) request map 을 찾아서 없으면 ref 도 없으므로 삭제 처리. 유저맵에서 제거
+  2) request map 에 있으면 ref 확인. 0 이면 삭제. ==> DeleteUser()
+  3) request map 에 있고 ref >0 이면 status 만 변경
+
+# 일반 요청을 받으면 => OnRequest
+ 1) request map 에 있고, closing status 이면 처리하지 않는다.
+ 2) request map 에 있고, closing status 가 아니면 ref 만 증가
+ 3) request map 에 없으면, 유저맵에서 제거, request map 에 input. ref 증가
+
+# 일반 요청 완료 후
+ 1) closing status 이면 closing 처리
+ 2) closing status 아니면 ref 감소. 0 이면 다시 user map 으로
+ 3) closing status 아니면 ref 감소. 0 보다 크면 놔둔다.
+
+
+
+ [ AlgoFront class ]
+
+ 1. API Client Thread
+ 2. CLIENT 요청 수신 Thread (iocp)
+ 3. 데이터 송신 Thread

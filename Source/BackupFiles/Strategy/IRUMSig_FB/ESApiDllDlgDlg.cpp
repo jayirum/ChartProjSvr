@@ -201,7 +201,7 @@ BOOL CESApiDllDlgDlg::OnInitDialog()
 	CUtil::GetConfig(g_zConfig, "NOTIFY_SOCKET_INFO", "IP", ip);
 	CUtil::GetConfig(g_zConfig, "NOTIFY_SOCKET_INFO", "PORT", port);
 	m_pNoteSock = new CTcpSrv;
-	m_pNoteSock->Initialize(atoi(port), ip, TRUE);
+	m_pNoteSock->Begin(atoi(port), ip, TRUE);
 
 
 	// 관리자 action 처리를 위한 polling thread
@@ -1348,7 +1348,7 @@ VOID CESApiDllDlgDlg::NotedThread()
 	WSANETWORKEVENTS NetworkEvents;
 	int start = 0, index = 0;
 
-	int nPos = WSAWaitForMultipleEvents(m_pNoteSock->m_nTotSockets, m_pNoteSock->m_wsaEvents, FALSE, 10, FALSE);
+	int nPos = WSAWaitForMultipleEvents(m_pNoteSock->m_nTotSockets, m_pNoteSock->m_hWsaEvents, FALSE, 10, FALSE);
 	// i번째 소켓에서 이벤트 발생
 	if (nPos == WSA_WAIT_FAILED)
 	{
@@ -1359,18 +1359,18 @@ VOID CESApiDllDlgDlg::NotedThread()
 	else if (nPos == WSA_WAIT_TIMEOUT)
 		return;
 
-	//WSAResetEvent(m_wsaEvents[index]);
+	//WSAResetEvent(m_hWsaEvents[index]);
 
 	start = nPos - WSA_WAIT_EVENT_0;
 
 	for (index = start; index < m_pNoteSock->m_nTotSockets; index++)
 	{
-		int sigEventIdx = WSAWaitForMultipleEvents(1, &m_pNoteSock->m_wsaEvents[index], TRUE, 10, FALSE);
+		int sigEventIdx = WSAWaitForMultipleEvents(1, &m_pNoteSock->m_hWsaEvents[index], TRUE, 10, FALSE);
 		// signaled 이벤트 오브젝트들 체크하기
 		if ((sigEventIdx == WSA_WAIT_FAILED || sigEventIdx == WSA_WAIT_TIMEOUT))
 			continue;
 
-		int retval = WSAEnumNetworkEvents(m_pNoteSock->m_sockArray[index], m_pNoteSock->m_wsaEvents[index], &NetworkEvents);
+		int retval = WSAEnumNetworkEvents(m_pNoteSock->m_sockArray[index], m_pNoteSock->m_hWsaEvents[index], &NetworkEvents);
 		if (retval == SOCKET_ERROR)
 		{
 			m_pNoteSock->SetSockErrMsg("WSAEnumNetworkEvents");

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Util.h"
 #include "Prop.h"
+#include "Screwdb.h"
 //#include "../INCLUDE/COMMON.H"
 //#include "MQBase.h"
 
@@ -821,7 +822,7 @@ void CUtil::logOutput(char* pMsg, ...)
 	GetLocalTime(&st);
 	sprintf(buff2, "[%02d:%02d:%02d.%03d]%s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buff1);
 
-	OutputDebugString(buff2);
+	//OutputDebugString(buff2);
 }
 
 
@@ -916,38 +917,41 @@ int	CUtil::GetDecimalCnt( TCHAR* psNTTN )
 	return nRet;
 }
 
-/************************************************************************
-	현재 시각이 정해진 시간(분)을 지났는지 여부
+///************************************************************************
+//	현재 시각이 정해진 시간(분)을 지났는지 여부
+//
+//	-- i_psLastTime : hhmmss 형태
+//************************************************************************/
+//BOOL CUtil::IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin )
+//{
+//	TCHAR	b_szNowH[32];
+//	TCHAR	b_szNowM[32];
+//
+//	TCHAR	b_szLastH[32];
+//	TCHAR	b_szLastM[32];
+//
+//	SYSTEMTIME	st;
+//
+//	GetLocalTime(&st);
+//
+//	sprintf_s( b_szLastH, "%.2s", i_psLastTime);
+//	sprintf_s( b_szNowH, "%02d", st.wHour );
+//
+//	//	HOUR 가 변했으면 이미 지난 것임
+//	if( atoi(b_szNowH) > atoi(b_szLastH) )	
+//		return TRUE;
+//
+//	sprintf_s( b_szLastM, "%.2s", i_psLastTime+2);
+//	sprintf_s( b_szNowM, "%02d", st.wMinute );
+//
+//	int nGapMin = atoi( b_szNowM ) - atoi(b_szLastM);
+//
+//	return ( nGapMin>i_nBaseMin );
+//
+//}
+//
+//
 
-	-- i_psLastTime : hhmmss 형태
-************************************************************************/
-BOOL CUtil::IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin )
-{
-	TCHAR	b_szNowH[32];
-	TCHAR	b_szNowM[32];
-
-	TCHAR	b_szLastH[32];
-	TCHAR	b_szLastM[32];
-
-	SYSTEMTIME	st;
-
-	GetLocalTime(&st);
-
-	sprintf_s( b_szLastH, "%.2s", i_psLastTime);
-	sprintf_s( b_szNowH, "%02d", st.wHour );
-
-	//	HOUR 가 변했으면 이미 지난 것임
-	if( atoi(b_szNowH) > atoi(b_szLastH) )	
-		return TRUE;
-
-	sprintf_s( b_szLastM, "%.2s", i_psLastTime+2);
-	sprintf_s( b_szNowM, "%02d", st.wMinute );
-
-	int nGapMin = atoi( b_szNowM ) - atoi(b_szLastM);
-
-	return ( nGapMin>i_nBaseMin );
-
-}
 
 
 ///************************************************************************
@@ -1240,6 +1244,109 @@ VOID CUtil::SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize,
 	SplitData(pData, '@', pListResult);
 }
 
+/*
+	24시간 고려한 점검
+
+	07~23:59:59
+	00 ~ 05:59:59
+
+	TIME_HHMM		//HHMM
+	,TIME_HHMMSS	//HHMMSS
+	,TIME_HH_MM		//HH:MM
+	,TIME_HH_MM_SS	//HH:MM:SS
+*/
+BOOL IsPassedTime(char* pzBaseTime, EN_TIMEMODE timeMode)
+{
+	BOOL bPassed = FALSE;
+
+	SYSTEMTIME st;
+	GetLocalTime(&st); 
+	char now1[32];
+	sprintf(now1, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+	BOOL bNowIsToday = FALSE;
+	if (strncmp(now1, "07:00:00", 8) >= 0 &&
+		strncmp(now1, "23:59:59", 8) <= 0)
+	{
+		bNowIsToday = TRUE;
+	}
+
+	char now[32];
+	BOOL bBaseTimeIsToday = FALSE;
+	switch (timeMode)
+	{
+	case TIME_HHMM:
+		sprintf(now, "%02d%02d", st.wHour, st.wMinute);
+
+		if (strncmp(pzBaseTime, "0700", 4) >= 0 &&
+			strncmp(pzBaseTime, "2359", 4) <= 0)
+			bBaseTimeIsToday = TRUE;
+
+		break;
+
+	case TIME_HHMMSS:
+		sprintf(now, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+
+		if (strncmp(pzBaseTime, "070000", 6) >= 0 &&
+			strncmp(pzBaseTime, "235959", 6) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+
+	case TIME_HH_MM:
+		sprintf(now, "%02d:%02d", st.wHour, st.wMinute);
+
+		if (strncmp(pzBaseTime, "07:00", 5) >= 0 &&
+			strncmp(pzBaseTime, "23:59", 5) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+
+	case TIME_HH_MM_SS:
+		sprintf(now, "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+
+		if (strncmp(pzBaseTime, "07:00:00", 8) >= 0 &&
+			strncmp(pzBaseTime, "23:59:59", 8) <= 0)
+			bBaseTimeIsToday = TRUE;
+		break;
+	}
+
+
+	
+	
+	
+
+	// 07~23
+	if (bNowIsToday)
+	{
+		// 07~23
+		if (bBaseTimeIsToday)
+		{
+			if (strcmp(now, pzBaseTime) >= 0)
+				bPassed = TRUE;
+		}
+		// 00 ~ 06
+		else
+		{
+			bPassed = FALSE;
+		}
+	}
+	// 00~06
+	if (!bNowIsToday)
+	{
+		// 00~06
+		if (!bBaseTimeIsToday)
+		{
+			if (strcmp(now, pzBaseTime) >= 0)
+				bPassed = TRUE;
+		}
+		// 07 ~ 23
+		else
+		{
+			bPassed = TRUE;
+		}
+	}
+
+	return bPassed;
+}
+
 VOID CUtil::SplitData(_In_ char* psData, _In_ char cDelimeter, _Out_ std::list<std::string>* pListResult)
 {
 	char* pFind;
@@ -1308,4 +1415,83 @@ char* GetCnfgValue(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, c
 	if (pComment)
 		*(pComment) = 0x00;
 	return o_psValue;
+}
+
+// //yyyymmdd-hhmmss
+VOID	getGMTtime(char* pOut)
+{
+	time_t rawtime;
+	time(&rawtime);
+	struct tm *ltime = gmtime(&rawtime);
+
+	sprintf(pOut, "%04d%02d%02d-%02d%02d%02d",
+		1900 + ltime->tm_year, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+}
+
+
+
+/*
+파라미터로 들어온 시간과
+현재시간 비교해서
+몇초가 지났는지 반환
+
+pStartTime - hhmmss  (235015)
+*/
+int CUtil::GetPassedSeconds(char* psStartTime, BOOL bColon)
+{
+	int nPassedSeconds = 0;
+	
+	// now
+	char zNow[32], zStartTime[32];;
+	SYSTEMTIME st; GetLocalTime(&st);
+	sprintf(zNow, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+
+
+	if (bColon)
+		sprintf(zStartTime, "%.2s%.2s%.2s", psStartTime, psStartTime + 3, psStartTime + 6);
+	else
+		sprintf(zStartTime, "%.6s", psStartTime);
+
+	int nComp = strncmp(zStartTime, zNow, 6);
+
+	if (nComp = 0)
+		return 0;
+
+	// 날짜가 지난 경우
+	// 하루의 초 - 235015의 초 + 현재까지의 초
+	if (nComp < 0)
+	{
+		// 전날 00시 부터 pStartTime까지의 초 
+		// pStartTime이 23:50:15 이면 23 * 60*60 + 50*60 + 15
+		int nHours = S2N(zStartTime, 2) * 60 * 60;	// 현재 시간을 초로
+		int nMins = S2N(zStartTime + 2, 2) * 60;	// 현재 분을 초로
+		int nTotalSecs = nHours + nMins + S2N(zStartTime + 4, 2);
+
+		// pStartTime 부터 자정까지의 시간
+		int nPassedSecs1 = 60 * 60 * 24 - nTotalSecs;
+
+		// 당일 자정부터 현재까지의 시간
+		nHours = st.wHour * 60 * 60;
+		nMins = st.wMinute * 60;
+		nTotalSecs = nHours + nMins + st.wSecond;
+
+		nPassedSeconds = nTotalSecs + nTotalSecs;
+	}
+	// 당일인 경우
+	// 현재까지의 초 - 235015의 초
+	else
+	{
+		// 당일 00시 부터 pStartTime까지의 초 
+		// pStartTime이 23:50:15 이면 23 * 60*60 + 50*60 + 15
+		int nHours = S2N(zStartTime, 2) * 60 * 60;	// 현재 시간을 초로
+		int nMins = S2N(zStartTime + 2, 2) * 60;	// 현재 분을 초로
+		int nTotalSecs = nHours + nMins + S2N(zStartTime + 4, 2);
+
+		// 당일 자정부터 현재까지의 시간
+		nHours = st.wHour * 60 * 60;
+		nMins = st.wMinute * 60;
+		nPassedSeconds = nHours + nMins + st.wSecond - nTotalSecs;
+	}
+
+	return nPassedSeconds;
 }

@@ -14,7 +14,7 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 //#include "../../IRUM_UTIL/NanoPubSub.h"
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
 #include <list>
 #include <map>
 #include <string>
@@ -61,9 +61,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp);
 CRITICAL_SECTION	g_Console;
 CLogMsg				g_log;
 CDBPoolAdo			*g_ado		= NULL;
-//TODO CSiseRecv			*g_pMDSub = NULL;
-//CNanoPubSub			*g_pMDSub = NULL;
-//CMCastRecv			*g_pMcastRecv = NULL;
+
 CTcpClient			*g_pApiRecv = NULL;
 CMemPool			*g_pMemPool = NULL;
 
@@ -71,26 +69,26 @@ HANDLE				g_hRecvThread = NULL, g_hSaveThread = NULL;
 unsigned int		g_unRecvThread = 0, g_unSaveThread = 0;
 std::map<std::string, CChartMaker*>	g_mapSymbol;
 
-
+char SERVICENAME[128], DISPNAME[128], DESC[128];
 
 int  _Start()
 {
 	char	msg[512] = { 0, };
-	CHAR	szDir[_MAX_PATH];
+	char szDir[_MAX_PATH];
+	char szNotificationServer[32], szNotificationPort[32];
 
-	//	GET LOG DIR
-	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
-
-	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
-	g_log.OpenLog(szDir, EXENAME);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
+	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
+
+	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
+
+
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	g_log.log(LOGTP_SUCC, "버전[%s]%s", __DATE__, __APP_VERSION);
+	g_log.log(LOGTP_SUCC, "Version[%s]%s", __DATE__, __APP_VERSION);
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
-	printf("버전[%s]%s\n", __DATE__, __APP_VERSION);
+	printf("Version[%s]%s\n", __DATE__, __APP_VERSION);
 
 	//---------------------------------------------
 	//	프로그램 전체를 끝내는 이벤트
@@ -112,10 +110,21 @@ int  _Start()
 	}
 
 	if (!DBOpen())
+	{
+		g_log.log(NOTIFY, "Failed to connect to DB");
 		return 0;
+	}
+		
 
 
-	InitApiClient();
+	while (!InitApiClient() )
+	{
+		if (!g_bContinue)
+			return 0;
+		g_log.log(NOTIFY, "Failed to connect to API server");
+		Sleep(10000);
+		continue;
+	}
 
 	// 차트 저장 스레드
 	g_hRecvThread = (HANDLE)_beginthreadex(NULL, 0, &RecvMDThread, NULL, 0, &g_unRecvThread);
@@ -123,7 +132,10 @@ int  _Start()
 
 
 	if (!LoadSymbol())
+	{
+		g_log.log(NOTIFY, "Failed to LoadSymbol");
 		return 0;
+	}
 	
 
 	DWORD ret = WaitForSingleObject(g_hDieEvent, INFINITE);
@@ -134,16 +146,22 @@ int  _Start()
 		CChartMaker* p = (*it).second;
 		delete p;
 	}
-
-	SAFE_DELETE(g_ado);
-	SAFE_DELETE(g_pApiRecv);
-	SAFE_CLOSEHANDLE(g_hRecvThread);
-	SAFE_CLOSEHANDLE(g_hSaveThread);
-	SAFE_DELETE(g_pMemPool);
+	//printf("----------------1\n");
+	//SAFE_DELETE(g_ado);
+	//printf("----------------2\n");
+	//SAFE_DELETE(g_pApiRecv);
+	//printf("----------------3\n");
+	//SAFE_CLOSEHANDLE(g_hRecvThread);
+	//printf("----------------4\n");
+	//SAFE_CLOSEHANDLE(g_hSaveThread);
+	//printf("----------------5\n");
+	//SAFE_DELETE(g_pMemPool);
+	//printf("----------------6\n");
 	CoUninitialize();
 
 	return 0; 
 }
+
 
 
 BOOL	InitMemPool()
@@ -200,8 +218,8 @@ void RecvMDThreadFn()
 		}
 		if (nLen < 0)
 		{
-			g_log.log(LOGTP_ERR, "PAKCET 이상(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
-			printf("PAKCET 이상(%s)\n", g_pApiRecv->GetMsg());
+			g_log.log(LOGTP_ERR, "PAKCET Error(%s)(%s)", pBuf, g_pApiRecv->GetMsg());
+			//printf("PAKCET Error(%s)\n", g_pApiRecv->GetMsg());
 			g_pMemPool->release(pBuf);
 			continue;
 		}
@@ -212,23 +230,22 @@ void RecvMDThreadFn()
 			char tm[9];
 			sprintf(tm, "%.2s:%.2s:%.2s", pSise->Time, pSise->Time + 2, pSise->Time + 4);
 			memcpy(pSise->Time, tm, sizeof(pSise->Time));
-			//printf("[RECV](%s)\n", pBuf);
 			sprintf(zSymbol, "%.*s", sizeof(pSise->ShortCode), pSise->ShortCode);
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
+			//ir_cvtcode_uro_6e(zSymbol, zTemp);
+
 			std::string sSymbol = zSymbol;
 
+			//printf("%s\n", zSymbol);
 			std::map<std::string, CChartMaker*>::iterator it = g_mapSymbol.find(sSymbol);
 			if (it == g_mapSymbol.end())
 			{
 				g_pMemPool->release(pBuf);
-				//g_log.log(LOGTP_ERR, "[%s] 종목은 요청한 종목이 아니다.", sSymbol.c_str());
 			}
 			else
 			{
 				CChartMaker* p = (*it).second;
 				PostThreadMessage(p->GetChartThreadId(), WM_RECV_API_MD, 0, (LPARAM)pBuf);
-				//printf("[RECV](%s)\n", pBuf);
-				//g_log.log(LOGTP_SUCC, "[RECV-2](%.80s)", pBuf);
 			}
 		}
 	}
@@ -256,6 +273,7 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 				
 				sprintf(zQ, "EXEC CHART_SAVE "
 					"'%.*s', "	//@I_GROUP_KEY	VARCHAR(5)--// CLN71
+					"'%.*s', "	//@I_STK_CD
 					"'%.*s', "	//, @I_CHART_NM	VARCHAR(20)
 					"'%.*s', "	//, @I_PREV_NM		VARCHAR(20)
 					"'%.*s', "	//@I_CHART_GB	CHAR(1)--// +,-, 0
@@ -266,10 +284,11 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 					"'%.*s', "	//@I_CNTR_QTY	VARCHAR(20)
 					"'%.*s', "	//@I_DOT_CNT		VARCHAR(20)
 					"'%.*s', "	//@I_SMA_SHORT	VARCHAR(20)
-					"'%.*s' "	//@I_SMA_LONG	VARCHAR(20)
-					//"'%.*s' "
+					"'%.*s', "	//@I_SMA_LONG	VARCHAR(20)
+					"'%.*s' "	//@I_SMA_SHORT_5	VARCHAR(20)
 					,
 					LEN_GROUP_KEY, zGroupKey,
+					sizeof(p->stk_cd), p->stk_cd,
 					sizeof(p->Nm), p->Nm,
 					sizeof(p->prevNm), p->prevNm,
 					sizeof(p->gb), p->gb,
@@ -280,13 +299,13 @@ static unsigned WINAPI ChartSaveThread(LPVOID lp)
 					sizeof(p->cntr_qty), p->cntr_qty,
 					sizeof(p->dotcnt), p->dotcnt,
 					sizeof(p->sma_short), p->sma_short,
-					sizeof(p->sma_long), p->sma_long
-					//sizeof(p->seq), p->seq
+					sizeof(p->sma_long), p->sma_long,
+					sizeof(p->sma_shortest), p->sma_shortest
 				);
 				if (FALSE == db->ExecQuery(zQ))
 				{
-					g_log.log(LOGTP_ERR, "CHART DATA Save 에러(%s)(%s)", db->GetError(), zQ);
-					printf("CHART DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
+					g_log.log(LOGTP_ERR, "CHART DATA Save err(%s)(%s)", db->GetError(), zQ);
+					//printf("CHART DATA Save 에러(%s)(%s)\n", db->GetError(), zQ);
 				}
 				else
 				{
@@ -328,55 +347,61 @@ BOOL DBOpen()
 	return TRUE;
 }
 
+/*
 
+ALTER PROCEDURE [dbo].[AA_GET_SYMBOL]
+-- Add the parameters for the stored procedure here
+AS
+BEGIN
+-- SET NOCOUNT ON added to prevent extra result sets from
+-- interfering with SELECT statements.
+SET NOCOUNT ON;
+
+SELECT API_CD,STK_CD,STK_NM,ARTC_CD,DOT_CNT,TICK_SIZE FROM AA_STK_MST WHERE USE_YN = 'Y'
+
+SET NOCOUNT OFF	 
+*/
 BOOL LoadSymbol()
 {
 
 	CDBHandlerAdo db(g_ado->Get());
-	char zQ[1024];
-	sprintf(zQ, "EXEC CHART_GET_SYMBOL");
+	char zStkCdQry[1024];
+	strcpy(zStkCdQry, "EXEC AA_GET_SYMBOL");
 
-	if (!db->ExecQuery(zQ))
+	if (!db->ExecQuery(zStkCdQry))
 	{
-		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zQ, db->GetError());
+		g_log.log(LOGTP_ERR, "GET SYMBOL ERROR()%s)(%s)", zStkCdQry, db->GetError());
 		return FALSE;
 	}
 
-	char yearLen[32], euroDollar[32];
+	char saveYn[32], yearLen[32], euroDollar[32];
+	CUtil::GetConfig(g_zConfig, "CHART_SAVE", "SAVEONDB", saveYn);
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "YEAR_LENGTH", yearLen);
 	CUtil::GetConfig(g_zConfig, "SYMBOL_TYPE", "EURO_DOLLAR", euroDollar);
 
-
-	char zTemp[32], zSymbol[32], zArtc[32];
+	char zSymbol[32], zArtc[32];
+	int nDotCnt = 0;
 	while (db->IsNextRow())
 	{
-		db->GetStr("ARTC_CODE", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zArtc);
-
-
-		db->GetStr("SYMBOL", zTemp);
-		ir_cvtcode_uro_6e(zTemp, zSymbol);
+		db->GetStr("ARTC_CD", zArtc);
+		db->GetStr("STK_CD", zSymbol);
+		nDotCnt = db->GetLong("DOT_CNT");
 
 		//TODO
-		if (strncmp(zSymbol, "CL", 2) != 0
-			) {
-			db->Next();
-			continue;
-		}
-		
-		// KR 은 CLQ7, 다른곳은 CLQ17 
-		ir_cvtcode_HD_KR(zSymbol, zTemp);
+		//if (strncmp(zArtc, "6A", 2) != 0) {
+		//	db->Next();
+		//	continue;
+		//}
+
 		std::string symbol = zSymbol;
 
-
-		CChartMaker* p = new CChartMaker(zSymbol, zArtc, /*g_pMemPool,*/ g_unSaveThread);
+		CChartMaker* p = new CChartMaker(zSymbol, zArtc, nDotCnt, g_unSaveThread, (saveYn[0]=='Y'));
 
 		g_mapSymbol[symbol] = p;
-		g_log.log(LOGTP_SUCC, "[%s][%s] 차트구성종목", zArtc, zSymbol);
+		g_log.log(LOGTP_SUCC, "[%s][%s] Chart Symbol", zArtc, zSymbol);
 		printf("[%s][%s] 차트구성종목\n", zArtc, zSymbol);
 
-		//TODO
-		//break;
+		
 		db->Next();
 	}
 	db->Close();
@@ -392,13 +417,14 @@ BOOL	InitApiClient()
 	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "IP", zIP);
 	CUtil::GetConfig(g_zConfig, "CHART_SOCKET_INFO", "PORT", port);
 	printf("API IP(%s)PORT(%s)", zIP, port);
-	g_pApiRecv = new CTcpClient();
+	g_pApiRecv = new CTcpClient("ChartMaker");
 	if (!g_pApiRecv->Begin(zIP, atoi(port), 10))
 	{
 		g_log.log(LOGTP_FATAL, "%s", g_pApiRecv->GetMsg());
+		return FALSE;
 	}
 	else
-		g_log.log(LOGTP_SUCC, "TCP CLIENT 초기화 및 connect 성공(IP:%s)(PORT:%s)", zIP,  port);
+		g_log.log(LOGTP_SUCC, "TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP,  port);
 	
 	g_pApiRecv->StartRecvData();
 
@@ -428,42 +454,56 @@ BOOL WINAPI ControlHandler ( DWORD dwCtrlType )
 int main(int argc, LPSTR *argv)
 {
 	g_bDebug = FALSE;
-  
-	if ( (argc > 1) &&
-         ((*argv[1] == '-') || (*argv[1] == '/')) )   
-    {  
-        if ( _stricmp( "install", argv[1]+1 ) == 0 )  
-        {  
-            install();  
-        }  
-        else if ( _stricmp( "remove", argv[1]+1 ) == 0 || _stricmp( "delete", argv[1]+1 ) == 0 )  
-        {  
-            uninstall();  
-        }  
-        else if ( _stricmp( "debug", argv[1]+1 ) == 0 )  
-        {  
-            g_bDebug = TRUE;
-				SetConsoleCtrlHandler( ControlHandler, TRUE ); 
-				InitializeCriticalSection(&g_Console);
-				
-				_Start();
 
-				DeleteCriticalSection (&g_Console);
-				printf("Stopped.\n"); 
-				return 0;  
-        }  
-        else  
-        { 
-			  return 0;
-        } 
-    } 
-	SERVICE_TABLE_ENTRY stbl[] = 
+	CHAR	szDir[_MAX_PATH];
+
+	//	GET LOG DIR
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+
+	CUtil::GetConfig(g_zConfig, "SERVICE", "SERVICE_NAME", SERVICENAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DISP_NAME", DISPNAME);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DESC", DESC);
+
+
+	if ((argc > 1) &&
+		((*argv[1] == '-') || (*argv[1] == '/')))
 	{
-		{SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
-		{NULL, NULL}
+		if (_stricmp("install", argv[1] + 1) == 0)
+		{
+			install();
+		}
+		else if (_stricmp("remove", argv[1] + 1) == 0 || _stricmp("delete", argv[1] + 1) == 0)
+		{
+			uninstall();
+		}
+		else if (_stricmp("debug", argv[1] + 1) == 0)
+		{
+			g_bDebug = TRUE;
+			SetConsoleCtrlHandler(ControlHandler, TRUE);
+			InitializeCriticalSection(&g_Console);
+
+			_Start();
+
+			DeleteCriticalSection(&g_Console);
+			printf("Stopped.\n");
+			return 0;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	SERVICE_TABLE_ENTRY stbl[] =
+	{
+		{ SERVICENAME, (LPSERVICE_MAIN_FUNCTION)ServiceStart },
+		{ NULL, NULL }
 	};
 
-	if(!StartServiceCtrlDispatcher(stbl))
+	if (!StartServiceCtrlDispatcher(stbl))
 	{
 		return  -1;
 	}
@@ -565,7 +605,7 @@ void install()
 	SERVICE_DESCRIPTION lpDes;
 	char Desc[64];
 	strcpy(Desc, SERVICENAME);
-	strcat(Desc, " 서비스!");
+	strcat(Desc, " Service");
 
 	hScm = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if(hScm == NULL)
@@ -582,17 +622,21 @@ void install()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스 프로그램이 같은 디렉토리에 없습니다");
-		printf("서비스 프로그램이 같은 디렉토리에 없습니다\n");
+		printf("There is no service process in same directory");
 		return;
 	}
 
 	////	종속 서비스
-//	char szDependency[64];
-// 	memset(szDependency, 0x00, sizeof(szDependency));	
-// 	CProp prop;
-// 	prop.SetBaseKey(HKEY_LOCAL_MACHINE, REG_FRONTSERVER);
-// 	strcpy(szDependency, prop.GetValue("Dependency"));
-// 	prop.Close();
+	CHAR	szDir[_MAX_PATH];
+	char szDependency[64] = { 0, };
+
+	CProp prop;
+	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+
+	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
+	CUtil::GetConfig(g_zConfig, "SERVICE", "DEPENDENCY", szDependency);
+
 
 	hSrv = CreateService(hScm, SERVICENAME, DISPNAME,
         SERVICE_ALL_ACCESS, 
@@ -602,20 +646,19 @@ void install()
 		SrvPath,
 		NULL,
 		NULL,
-		"IRUM_ChartShmQueue",	//NULL, //szDependency,
+		szDependency,
 		NULL,
 		NULL);
 
 	if(hSrv == NULL)
 	{
-		printf("서비스를 설치하지 못 했습니다 : %d\n", GetLastError());
+		printf("Failed to install the service : %d\n", GetLastError());
 	}
 	else
 	{
 		lpDes.lpDescription = Desc;
 		ChangeServiceConfig2(hSrv, SERVICE_CONFIG_DESCRIPTION, &lpDes);
-		//log.LogEventInf(-1, "서비스를 성공적으로 설치했습니다.");
-		printf("서비스를 성공적으로 설치했습니다.\n");
+		printf("Succeeded in installing the service.(dependency:%s)\n", szDependency);
 		CloseServiceHandle(hSrv);
 	}
 	CloseServiceHandle(hScm);
@@ -628,7 +671,7 @@ void uninstall()
 	if(hScm == NULL)
 	{
 		//log.LogEventErr(-1, "서비스 메니져와 연결할 수 없습니다");
-		printf("서비스 메니져와 연결할 수 없습니다\n");
+		printf("Can't connect to SCM\n");
 		return;
 	}
 
@@ -637,7 +680,7 @@ void uninstall()
 	{
 		CloseServiceHandle(hScm);
 		//log.LogEventErr(-1, "서비스가 설치되어 있지 않습니다");
-		printf("서비스가 설치되어 있지 않습니다 : %d\n", GetLastError());
+		printf("Service is not installed: %d\n", GetLastError());
 		return ;
 	}	
 
@@ -653,10 +696,10 @@ void uninstall()
 	if(DeleteService(hSrv))
 	{
 		//log.LogEventInf(-1, "성공적으로 서비스를 제거했습니다");
-		printf("성공적으로 서비스를 제거했습니다\n");
+		printf("Succeeded in removing the service \n");
 	}
 	else{
-		printf("서비스를 제거하지 못했습니다.\n");
+		printf("Failed in removing the service\n");
 	}
 	CloseServiceHandle(hSrv);
 	CloseServiceHandle(hScm);

@@ -16,8 +16,8 @@ public:
 	BOOL	Initialize();
 
 	virtual VOID	ThreadFunc();
-	BOOL	LoadShm(/*CHART_TP*/int tp);
-	BOOL	LoadShmWrapper(/*CHART_TP*/int tp);
+	//BOOL	LoadShm(/*CHART_TP*/int tp);
+	//BOOL	LoadShmWrapper(/*CHART_TP*/int tp);
 
 	//VOID	DBSave(/*CHART_TP*/int  tp);
 	//VOID	DBSaveWrapper(/*CHART_TP*/int  tp);

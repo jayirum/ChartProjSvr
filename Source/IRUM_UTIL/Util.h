@@ -25,12 +25,20 @@
 DWORD	ReportException(DWORD dExitCode, const char* psPos, _Out_ char* pzMsgBuff);
 VOID	DumpErr(char* pzSrc, int nErr, char* pzMsg);
 char*	GetCnfgValue(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+VOID	getGMTtime(char* pOut);	//yyyymmdd-hhmmss
+
 
 //#define	CNFG_PATH	"D:\\cnfg"
 #define property(DATATYPE, READ, WRITE) __declspec(property(get=READ, put=WRITE)) DATATYPE
 
 enum { FULLMODE=0, NORMALMODE, DATEMODE, TIMEMODE, HOURMIN, MILLISECMODE };
 enum { EN_SUNDAY=0, EN_MONDAY, EN_TUESDAY, EN_WEDNESDAY, EN_THURSDAY, EN_FRIDAY, EN_SATURDAY};
+typedef enum {
+	TIME_HHMM		//HHMM
+	,TIME_HHMMSS	//HHMMSS
+	,TIME_HH_MM		//HH:MM
+	,TIME_HH_MM_SS	//HH:MM:SS
+}EN_TIMEMODE;
 
 #define FMT_GETTIME_DOT_DATEMODE_LEN			10		/*! YYYY.MM.DD */
 #define FMT_GETTIME_DOT_TIMEMODE_LEN			8		/*! HH:MM:SS */
@@ -128,6 +136,7 @@ enum { EN_SUNDAY=0, EN_MONDAY, EN_TUESDAY, EN_WEDNESDAY, EN_THURSDAY, EN_FRIDAY,
 
 
 char* MakeGUID(char *pzGUID);
+BOOL IsPassedTime(char* pzBaseTime, EN_TIMEMODE timeMode);
 
 class GetSvcNameT
 	: public std::unary_function<VOID, LPCTSTR>
@@ -203,7 +212,8 @@ public:
 //	static	TCHAR*	ResizeStr_Dbl( TCHAR* pOrg, int nOrgLen, TCHAR* pOut, int nOutLen );
 
 	static	int		GetDecimalCnt( TCHAR* psNTTN );	//	소숫점 이하 갯수
-	static	BOOL	IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin );	//	분(minitue)가 지났는지 여부
+	//static	BOOL	IsPassedMin( TCHAR* i_psLastTime, int i_nBaseMin );	//	분(minitue)가 지났는지 여부
+	//static	BOOL	IsPassedSec( TCHAR* i_psLastTime, int i_nBaseSec);	//	초(sec)가 지났는지 여부
 	static	TCHAR*	CvtInt_SpaceLeading( TCHAR* i_psOrg, int i_nOrgLen, int i_nOutLen, TCHAR* o_psOut );
 	static	TCHAR*	CvtDbl_SpaceLeading( TCHAR* i_psOrg, int i_nOrgLen, int i_nOutLen, TCHAR* o_psOut );
 
@@ -222,6 +232,8 @@ public:
 	static	char*	GetCnfgXMLFileNm(char *i_psDir, char* i_psFileNm, char* o_psValue);
 	static	char*	GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue );
 	static  BOOL	GetNextConfigData(char* pzCnfgFileNm, char* pzSectionNm, char* pzPrevKeyNm, char* o_pzNextKeyNm, char* o_pzNextValue);
+	//static	char*	GetCnfgQuery(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+
 	static int		GetTickGap(double dFirstPrc, double dSndPrc, int nDotCnt, double dTickSize);
 	static double	GetPrcByTick(char* pzOrigPrc, double dTickCnt, double dTickSize, char cPlusMinus);
 	static int CompPrc(const char* pPrc1, const int nLen1, const char* pPrc2, const int nLen2, const int nDotCnt, const int nFormatLen);
@@ -234,6 +246,9 @@ public:
 	static VOID FormatErrMsg(_In_ int nErrNo, _Out_ char* pzMsg);
 	static VOID SplitData(_In_ char* psData, _In_ char cDelimeter, _Out_ std::list<std::string>* pListResult);
 	static VOID SplitDataEx(_In_ char* psData, _In_ char cDelimeter, _In_ int nSize, _Out_ std::list<std::string>* pListResult);
+
+	static int GetPassedSeconds(char* pStartTime, BOOL bColon);
+
 };
 
 

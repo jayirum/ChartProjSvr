@@ -1,0 +1,83 @@
+#pragma once
+
+
+#include <string>
+#include "../../IRUM_UTIL/BaseThread.h"
+#include "../../IRUM_UTIL/MemPool.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
+#include "StratHistManager.h"
+#include "StrategyMDB.h"
+
+typedef struct _SYMBOL_INFO
+{
+	char	zTickSize[10];
+	int		nDotCnt;
+}SYMBOL_INFO;
+
+enum { SLPT_NONE=0, SL_BUY, SL_SELL, PT_BUY, PT_SELL};
+
+
+class CStratMaker : public CBaseThread
+{ 
+public:
+	CStratMaker(char* pzSymbol);
+	BOOL Initialize();
+	void SetApiThreadInfo(CMemPool* pMemPool,unsigned dwSaveThread, unsigned dwSendThread);	// , char* pzCloseTM, char* pzMaxSLCnt);
+	~CStratMaker();
+	//unsigned int GetMainThreadId() { return m_dwStratThreadID; }
+	unsigned int GetStratThreadId() { return m_dwStratThreadID; }
+private:
+	//BOOL	LoadSymbolSpec();		// 전략을 위한 공통정보
+
+	VOID	MainFunc();
+	VOID	ThreadFunc();
+
+	//BOOL	BeginDB();
+	//VOID	EndDB();
+
+	VOID	APIOrdProc(char* pData);
+	VOID	StratProc(char* pMarketData);
+	VOID	TestChartNm();
+	VOID	StratClose(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
+	VOID	MarketCloseClr();
+	VOID	ClosePosition();
+	char*	GetCloseOrdType( char* pzCurrPrc, 
+					_Out_ char* pzBasePrc, _Out_ char* pzStratID, _Out_ char* pzClrMsg
+					,_Out_ ABOTLOG_NO3 *dblog);
+	VOID	StratOpen(char* pzCurrPrc, char* pzApiDT, char* pzApiTm);
+	INT		CheckMarketTime();
+	VOID	SaveDBLog(_In_ ABOTLOG_NO3* p);
+	
+	BOOL	InitChartShm();
+	VOID	CloseChartShm();
+
+	// work thread
+	static unsigned WINAPI StratThread(LPVOID lp);
+
+	BOOL	TradeOption();
+
+private:
+	CMemPool			*m_pMemPool;
+	//CStratHistManager	*m_h;
+	CChartShmUtil		*m_chart;
+	CStrategyMDB		*m_mdb;
+
+	char			m_zSymbol[128];
+	char			m_zArtc[128];
+	char			m_zShmNm[128], m_zMutexNm[128];
+	char			m_zLastCurrPrc[32];
+	char			m_szMsg[1024];
+	
+	unsigned		m_dwSaveThread, m_dwSendThread;
+	SYMBOL_INFO		m_SymbolInfo;
+
+	//int				m_nMarketStatus;
+
+	// worker thread
+	HANDLE			m_hStratThread;
+	HANDLE			m_hWorkDie;
+	unsigned int	m_dwStratThreadID;
+
+};
+
+

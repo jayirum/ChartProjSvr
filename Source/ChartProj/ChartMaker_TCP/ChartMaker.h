@@ -10,6 +10,8 @@
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/QueueShm.h"
 #include "../../IRUM_UTIL/MemPool.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
+#include "../../IRUM_UTIL/LogMsg.h"
 
 #define MAX_CHARTTP_CNT	20
 
@@ -20,7 +22,7 @@
 class CChartMaker : public CBaseThread
 {
 public:
-	CChartMaker(char* pzSymbol, char* pzArtcCode, /*CMemPool* pMemPool,*/ unsigned dwMainThreadId);
+	CChartMaker(char* pzSymbol, char* pzArtcCode, int nDotCnt, unsigned dwMainThreadId, BOOL bSaveChart);
 	virtual ~CChartMaker();
 
 	VOID	ChartProc(VOID* pIn, int tp);
@@ -55,4 +57,12 @@ private:
 	HANDLE			m_hWorkThread;
 	HANDLE			m_hWorkDie;
 	unsigned int	m_dwWorkThreadID;
+	int				m_nDotCnt;
+	BOOL			m_bSaveChart;
+
+	CHARTNAME_TYPE	m_chartNmType;
+	CChartShmUtil	*m_chartUtil;
+
+	CLogMsg			m_logData;
+	BOOL			m_bLogData;
 };

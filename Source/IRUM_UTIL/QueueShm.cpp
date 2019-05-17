@@ -303,6 +303,34 @@ BOOL CQueueShm::DataGet(char *pGroupKey, char *pStructKey, char *pStructData)
 	return TRUE;
 }
 
+
+BOOL CQueueShm::DataGet(char *pGroupKey, char *pStructKey, char *pStructData, int *pErrCode, char* pErrMsg)
+{
+	if (!m_pShm) {
+		*pErrCode = 1;
+		sprintf(pErrMsg, "SHM is not set up");
+		return FALSE;
+	}
+
+	char *pStruct = SearchStructPointer(pGroupKey);
+	if (!pStruct) {
+		*pErrCode = 2;
+		sprintf(pErrMsg, "SearchStructPointer Error(GROUP_KEY:%s)", pGroupKey);
+		return FALSE;
+	}
+
+	char *pData = SearchDataPointer(pStruct, pStructKey);
+	if (!pData) {
+		*pErrCode = 3;
+		sprintf(pErrMsg, "SearchDataPointer Error(STRUCT_KEY:%s)", pStructKey);
+		return FALSE;
+	}
+
+	CopyMemory(pStructData, pData, m_InitData.lStructSize);
+
+	return TRUE;
+}
+
 BOOL CQueueShm::DataGet(char *pGroupKey, char *pStructKey, /*in*/int nStartPos, /*in*/int nLen, /*out*/char *pStructData)
 {
 	if(!m_pShm) return FALSE;

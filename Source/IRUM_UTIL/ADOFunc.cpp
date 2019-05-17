@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "Util.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -227,12 +228,77 @@ VARIANT CADOFunc::GetValue(LONG lField)
 }
 
 
+//VOID CADOFunc::GetValueEx2(LPCTSTR pszField, VARIANT* pRet)
+//{
+//	VariantCopy(pRet, &m_pRs->Fields->Item[_bstr_t(pszField)]->Value);
+//}
+
+char* CADOFunc::GetStrWithLen(LPCTSTR pszField, int nMaxLen, char* pzOut)
+{
+	_variant_t vVal;
+
+	try {
+		VariantCopy(&vVal, &m_pRs->Fields->Item[_bstr_t(pszField)]->Value);
+	}
+	//__except (ReportException(GetExceptionCode(), "CADOFunc::GetStrWithLen", pzOut))
+	catch(...)
+	{
+		sprintf(m_szMessage, "GetStrWithLen try catch error");
+		return NULL;
+	}
+	//strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); 
+	sprintf(pzOut, "%.*s", nMaxLen, (LPCSTR)(_bstr_t)vVal);
+	return pzOut;
+}
+
+
+char* CADOFunc::GetStr(LPCTSTR pszField, char* pzOut)
+{
+	VARIANT vVal;
+	if (!GetValueEx(pszField, &vVal))
+		return NULL;
+
+	//strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); 
+	strcpy(pzOut, (LPCSTR)(_bstr_t)vVal);
+	return pzOut;
+}
+
+
+
+int CADOFunc::GetStrEx(LPCTSTR pszField, char* pzOut, int * pnLen)
+{
+	*pnLen = -1;
+	__try {
+		GetStr(pszField, pzOut);
+		*pnLen = strlen(pzOut);
+	}
+	__except (ReportException(GetExceptionCode(), "CADOFunc::GetStr", pzOut))
+	{
+	}
+	return *pnLen;
+}
 
 
 VARIANT CADOFunc::GetValue(LPCTSTR pszField)
 {
 	return m_pRs->Fields->Item[_bstr_t(pszField)]->Value;
 }
+
+
+BOOL CADOFunc::GetValueEx(LPCTSTR pszField, VARIANT* pRet)
+{
+	BOOL bRet = TRUE;
+	__try {
+		*pRet = GetValue(pszField);
+	}
+	__except (ReportException(GetExceptionCode(), "CADOFunc::GetValueEx", m_szMessage))
+	{
+		bRet = FALSE;
+	}
+	return bRet;
+}
+
+
 
 BOOL CADOFunc::GetRows(VARIANT *pRecordArray)
 {
@@ -266,6 +332,7 @@ BOOL CADOFunc::IsNextRow()
 
 void CADOFunc::Next()
 {
+	Sleep(1);
 	m_pRs->MoveNext();
 }
 
@@ -494,7 +561,7 @@ BOOL CDBPoolAdo::Init(int nInitCnt)
 {
 	if (nInitCnt <= 0)
 	{
-		sprintf_s(m_zMsg, "DB POOL Count 오류:%d", nInitCnt);
+		sprintf_s(m_zMsg, "DB POOL Count Err:%d", nInitCnt);
 		return FALSE;
 	}
 	for (int i = 0; i < nInitCnt; i++)
@@ -603,6 +670,25 @@ CADOFunc* CDBPoolAdo::GetAvailableDB()
 	return p;//(*it);
 }
 
+CADOFunc* CDBPoolAdo::GetAvailableAdo(CADOFunc* p)
+{
+	if (m_setDB.size() == 0)
+	{
+		if (!AddNew())
+		{
+			sprintf(m_zMsg, "POOL 에 남아있는 세션이 없음 ");
+			return NULL;
+		}
+	}
+
+	LOCK();
+	std::set<CADOFunc*>::iterator it = m_setDB.begin();
+	p = (*it);
+	m_setDB.erase(it);
+	UNLOCK();
+
+	return p;//(*it);
+}
 
 //<DBPool>
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

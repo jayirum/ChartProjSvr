@@ -107,6 +107,7 @@ BEGIN_MESSAGE_MAP(CMudFishOrdDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDCANCEL, &CMudFishOrdDlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDOK, &CMudFishOrdDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_BUTTON_CLOSE_POS, &CMudFishOrdDlg::OnBnClickedButtonClosePos)
 END_MESSAGE_MAP()
 
 
@@ -142,10 +143,19 @@ BOOL CMudFishOrdDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	//	GET LOG DIR
-	char szDir[_MAX_PATH];
+	char szDir[_MAX_PATH] = { 0, };
 	CProp prop;
-	prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY);
-	strcpy(szDir, prop.GetValue("CONFIG_DIR_CHART"));
+	if (!prop.SetBaseKey(HKEY_LOCAL_MACHINE, IRUM_DIRECTORY))
+	{
+		AfxMessageBox("Registry Open Failed");
+		return FALSE;
+	}
+	strcpy(szDir, prop.GetValue("CONFIG_DIR_MRYOON"));
+	if(szDir[0]==0)
+	{
+		AfxMessageBox("Registry value Failed");
+		return FALSE;
+	}
 	CUtil::GetCnfgFileNm(szDir, EXENAME, g_zConfig);
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	g_log.OpenLog(szDir, EXENAME);
@@ -356,6 +366,8 @@ unsigned WINAPI CMudFishOrdDlg::Thread_ApiTick(LPVOID lp)
 			CUtil::TrimAll(zSymbol, strlen(zSymbol));
 			std::string sSymbol = zSymbol;
 
+			//char buf[128]; sprintf(buf,"tick[%s]\n", zSymbol);
+			//OutputDebugString(buf);
 			ITMAP_STRAT it = p->m_mapStrat.find(sSymbol);
 			if (it == p->m_mapStrat.end())
 			{
@@ -904,12 +916,14 @@ BOOL CMudFishOrdDlg::LoadSymbolInfo(BOOL bCreateStrat)
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_NAME", name);
 	CUtil::GetConfig(g_zConfig, "DBINFO", "DB_POOL_CNT", cnt);
 
-	if(!m_pDBPool)
-		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
-	if (!m_pDBPool->Init(atoi(cnt)))
+	if (!m_pDBPool)
 	{
-		showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
-		return FALSE;
+		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
+		if (!m_pDBPool->Init(atoi(cnt)))
+		{
+			showMsg(FALSE, "DB OPEN FAILED.(%s)(%s)(%s)", ip, id, pwd);
+			return FALSE;
+		}
 	}
 
 	CDBHandlerAdo db(m_pDBPool->Get());
@@ -1330,3 +1344,36 @@ void CMudFishOrdDlg::OnBnClickedOk()
 	End();
 	CDialogEx::OnOK();
 }
+
+
+void CMudFishOrdDlg::OnBnClickedButtonClosePos()
+{
+	int result = AfxMessageBox("현재 포지션을 청산합니다.청산 후에는 재실행 전까지 해당 종목은 운용되지 않습니다.", MB_YESNO, 0);
+
+	if (result == IDNO)
+		return;
+
+	int nCount = m_ctlSymbol.GetItemCount();
+	if (nCount == 0) {
+		AfxMessageBox("청산할 종목을 선택하셔야 합니다.", MB_OK);
+		return;
+	}
+
+	CString sSymbol;
+
+	for (int i = 0; i < nCount; i++)
+	{
+		if (m_ctlSymbol.GetCheck(i))
+		{
+			sSymbol = m_ctlSymbol.GetItemText(i, I_SYMBOL);
+
+			ITMAP_STRAT it = m_mapStrat.find(std::string(sSymbol.GetBuffer()));
+			if (it != m_mapStrat.end())
+			{
+				ST_STRAT* p = (*it).second;
+				PostThreadMessage(p->m->GetStratThreadId(), WM_CLOSE_POSITION, 0,0);
+			}
+		}
+	}
+}
+	

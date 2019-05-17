@@ -1,6 +1,7 @@
 
 
-#include "../../IRUM_INC/IRUM_Common.h"
+#include "../../IRUM_UTIL/IRUM_Common.h"
+#include "../../IRUM_UTIL/ChartShmUtil.h"
 #include "CreateSaveShm.h"
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/Util.h"
@@ -107,7 +108,7 @@ BOOL CCreateSaveShm::Create()
 		//}
 	}
 	//int Size = shmData.lMaxGroupCnt*CHART_TP_CNT*MAX_CHART_UNIT_CNT * sizeof(ST_SHM_CHART_UNIT);
-	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = 총그룹갯수(심볼수:%d)*차트수(%d)*차트당UNIT수(%d)*UNIT크기(%d) = %d (%10.2f MB)",
+	sprintf(m_zMsg, "(%s)(%s) succeeded in creating SHM.SHM size = Total Group Cnt(Symbol:%d)*ChartCnt(%d)*Unit Per Chart%d)*UNIT Size(%d) = %d (%10.2f MB)",
 		m_zShmNm, m_zMutexNm,
 		MAX_SYMBOL_PER_ARTC, CHART_TP_CNT, MAX_CHART_UNIT_CNT, sizeof(ST_SHM_CHART_UNIT),
 		nTotSize, (double)nTotSize /1024./1024.);
@@ -121,25 +122,34 @@ BOOL CCreateSaveShm::Create()
 
 VOID CCreateSaveShm::ThreadFunc()
 {
-	for (int i = TP_1MIN; i < TP_DAY; i++)
-	{
-		if (!LoadShmWrapper(i))
-			return;
-	}
-	while (TRUE)
-	{
-		if (WaitForSingleObject(m_hDie, 10000)==WAIT_OBJECT_0)
-			break;
+	BOOL bInit = FALSE;
 
-		// DB WRITE
-		//for (int i = TP_1MIN; i < TP_MON; i++)
-		//{
-		//	DBSaveWrapper(i);
-		//}
+	//for (int i = TP_1MIN; i < TP_DAY; i++)
+	//{
+	//	if (!m_bContinue)
+	//		return;
+
+	//	if (!LoadShmWrapper(i)) {
+	//		printf("LoadSymbolError(%s)(%d)\n", m_zArtc, i);
+	//		return;
+	//	}
+	//}
+
+	while (m_bContinue)
+	{
+		if (WaitForSingleObject(m_hDie, INFINITE) == WAIT_OBJECT_0) {
+			break;
+		}
+
+
 	}
 }
 //
 
+
+
+
+#if 0
 BOOL	CCreateSaveShm::LoadShmWrapper(/*CHART_TP*/int  tp)
 {
 	__try
@@ -166,6 +176,8 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 		g_log.log(LOGTP_ERR, "CHART DATA Load-1 Fail(%s)(%s)", db->GetError(), zQ);
 		return FALSE;
 	}
+	g_log.log(LOGTP_SUCC, "Load Initial Chart Data(%s)", m_zArtc);
+
 	while (db->IsNextRow())
 	{
 		char zGroup[128];
@@ -189,6 +201,7 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 			return FALSE;
 		}
 
+		
 		int nLoop = 0;
 		char zTemp[128];
 		CHAR zGroupKey[LEN_GROUP_KEY + 1];
@@ -228,7 +241,7 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 			if (!m_shmQ.GroupFind(zGroupKey))
 			{
 				m_shmQ.GroupInsert(zGroupKey);
-				g_log.log(LOGTP_SUCC, "[GROUP INSERT][%s]", zGroupKey);
+				//g_log.log(LOGTP_SUCC, "[GROUP INSERT][%s]", zGroupKey);
 				m_shmQ.DataInsert(zGroupKey, (char*)&stShm);
 				//g_log.log(LOGTP_SUCC, "[DATA INSERT][%s][%.*s][%.*s]", zGroupKey, LEN_CHART_NM, stShm.Nm, LEN_CHART_NM, stShm.prevNm);
 				//printf("[DATA INSERT][%s][%.*s][%.*s]\n", zGroupKey, LEN_CHART_NM, stShm.Nm, LEN_CHART_NM, stShm.prevNm);
@@ -267,11 +280,10 @@ BOOL	CCreateSaveShm::LoadShm(/*CHART_TP*/int  tp)
 		db->Close();
 
 
-
 	} // for (it = listGroupKey.begin(); it != listGroupKey.end(); it++)
 	return TRUE;
 }
-
+#endif
 
 //VOID	CCreateSaveShm::DBSave(/*CHART_TP*/int  tp)
 //{

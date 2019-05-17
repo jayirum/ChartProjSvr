@@ -51,7 +51,11 @@ public:
 	double GetDouble(int lField) { return GetDbl(lField); }
 
 	VARIANT GetValue(LPCTSTR pszField);
-	char* GetStr(LPCTSTR pszField, char* pzOut) { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
+	BOOL GetValueEx(LPCTSTR pszField, VARIANT* pRet);
+	//VOID GetValueEx2(LPCTSTR pszField, VARIANT* pRet);
+	char* GetStr(LPCTSTR pszField, char* pzOut);// { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
+	char* GetStrWithLen(LPCTSTR pszField, int nMaxLen, char* pzOut);
+	int GetStrEx(LPCTSTR pszField, char* pzOut, int * pnLen);// { strcpy(pzOut, (LPCSTR)(_bstr_t)GetValue(pszField)); return pzOut; }
 	long GetLong(LPCTSTR pszField) { return (long)(_variant_t)GetValue(pszField); }
 	double GetDbl(LPCTSTR pszField) { return (double)(_variant_t)GetValue(pszField); }
 	double GetDouble(LPCTSTR pszField) { return GetDbl(pszField); }
@@ -85,6 +89,7 @@ public:
 	BOOL Init(int nInitCnt);
 	INT Release(CADOFunc* p);
 	CADOFunc* GetAvailableDB();
+	CADOFunc* GetAvailableAdo(CADOFunc* p);
 	CDBPoolAdo* Get() { return this; };
 	char* GetMsg() { return m_zMsg; };
 	INT Available();
