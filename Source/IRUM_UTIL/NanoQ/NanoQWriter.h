@@ -4,13 +4,13 @@
 #include "NanoQBase.h"
 
 
-class CNanoQC : public CNanoQ
+class CNanoQWriter : public CNanoQ
 {
 public:
-	CNanoQC();
-	virtual ~CNanoQC();
+	CNanoQWriter();
+	~CNanoQWriter();
 
-	BOOL	Begin(char* pzRemoteChannelNm, int nSendTimeout);
+	BOOL	Begin(char* pzChannelNm, int nSendTimeout);
 	BOOL	Connect();
 	int		SendData(char* pData, int nSendLen, int* pnErrCode);
 private:

@@ -4,13 +4,13 @@
 #include "NanoQBase.h"
 
 
-class CNanoQS : public CNanoQ
+class CNanoQReader : public CNanoQ
 {
 public:
-	CNanoQS();
-	virtual ~CNanoQS();
+	CNanoQReader();
+	~CNanoQReader();
 
-	BOOL	Begin(char* pzRemoteChannelNm, int nRecvTimeout);
+	BOOL	Begin(char* pzChannelNm, int nRecvTimeout);
 	int		RecvData(_Out_ char* pData, _In_ int nBuffLen, _Out_ int* pnErrCode);
 private:
 

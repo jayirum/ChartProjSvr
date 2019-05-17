@@ -3,18 +3,18 @@
 #include <windows.h>
 #include <process.h>
 
-#define NANOQAPI extern "C" __declspec(dllexport)
+#define NANOQAPI_EXPORTS
 
 
-#include "NanoQDll.h"
-#include "../../IRUM_UTIL/NanoQ/NanoQC.h"
-#include "../../IRUM_UTIL/NanoQ/NanoQS.h"
+#include "../../IRUM_UTIL/NanoQ/NanoQDll.h"
+#include "../../IRUM_UTIL/NanoQ/NanoQReader.h"
+#include "../../IRUM_UTIL/NanoQ/NanoQWriter.h"
 #include "./utils/err.c"	//important
 
 
-CNanoQC	g_senderQ;
-CNanoQS g_recvQ;
-char			g_sMsgS[1024] = { 0, };
+CNanoQWriter	queWriter;
+CNanoQReader	queReader;
+char			g_sMsgW[1024] = { 0, };
 char			g_sMsgR[1024] = { 0, };
 BOOL			g_bContinue		= FALSE;
 HANDLE			g_hThread		= NULL;
@@ -25,51 +25,51 @@ void(*g_CallBack)(int, char*);	// return, message
 unsigned WINAPI RecvThread(LPVOID lp);
 
 
-char* GetLastMsgS()
+void W_GetLastMsg(char* pMsg)
 {
-	return g_sMsgS;
+	strcpy(pMsg, g_sMsgW);
 }
 
-char* GetLastMsgR()
+void R_GetLastMsg(char* pMsg)
 {
-	return g_sMsgR;
+	strcpy(pMsg, g_sMsgR);
 }
 
-int S_Begin(char *pRemoteChannel, int nSendTimeout)
+int W_Begin(char *pzChannelNm, int nSendTimeout)
 {
-	if (!g_senderQ.Begin(pRemoteChannel, nSendTimeout))
+	if (!queWriter.Begin(pzChannelNm, nSendTimeout))
 	{
-		strcpy(g_sMsgS, g_senderQ.GetMsg());
+		strcpy(g_sMsgW, queWriter.GetMsg());
 		return Q_ERROR;
 	}
 	return Q_SUCCESS;
 }
 
-int S_Connect()
+int W_Connect()
 {
-	if (!g_senderQ.Connect())
+	if (!queWriter.Connect())
 	{
-		strcpy(g_sMsgS, g_senderQ.GetMsg());
+		strcpy(g_sMsgW, queWriter.GetMsg());
 		return Q_ERROR;
 	}
 	return Q_SUCCESS;
 }
 
 
-int S_SendData(char* pData, int nSendLen)
+int W_SendData(char* pData, int nSendLen)
 {
 	int nErrCode = Q_SUCCESS;
-	int ret = g_senderQ.SendData(pData, nSendLen, &nErrCode);
+	int ret = queWriter.SendData(pData, nSendLen, &nErrCode);
 	if(ret== Q_ERROR)
 	{
-		strcpy(g_sMsgS, g_senderQ.GetMsg());
+		strcpy(g_sMsgW, queWriter.GetMsg());
 	}
 	return ret;
 }
 
-void S_Close()
+void W_Close()
 {
-	g_senderQ.End();
+	queWriter.End();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,26 +78,25 @@ void S_Close()
 //
 //
 /////////////////////////////////////////////////////////////////////////////
-int R_Begin(char *pMyChannel, int nRecvTimeout)
+int R_Begin(char *pzChannelNm, int nRecvTimeout)
 {
-	if (!g_recvQ.Begin(pMyChannel, nRecvTimeout))
+	if (!queReader.Begin(pzChannelNm, nRecvTimeout))
 	{
-		strcpy(g_sMsgR, g_recvQ.GetMsg());
+		strcpy(g_sMsgR, queReader.GetMsg());
 		return Q_ERROR;
 	}
 	return Q_SUCCESS;
 }
 
-
-
-
 int R_RecvData(char* pData, int nBuffLen)
 {
 	int nErrCode = Q_SUCCESS;
-	int ret = g_recvQ.RecvData(pData, nBuffLen, &nErrCode);
+	int ret = queReader.RecvData(pData, nBuffLen, &nErrCode);
 	if (ret == Q_ERROR)
 	{
-		strcpy(g_sMsgR, g_recvQ.GetMsg());
+		if (nErrCode == Q_TIMEOUT)
+			return Q_TIMEOUT;
+		strcpy(g_sMsgR, queReader.GetMsg());
 	}
 	return ret;
 }
@@ -121,10 +120,10 @@ unsigned WINAPI RecvThread(LPVOID lp)
 		ZeroMemory(zRecvMsg, sizeof(zRecvMsg));
 
 		int nErrCode = Q_SUCCESS;
-		nRet = g_recvQ.RecvData(zRecvMsg, nBuffLen, &nErrCode);
+		nRet = queReader.RecvData(zRecvMsg, nBuffLen, &nErrCode);
 		if (nRet == Q_ERROR)
 		{
-			//strcpy(g_sMsgR, g_recvQ.GetMsg());
+			//strcpy(g_sMsgR, queReader.GetMsg());
 		}
 		else if (nRet == Q_SUCCESS)
 		{
@@ -144,5 +143,5 @@ void R_StopRecv()
 void R_Close()
 {
 	R_StopRecv();
-	g_recvQ.End();
+	queReader.End();
 }

@@ -1,23 +1,23 @@
-#include "NanoQS.h"
+#include "NanoQReader.h"
 #include <stdio.h>
 
-CNanoQS::CNanoQS()
+CNanoQReader::CNanoQReader()
 {
 
 }
 
-CNanoQS::~CNanoQS()
+CNanoQReader::~CNanoQReader()
 {}
 
-BOOL CNanoQS::Begin(char* pzMyChannelNm, int nRecvTimeout)
+BOOL CNanoQReader::Begin(char* pzChannelNm, int nRecvTimeout)
 {
 	m_tp = TP_PULL;
 
-	if (!pzMyChannelNm) {
+	if (!pzChannelNm) {
 		sprintf(m_zMsg, "Need my channel name");
 		return FALSE;
 	}
-	sprintf(m_zMyChannel, "ipc://%s", pzMyChannelNm);
+	sprintf(m_zChannel, "ipc://%s", pzChannelNm);
 
 	m_sock = nn_socket(AF_SP, NN_PULL);
 	if (m_sock == -1) {
@@ -26,12 +26,12 @@ BOOL CNanoQS::Begin(char* pzMyChannelNm, int nRecvTimeout)
 		return FALSE;
 	}
 
-	int rc = nn_bind(m_sock, m_zMyChannel);
+	int rc = nn_bind(m_sock, m_zChannel);
 	if (rc < 0) 
 	{
 		int err = nn_errno();
 		printf("Failed to bind to \"%s\": %s [%d]\n",
-			m_zMyChannel,
+			m_zChannel,
 			nn_err_strerror(err),
 			(int)err);
 		return -1;
@@ -51,7 +51,7 @@ BOOL CNanoQS::Begin(char* pzMyChannelNm, int nRecvTimeout)
 }
 
 
-int	CNanoQS::RecvData(_Out_ char* pData, _In_ int nBuffLen, _Out_ int* pnErrCode)
+int	CNanoQReader::RecvData(_Out_ char* pData, _In_ int nBuffLen, _Out_ int* pnErrCode)
 {
 	*pnErrCode = Q_SUCCESS;
 	int rc = nn_recv(m_sock, pData, nBuffLen, 0);

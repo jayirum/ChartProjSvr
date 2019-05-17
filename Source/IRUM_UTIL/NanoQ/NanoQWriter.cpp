@@ -1,24 +1,25 @@
-#include "NanoQC.h"
+#include "NanoQWriter.h"
 #include <stdio.h>
 
-CNanoQC::CNanoQC()
+CNanoQWriter::CNanoQWriter()
 {
 
 }
 
-CNanoQC::~CNanoQC()
-{}
+CNanoQWriter::~CNanoQWriter()
+{
+}
 
-BOOL CNanoQC::Begin(char* pzRemoteChannelNm, int nSendTimeout)
+BOOL CNanoQWriter::Begin(char* pzChannelNm, int nSendTimeout)
 {
 	m_tp = TP_PUSH;
 	
-	if (!pzRemoteChannelNm) {
+	if (!pzChannelNm) {
 		sprintf(m_zMsg, "Need Remote channel name");
 		return FALSE;
 	}
 
-	sprintf(m_zRemoteChannel, "ipc://%s", pzRemoteChannelNm);
+	sprintf(m_zChannel, "ipc://%s", pzChannelNm);
 	m_sock = nn_socket(AF_SP, NN_PUSH);
 	if (m_sock == -1) {
 		int err = nn_errno();
@@ -38,13 +39,13 @@ BOOL CNanoQC::Begin(char* pzRemoteChannelNm, int nSendTimeout)
 }
 
 
-BOOL CNanoQC::Connect()
+BOOL CNanoQWriter::Connect()
 {
-	int rc = nn_connect(m_sock, m_zRemoteChannel);
+	int rc = nn_connect(m_sock, m_zChannel);
 	if (rc < 0) {
 		int err = nn_errno();
 		sprintf(m_zMsg,"Failed to connect \"%s\": %s [%d]\n",
-			m_zRemoteChannel,
+			m_zChannel,
 			nn_err_strerror(err),
 			(int)err);
 		return FALSE;;
@@ -53,7 +54,7 @@ BOOL CNanoQC::Connect()
 }
 
 
-int	CNanoQC::SendData(char* pData, int nSendLen, int* pnErrCode)
+int	CNanoQWriter::SendData(char* pData, int nSendLen, int* pnErrCode)
 {
 	*pnErrCode = Q_SUCCESS;
 	int rc = nn_send(m_sock, pData, nSendLen, 0);
@@ -63,7 +64,7 @@ int	CNanoQC::SendData(char* pData, int nSendLen, int* pnErrCode)
 		if (err == ETIMEDOUT)
 		{
 			*pnErrCode = Q_TIMEOUT;
-			return Q_ERROR;
+			return Q_TIMEOUT;
 		}
 		sprintf(m_zMsg, "Failed to send: %s\n", nn_err_strerror(err));
 		*pnErrCode = Q_ERROR;

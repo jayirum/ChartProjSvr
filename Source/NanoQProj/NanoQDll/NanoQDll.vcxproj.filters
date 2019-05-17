@@ -30,24 +30,24 @@
     <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQC.cpp">
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQS.cpp">
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NanoQDll.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQC.h">
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQDll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQS.h">
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
   </ItemGroup>

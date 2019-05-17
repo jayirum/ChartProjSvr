@@ -17,14 +17,14 @@
 #pragma comment(lib, "nanomsg.lib")
 
 enum _NANOQ_TP {TP_PULL, TP_PUSH};
-enum {Q_ERROR=-1, Q_TIMEOUT, Q_SUCCESS};
+enum {Q_ERROR=-1, Q_SUCCESS, Q_TIMEOUT};
 
 
 class CNanoQ
 {
 public:
 	CNanoQ();
-	virtual ~CNanoQ();
+	~CNanoQ();
 
 	virtual BOOL	Begin(char* pzChannelNm, int nTimeout) = 0;
 	VOID	End();
@@ -34,7 +34,6 @@ protected:
 	_NANOQ_TP	m_tp;
 	int		m_nTimeout;
 	int		m_sock;
-	char	m_zMyChannel[NN_SOCKADDR_MAX];
-	char	m_zRemoteChannel[NN_SOCKADDR_MAX];
+	char	m_zChannel[NN_SOCKADDR_MAX];
 	char	m_zMsg[1024];
 };
