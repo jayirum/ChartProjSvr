@@ -33,21 +33,27 @@ public:
 	BOOL Initialize(_FBI::ST_STK_INFO* p, unsigned int	nSaveThreadId);
 	VOID Finalize();
 
+	// FBIMainProc calls this function when it gets order / tick
 	VOID RelayOrdAndPrc(int nMsg, void* pData);
 
 private:
 
+	////////////////////////////////////////////////////////////////////////////
 	// Thread Function. Be created 2 - one is for Up, the other is for Down
-	static unsigned WINAPI Thread_OrderList(LPVOID lp);
+	static unsigned WINAPI OrderHandlerThread(LPVOID lp);
 
+	// add order / delete order
 	VOID OrderProc(void* pOrdData);
+
+	// check fire against every tick
+	VOID ScanOrdByPrc(void* pPrcData);
+	
 	VOID OrderProcAdd(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
 	VOID OrderProcCncl(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
 	
-	VOID ScanOrdByPrc(void* pPrcData);
 	VOID FireOrder(_FBI::ST_SLORD* pOrd, std::string sFiredPrc);
 	BOOL DeleteOrder(BOOL bAsc, std::string sOrdPrc, int nOrdNo);
-
+	////////////////////////////////////////////////////////////////////////////
 
 
 	unsigned int GetOppositeThreadId();

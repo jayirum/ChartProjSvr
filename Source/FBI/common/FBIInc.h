@@ -110,7 +110,7 @@ namespace _FBI
 	char* chartName(char* psDate, char* psTime, _Out_ char* pzChartNm);
 
 	void Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out);
-	int ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen);
+	int ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen, std::string* sPrc2);
 
 	struct HEADER
 	{
@@ -193,15 +193,16 @@ namespace _FBI
 	{
 		char STX[1];
 		char Len[4];
-		char DealTp[1];				// 0:시가종가, 1:주문가종가
+		char DealTp[1];				// 0:3M, 1:10M
 		char ArtcCd[FBILEN_SYMBOL];
 		char StkCd[FBILEN_SYMBOL];
 		char DealSeq[FBILEN_DEAL_SEQ];
-		char DealStatus[1];			// 1:주문가능/2:대기/3:차트/4:결과중/5:완료
+		char DealStatus[2];			// 1:주문가능/2:대기/3:차트/4:결과중/5:완료
 									// DEALSTATUS_TENOP 도 포함
 		char OrdResult[1];			// 1:DOWN / 2:UP / 3:EVEN
 		char Time[8];				// 각 status 시작시간
 		char CandleTime[5];			// hh:mm
+		char ClosePrc[10];			// chart 의 close price
 		char ETX[1];
 	};
 
@@ -222,6 +223,10 @@ namespace _FBI
 		int		nTickCnt;
 		double	dWinPrc;
 		double	dLosePrc;
+		char	cWinLose;	// W, L
+		std::string sFiredPrc;
+		std::string sArtcCd;
+		std::string sStkCd;
 		BOOL	bMain;
 	};
 
