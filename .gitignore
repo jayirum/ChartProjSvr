@@ -6264,3 +6264,11 @@ Source/Test/DllTest/DllTest2/Debug/DllTest.exe
 Source/SmartMessage/SmartMessage.dll
 Source/SmartMessage/SmartMessage/SmartMessage.dll
 Source/_Bin/CORE.exe
+Source/_Bin/DllUser.exe
+Source/_Bin/NanoQDll.dll
+Source/NanoQProj/Debug/NanoQDll.dll
+Source/NanoQProj/Debug/NanoQDll.exp
+Source/NanoQProj/Debug/NanoQDll.lib
+Source/NanoQProj/Release/NanoQDll.lib
+Source/NanoQProj/Release/NanoQDll.exp
+Source/NanoQProj/Release/NanoQDll.dll
