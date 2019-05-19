@@ -7,6 +7,8 @@
 #include "../../IRUM_UTIL/Util.h"
 #include "../../IRUM_UTIL/TimeInterval.h"
 #include "../common/FBIInc.h"
+#include <string.h>
+#include <memory.h>
 
 extern BOOL		g_bContinue ;	// flag whether continue process or not
 extern CLogMsg	g_log;
@@ -48,7 +50,7 @@ BOOL CFBIMainProc::Initialize()
 	}
 
 	// SAVE THREAD
-	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &Thread_SaveResult, NULL, 0, &m_unSaveData);
+	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &SaveResultThread, NULL, 0, &m_unSaveData);
 	
 	if (!LoadStkInfo()) {
 		g_log.log(NOTIFY, "LoadStkInfo Error. Terminate Application");
@@ -97,13 +99,14 @@ BOOL CFBIMainProc::InitializeSM()
 	char zIp[32], zPort[32];
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_IP", zIp);
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_PORT", zPort);
-	if(!m_smPrc.AddDest())
+	
+	//if(!m_smPrc.AddDest())
 
-	[SMSERVER_INFO]
-	MARKET_IP = 110.4.89.204
-		MARKET_PORT = 7999
-		ORD_IP = 110.4.89.204
-		ORD_PORT = 6253
+	//[SMSERVER_INFO]
+	//MARKET_IP = 110.4.89.204
+	//	MARKET_PORT = 7999
+	//	ORD_IP = 110.4.89.204
+	//	ORD_PORT = 6253
 
 	if (!m_smOrd.Begin())
 	{
@@ -111,7 +114,8 @@ BOOL CFBIMainProc::InitializeSM()
 		return FALSE;
 	}
 }
-VOID	DeInitializeSM();
+VOID CFBIMainProc::DeInitializeSM()
+{}
 
 BOOL CFBIMainProc::CreateStkOrders()
 {
@@ -168,69 +172,85 @@ long __stdcall CFBIMainProc::CallBackSMOrd(int index, char* WorkThread, char* Me
 const int WM_ORD_FIRED		= WM_USER + 519;
 
 */
-unsigned WINAPI CFBIMainProc::Thread_SaveResult(LPVOID lp)
+unsigned WINAPI CFBIMainProc::SaveResultThread(LPVOID lp)
 {
-	//char zQ[1024];
-	//char zGroupKey[LEN_GROUP_KEY + 1];
+	CFBIMainProc* pThis = (CFBIMainProc*)lp;
+	char zQ[1024];
+	
+	while (g_bContinue)
+	{
+		Sleep(1);
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == _FBI::WM_ORD_FIRED)
+			{
+				_FBI::ST_SLORD* pSlOrd = (_FBI::ST_SLORD*)msg.lParam;
+				CDBHandlerAdo db(pThis->m_pDBPool->Get());
 
-	//while (g_bContinue)
-	//{
-	//	Sleep(1);
-	//	MSG msg;
-	//	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	//	{
-	//		if (msg.message == WM_SAVE_CHART)
-	//		{
-	//			ST_SHM_CHART_UNIT* p = (ST_SHM_CHART_UNIT*)msg.lParam;
-	//			sprintf(zGroupKey, "%.*s", LEN_GROUP_KEY, p->Reserved);
-	//			CDBHandlerAdo db(g_ado->Get());
+				sprintf(zQ, "EXEC AA_ORD_RESULT_SL "
+					"%d"		//@I_ORD_NO		INT
+					,",'%s'"	//@I_FIRED_PRC	VARCHAR(20)
+					,",'%s'"	//@I_WINLOSE		CHAR(1)		--W, L
+					,
+					pSlOrd->OrdNo
+					, pSlOrd->sFiredPrc.c_str()
+					, pSlOrd->cWinLose
+				);
+				if (FALSE == db->ExecQuery(zQ))
+				{
+					g_log.log(LOGTP_ERR, "SL Ord Result Err(%s)(%s)", db->GetError(), zQ);
+					break;
+				}
+				else
+				{
+					if (!db->IsNextRow())
+					{
+						g_log.log(NOTIFY, "Failed to read AA_ORD_RESULT_SL recordset(%s)", db->GetError());
+						break;
+					}
+					char zWinLose[128] = { 0, };
+					if (db->GetStrWithLen("WINLOSE", 10, zWinLose) == NULL)
+					{
+						g_log.log(NOTIFY, "Failed to read AA_ORD_RESULT_SL recordset(%s)", db->GetError());
+						break;
+					}
 
-	//			sprintf(zQ, "EXEC CHART_SAVE "
-	//				"'%.*s', "	//@I_GROUP_KEY	VARCHAR(5)--// CLN71
-	//				"'%.*s', "	//@I_STK_CD
-	//				"'%.*s', "	//, @I_CHART_NM	VARCHAR(20)
-	//				"'%.*s', "	//, @I_PREV_NM		VARCHAR(20)
-	//				"'%.*s', "	//@I_CHART_GB	CHAR(1)--// +,-, 0
-	//				"'%.*s', "	//@I_OPEN_PRC	VARCHAR(20)
-	//				"'%.*s', "	//@I_HIGH_PRC	VARCHAR(20)
-	//				"'%.*s', "	//@I_LOW_PRC		VARCHAR(20)
-	//				"'%.*s', "	//@I_CLOSE_PRC	VARCHAR(20)
-	//				"'%.*s', "	//@I_CNTR_QTY	VARCHAR(20)
-	//				"'%.*s', "	//@I_DOT_CNT		VARCHAR(20)
-	//				"'%.*s', "	//@I_SMA_SHORT	VARCHAR(20)
-	//				"'%.*s', "	//@I_SMA_LONG	VARCHAR(20)
-	//				"'%.*s' "	//@I_SMA_SHORT_5	VARCHAR(20)
-	//				,
-	//				LEN_GROUP_KEY, zGroupKey,
-	//				sizeof(p->stk_cd), p->stk_cd,
-	//				sizeof(p->Nm), p->Nm,
-	//				sizeof(p->prevNm), p->prevNm,
-	//				sizeof(p->gb), p->gb,
-	//				sizeof(p->open), p->open,
-	//				sizeof(p->high), p->high,
-	//				sizeof(p->low), p->low,
-	//				sizeof(p->close), p->close,
-	//				sizeof(p->cntr_qty), p->cntr_qty,
-	//				sizeof(p->dotcnt), p->dotcnt,
-	//				sizeof(p->sma_short), p->sma_short,
-	//				sizeof(p->sma_long), p->sma_long,
-	//				sizeof(p->sma_shortest), p->sma_shortest
-	//			);
-	//			if (FALSE == db->ExecQuery(zQ))
-	//			{
-	//				g_log.log(LOGTP_ERR, "CHART DATA Save err(%s)(%s)", db->GetError(), zQ);
-	//				//printf("CHART DATA Save ¿¡·¯(%s)(%s)\n", db->GetError(), zQ);
-	//			}
-	//			else
-	//			{
-	//				//g_log.log(LOGTP_SUCC, "DB SAVE(%s)", zQ);
-	//			}
+					char zClientSendBuf[1024] = { 0, };
+					_FBI::PT_DEAL_STATUS *cPack = (_FBI::PT_DEAL_STATUS *)zClientSendBuf;
 
-	//			delete p;
-	//			db->Close();
-	//		} //if (msg.message == WM_SAVE_CHART)
-	//	} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	//} // while (TRUE)
+					FillMemory(zClientSendBuf, sizeof(_FBI::PT_DEAL_STATUS), 0x20);
+					cPack->STX[0] = _FBI::STX;
+
+					char len[32];
+					sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
+					memcpy(cPack->Len, len, strlen(len));
+					memcpy(cPack->ArtcCd, pSlOrd->sArtcCd.c_str(), min(sizeof(cPack->ArtcCd), pSlOrd->sArtcCd.size()));
+					memcpy(cPack->StkCd, pSlOrd->sStkCd.c_str(), min(sizeof(cPack->StkCd), pSlOrd->sStkCd.size()));
+					//memcpy(cPack->DealSeq, z, strlen(z));
+					cPack->DealStatus[0] = '5';
+					cPack->OrdResult[0] = pSlOrd->cWinLose;
+					//memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
+					memcpy(cPack->ClosePrc, pSlOrd->sFiredPrc.c_str(), min(sizeof(cPack->ClosePrc), pSlOrd->sFiredPrc.size()));
+
+					// yyyymmddhhmm => hh:mm
+					//sprintf(pThis->m_zNextCandleTm, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
+					//sprintf(cPack->CandleTime, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
+					//memcpy(cPack->CandleTime, pDeal->tm_chart, sizeof(pDeal->tm_chart));
+
+					cPack->ETX[0] = _FBI::ETX;
+					*(cPack->ETX + 1) = 0x00;
+
+					//TODO. pThis->SendToClient(cPack, 0);
+
+				}
+
+				g_memPool.release((char*)pSlOrd);
+				db->Close();
+			} //if (msg.message == _FBI::WM_ORD_FIRED)
+		} // while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	} // while (TRUE)
+
 	return 0;
 }
 

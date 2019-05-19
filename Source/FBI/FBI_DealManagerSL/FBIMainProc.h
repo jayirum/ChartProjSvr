@@ -25,7 +25,7 @@ public:
 
 private:
 	VOID ThreadFunc();
-	static unsigned WINAPI Thread_SaveResult(LPVOID lp);
+	static unsigned WINAPI SaveResultThread(LPVOID lp);
 
 	long __stdcall CallBackSMPrc(int index, char* WorkThread, char* Message);
 	long __stdcall CallBackSMOrd(int index, char* WorkThread, char* Message);

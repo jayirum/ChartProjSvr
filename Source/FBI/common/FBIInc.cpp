@@ -9,11 +9,11 @@ void _FBI::Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out)
 	*out = z;
 }
 
-int _FBI::ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen)
+int _FBI::ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen, std::string* sPrc2)
 {
 	char z[128];
 	sprintf(z, "%0*.*f", nTotLen, nDotLen, dPrc2);
-	
+	*sPrc2 = z;
 	return sPrc1.compare(z);
 }
 

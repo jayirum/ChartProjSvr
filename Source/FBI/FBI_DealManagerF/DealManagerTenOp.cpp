@@ -56,7 +56,7 @@ BOOL CDealManagerTenOp::Initialize()
 		m_pDBPool = new CDBPoolAdo(ip, id, pwd, name);
 		if (!m_pDBPool->Init(3))
 		{
-			g_log.log( NOTIFY, "[TENOP](%s)Thread DB OPEN FAILED.(%s)(%s)(%s)", m_zStkCd, ip, id, pwd);
+			g_log.log( NOTIFY, "[10M](%s)Thread DB OPEN FAILED.(%s)(%s)(%s)", m_zStkCd, ip, id, pwd);
 			return FALSE;
 		}
 	}
@@ -91,11 +91,11 @@ BOOL CDealManagerTenOp::InitChartShm()
 	m_chartShm = new CChartShmUtilFixed(atoi(zChartNmTp));
 	if (!m_chartShm->OpenChart(m_zArtcCd))
 	{
-		g_log.log(LOGTP_ERR, "[TENOP]%s", m_chartShm->getmsg());
+		g_log.log(LOGTP_ERR, "[10M]%s", m_chartShm->getmsg());
 		return FALSE;
 	}
 
-	g_log.log(INFO, "[TENOP]%s Chart Shm is opened", m_zArtcCd);
+	g_log.log(INFO, "[10M]%s Chart Shm is opened", m_zArtcCd);
 
 	return TRUE;
 }
@@ -145,7 +145,7 @@ BOOL CDealManagerTenOp::LoadDealInfo()
 	sprintf(zQ, "EXEC AA_GET_DEAL_INFO '%s', 1 ", m_zArtcCd);
 	if (FALSE == db->ExecQuery(zQ))
 	{
-		g_log.log(ERR/*NOTIFY*/, "[TENOP]Load DealInfo Error(%s)", zQ);
+		g_log.log(ERR/*NOTIFY*/, "[10M]Load DealInfo Error(%s)", zQ);
 		return FALSE;
 	}
 
@@ -155,23 +155,23 @@ BOOL CDealManagerTenOp::LoadDealInfo()
 		// hh:mm:ss
 		if (db->GetStrWithLen("TM_ORD_START", 10, zOrderStartTm) == NULL)
 		{
-			g_log.log(ERR, "[TENOP]LoadDealInfo TM_ORD_START Error(%s)", db->GetError());
+			g_log.log(ERR, "[10M]LoadDealInfo TM_ORD_START Error(%s)", db->GetError());
 			return FALSE;
 		}
 
 		if (db->GetStrWithLen("TM_END", 10, zEndTm) == NULL)
 		{
-			g_log.log(ERR, "[TENOP]LoadDealInfo TM_END Error(%s)", db->GetError());
+			g_log.log(ERR, "[10M]LoadDealInfo TM_END Error(%s)", db->GetError());
 			return FALSE;
 		}
 		if (db->GetStrWithLen("TRADE_DT", 10, zTradeDt) == NULL)
 		{
-			g_log.log(ERR, "[TENOP]LoadDealInfo TRADE_DT Error(%s)", db->GetError());
+			g_log.log(ERR, "[10M]LoadDealInfo TRADE_DT Error(%s)", db->GetError());
 			return FALSE;
 		}
 		if (db->GetStrWithLen("NEXT_DT", 10, zNextDt) == NULL)
 		{
-			g_log.log(ERR, "[TENOP]LoadDealInfo NEXT_DT Error(%s)", db->GetError());
+			g_log.log(ERR, "[10M]LoadDealInfo NEXT_DT Error(%s)", db->GetError());
 			return FALSE;
 		}
 
@@ -229,7 +229,7 @@ BOOL CDealManagerTenOp::LoadDealInfo()
 		db->Next();
 	}
 	db->Close();
-	g_log.log(INFO, "[TENOP]Succeeded in DealInfo[%s][Count:%d]", m_zArtcCd, m_mapDeal.size());
+	g_log.log(INFO, "[10M]Succeeded in DealInfo[%s][Count:%d]", m_zArtcCd, m_mapDeal.size());
 	return TRUE;
 }
 
@@ -242,7 +242,7 @@ VOID CDealManagerTenOp::ThreadFunc()
 	// Terminate this proces
 
 	if (!LoadDealInfo()) {
-		g_log.log(NOTIFY, "[TENOP]LoadDealInfo 오류로 프로세스 Terminate!");
+		g_log.log(NOTIFY, "[10M]LoadDealInfo 오류로 프로세스 Terminate!");
 		exit(0);
 		return;
 	}
@@ -265,7 +265,7 @@ VOID CDealManagerTenOp::ThreadFunc()
 			break;
 		}
 		else if (dwRet == WAIT_ABANDONED_0) {
-			g_log.log(LOGTP_ERR, "[TENOP][THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
+			g_log.log(LOGTP_ERR, "[10M][THREAD ID:%d]WAIT ERROR(%d)", GetMyThreadID(), GetLastError());
 			Sleep(1000);
 			continue;
 		}
@@ -324,6 +324,7 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 	char zClientSendBuf[1024] = { 0, };
 	char z[128];
 
+
 	_FBI::PT_DEAL_STATUS *cPack = (_FBI::PT_DEAL_STATUS *)zClientSendBuf;
 	int nCPackLen = sizeof(_FBI::PT_DEAL_STATUS);
 	
@@ -368,7 +369,7 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 			{
 				if (strncmp(pThis->m_zArtcCd, "HSI", 3) != 0 && strncmp(pThis->m_zArtcCd, "SCN", 3) != 0)
 				{
-					g_log.log(ERR, "[TENOP][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
+					g_log.log(ERR, "[10M][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
 						, pThis->m_zStkCd, pDeal->tm_end, zChartNm, pThis->m_chartShm->getmsg());
 				}
 			}
@@ -378,7 +379,7 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 		{
 			if (strncmp(pThis->m_zArtcCd, "HSI", 3) != 0 && strncmp(pThis->m_zArtcCd, "SCN", 3) != 0)
 			{
-				g_log.log(NOTIFY, "[TENOP][%s](END_TM:%s)(CHART_TM:%s)(%s)There is no chart.Resulting Failed!!!"
+				g_log.log(NOTIFY, "[10M][%s](END_TM:%s)(CHART_TM:%s)(%s)There is no chart.Resulting Failed!!!"
 					, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
 			}
 			*UpDown = 'E';
@@ -397,7 +398,7 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 
 			if (nRetriedCnt > 0)
 			{
-				g_log.log(INFO, "[TENOP]Get Chartdata Ok[RETRY:%d][%s](END_TM:%s)(CHART_NM:%s)(Open:%s)(Close:%s)"
+				g_log.log(INFO, "[10M]Get Chartdata Ok[RETRY:%d][%s](END_TM:%s)(CHART_NM:%s)(Open:%s)(Close:%s)"
 					, nRetriedCnt, pThis->m_zStkCd, pDeal->tm_end, zChartNm, zOpen, zClose);
 			}
 		}
@@ -424,18 +425,18 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 				, zClose
 				, zChartNm
 			);
-			if(g_bDebugLog) 
-				g_log.log(INFO, "[TENOP][Result](%s)", zQ);
+			/*if(g_bDebugLog) 
+				g_log.log(INFO, "[10M][Result](%s)", zQ);*/
 			if (FALSE == db->ExecQuery(zQ))
 			{
-				g_log.log(ERR/*NOTIFY*/, "[TENOP]Result Error(AA_ORD_RESULT_TENOP) error(%s)", zQ);
+				g_log.log(ERR/*NOTIFY*/, "[10M]Result Error(AA_ORD_RESULT_TENOP) error(%s)", zQ);
 				Sleep(1000);
 				db->Close();
 				continue;
 			}
 			else
 			{
-				g_log.log(INFO, "[TENOP][주문처리 성공][%s][SEQ:%d][CHART_NM:%s][OPEN:%.10s][CLOSE:%.10s]",
+				g_log.log(INFO, "[10M][주문처리 성공][%s][SEQ:%d][CHART_NM:%s][OPEN:%.10s][CLOSE:%.10s]",
 					pThis->m_zArtcCd, nDealSeq, zChartNm, chartData.open, chartData.close);
 
 
@@ -443,21 +444,26 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 				memset(cPack, 0x20, nCPackLen);
 				cPack->STX[0] = _FBI::STX;
 
-				char len[32];
+				char len[32], temp[32];
 				sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
 				memcpy(cPack->Len, len, strlen(len));
+				
+				cPack->DealTp[0] = _FBI::DEAL_TP_TEN_OP_C;
+
 				memcpy(cPack->ArtcCd, pThis->m_zArtcCd, min(sizeof(cPack->ArtcCd), strlen(pThis->m_zArtcCd)));
 				memcpy(cPack->StkCd, pThis->m_zStkCd, min(sizeof(cPack->StkCd), strlen(pThis->m_zStkCd)));
 				sprintf(z, "%d", nDealSeq);
 				memcpy(cPack->DealSeq, z, strlen(z));
-				cPack->DealStatus[0] = '5';
+				sprintf(temp, "%02d", _FBI::DEAL_STATUS_DONE_TENOP);
+				memcpy(cPack->DealStatus, temp, 2);
 				cPack->OrdResult[0] = *UpDown;
 				memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
+				memcpy(cPack->CandleTime, pDeal->tm_chart, min(sizeof(cPack->CandleTime), sizeof(pDeal->tm_chart)));
+				memcpy(cPack->ClosePrc, zClose, min(sizeof(cPack->ClosePrc), strlen(zClose)));
 
 				// yyyymmddhhmm => hh:mm
 				//sprintf(pThis->m_zNextCandleTm, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
 				//sprintf(cPack->CandleTime, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
-				memcpy(cPack->CandleTime, pDeal->tm_chart, sizeof(pDeal->tm_chart));
 				
 				cPack->ETX[0] = _FBI::ETX;
 				*(cPack->ETX + 1) = 0x00;
@@ -475,6 +481,39 @@ unsigned WINAPI CDealManagerTenOp::Thread_ResultProcByChart(LPVOID lp)
 	} // while(GetMessage(&msg, NULL, 0,0))
 
 	return 0;
+}
+
+BOOL CDealManagerTenOp::SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt)
+{
+	if (nRecurCnt > 10)
+		return FALSE;
+
+	int nLen = sizeof(_FBI::PT_DEAL_STATUS);
+	char zSendBuffer[1024] = { 0, };
+	memcpy(zSendBuffer, (char*)pPacket, nLen);
+	zSendBuffer[nLen++] = 0x0a;
+
+	int nErrCode;
+	int res = m_pClient->SendData(zSendBuffer, nLen, &nErrCode);
+	if (res <= 0)
+	{
+		g_log.log(ERR, "[10M]SendToClient Error(%s)", m_pClient->GetMsg());
+		Sleep(1000);
+		if (InitClientConnect())
+		{
+			nRecurCnt++;
+			return SendToClient(pPacket, nRecurCnt);
+		}
+		return FALSE;
+	}
+	nRecurCnt = 0;
+	//if (g_bDebugLog) 
+	{
+		if (strncmp(pPacket->ArtcCd, "CL", 2) == 0) {
+			g_log.log(INFO, "[10M]Send To Client(%.*s)", nLen, zSendBuffer);
+		}
+	}
+	return TRUE;
 }
 
 
@@ -574,7 +613,7 @@ BOOL CDealManagerTenOp::DealManageInner()
 	// ==> 결과처리 후 거기서 삭제를 하기 때문에 이 코드는 실행 안될 것이다.
 	if (pInfo->DealStatus == _FBI::DEAL_STATUS_DONE_TENOP)
 	{
-		g_log.log(INFO, "[TENOP][DEAL_MANAGE(%s)(현재:%s)(DEAL주문시간:%s)(상태:%s)]이미 완료된 DEAL 이라서 MAP 에서 제거",
+		g_log.log(INFO, "[10M][DEAL_MANAGE(%s)(현재:%s)(DEAL주문시간:%s)(상태:%s)]이미 완료된 DEAL 이라서 MAP 에서 제거",
 			pInfo->ArtcCd, zNowFull, sOrdTm.c_str(), _FBI::dealstatusTenOp(pInfo->DealStatus, status));
 		
 		m_mapDeal.erase(pInfo->DealSeq);
@@ -744,8 +783,10 @@ BOOL CDealManagerTenOp::DealOrd(char* pzNowFullTm, _FBI::ST_DEAL_INFO_TENOP* pIn
 	if (bUpdate)
 	{
 		if (g_bDebugLog) {
-			g_log.log(INFO, "[TENOP](%s)(SEQ:%d)/주문/(현재:%s) <%s>으로 UPDATE",
-				pInfo->ArtcCd, pInfo->DealSeq, pzNowFullTm, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
+			if (strncmp(pInfo->ArtcCd, "CL", 2) == 0) {
+				g_log.log(INFO, "[10M](%s)(SEQ:%d)/주문/(현재:%s) <%s>으로 UPDATE",
+					pInfo->ArtcCd, pInfo->DealSeq, pzNowFullTm, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
+			}
 		}
 		UpdateDealStatus(pInfo);
 		m_mapDeal[pInfo->DealSeq] = pInfo;
@@ -757,7 +798,7 @@ BOOL CDealManagerTenOp::DealOrd(char* pzNowFullTm, _FBI::ST_DEAL_INFO_TENOP* pIn
 	//else
 	//{
 	//	//상태가 이상하다. 에러 처리.
-	//	g_log.log(ERR/*NOTIFY*/, "[TENOP][DEAL_MANAGE(%s)(SEQ:%d)/주문상태업데이트오류(현재:%s)(현상태:%s)]",
+	//	g_log.log(ERR/*NOTIFY*/, "[10M][DEAL_MANAGE(%s)(SEQ:%d)/주문상태업데이트오류(현재:%s)(현상태:%s)]",
 	//		pInfo->ArtcCd, pInfo->DealSeq, pzNowFullTm, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
 	//	
 	//	m_mapDeal.erase(pInfo->DealSeq);
@@ -777,7 +818,7 @@ BOOL CDealManagerTenOp::DealWait(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP* pInf
 	else if (pInfo->DealStatus == _FBI::DEAL_STATUS_ORD_8)
 	{
 		if (g_bDebugLog) {
-			g_log.log(INFO, "[TENOP](%s)(SEQ:%d)/(현재:%s)(DEAL대기시간:%s%s) <대기>로 UPDATE",
+			g_log.log(INFO, "[10M](%s)(SEQ:%d)/(현재:%s)(DEAL대기시간:%s%s) <대기>로 UPDATE",
 				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_wait);
 		}
 		// update.
@@ -789,7 +830,7 @@ BOOL CDealManagerTenOp::DealWait(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP* pInf
 	//else
 	//{
 	//	//상태가 이상하다. 에러 처리.
-	//	g_log.log(ERR/*NOTIFY*/, "[TENOP][DEAL_MANAGE(%s)(SEQ:%d)/대기/(현재:%s)(DEAL대기시간:%s%s)(현상태:%s)]대기시간 지났는데 상태가 <주문8>이 아니다. ",
+	//	g_log.log(ERR/*NOTIFY*/, "[10M][DEAL_MANAGE(%s)(SEQ:%d)/대기/(현재:%s)(DEAL대기시간:%s%s)(현상태:%s)]대기시간 지났는데 상태가 <주문8>이 아니다. ",
 	//		pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_wait, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
 
 	//	m_mapDeal.erase(pInfo->DealSeq);
@@ -810,7 +851,7 @@ BOOL CDealManagerTenOp::DealChartWait(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP*
 	{
 		// update.
 		if (g_bDebugLog) {
-			g_log.log(INFO, "[TENOP](%s)(SEQ:%d)/(현재:%s)(DEAL차트시간:%s%s)] <차트>로 UPDATE",
+			g_log.log(INFO, "[10M](%s)(SEQ:%d)/(현재:%s)(DEAL차트시간:%s%s)] <차트>로 UPDATE",
 				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_chartwait);
 		}
 		pInfo->DealStatus = _FBI::DEAL_STATUS_CHARTWAIT_TENOP;
@@ -822,7 +863,7 @@ BOOL CDealManagerTenOp::DealChartWait(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP*
 	else
 	{
 		//상태가 이상하다. 에러 처리.
-		g_log.log(ERR/*NOTIFY*/, "[TENOP][DEAL_MANAGE(%s)(SEQ:%d)/차트/(현재:%s)(DEAL차트시간:%s%s)(현상태:%s)]차트시간 지났는데 상태가 <대기>가 아니다. ",
+		g_log.log(ERR/*NOTIFY*/, "[10M][DEAL_MANAGE(%s)(SEQ:%d)/차트/(현재:%s)(DEAL차트시간:%s%s)(현상태:%s)]차트시간 지났는데 상태가 <대기>가 아니다. ",
 			pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_chartwait, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
 
 		m_mapDeal.erase(pInfo->DealSeq);
@@ -844,7 +885,7 @@ BOOL CDealManagerTenOp::DealResulting(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP*
 	{
 		// update.
 		if (g_bDebugLog) {
-			g_log.log(INFO, "[TENOP](%s)(SEQ:%d)/(현재:%s)(DEAL결과시간:%s%s) <결과>로 UPDATE",
+			g_log.log(INFO, "[10M](%s)(SEQ:%d)/(현재:%s)(DEAL결과시간:%s%s) <결과>로 UPDATE",
 				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_end);
 		}
 		pInfo->DealStatus = _FBI::DEAL_STATUS_RESULTING_TENOP;
@@ -855,7 +896,7 @@ BOOL CDealManagerTenOp::DealResulting(char* pzNowFull, _FBI::ST_DEAL_INFO_TENOP*
 	else
 	{
 		//상태가 이상하다. 에러 처리.
-		g_log.log(ERR/*NOTIFY*/, "[TENOP][DEAL_MANAGE(%s)/결과/(SEQ:%d)(현재:%s)(DEAL결과시간:%s%s)(현상태:%s)]결과시간 지났는데 상태가 <차트>가 아니다. ",
+		g_log.log(ERR/*NOTIFY*/, "[10M][DEAL_MANAGE(%s)/결과/(SEQ:%d)(현재:%s)(DEAL결과시간:%s%s)(현상태:%s)]결과시간 지났는데 상태가 <차트>가 아니다. ",
 			pInfo->ArtcCd, pInfo->DealSeq, pzNowFull,pInfo->Date, pInfo->tm_end, _FBI::dealstatusTenOp(pInfo->DealStatus, status));
 
 		m_mapDeal.erase(pInfo->DealSeq);
@@ -900,65 +941,66 @@ void CDealManagerTenOp::UpdateDealStatus(_FBI::ST_DEAL_INFO_TENOP* pInfo)
 	char len[32];
 	char packet[1024] = { 0, };
 	
-	_FBI::PT_DEAL_STATUS* p = (_FBI::PT_DEAL_STATUS*)packet;
-	memset(p, 0x20, sizeof(_FBI::PT_DEAL_STATUS));
+	_FBI::PT_DEAL_STATUS* pDeal = (_FBI::PT_DEAL_STATUS*)packet;
+	memset(pDeal, 0x20, sizeof(_FBI::PT_DEAL_STATUS));
 
-	p->STX[0] = _FBI::STX;
+	pDeal->STX[0] = _FBI::STX;
 	sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
-	memcpy(p->Len, len, strlen(len));
-	p->DealTp[0] = _FBI::DEAL_TP_TEN_OP_C;
-	memcpy(p->ArtcCd, m_zStkCd, min(strlen(m_zArtcCd),_FBI::FBILEN_SYMBOL));
-	memcpy(p->StkCd, m_zStkCd, min(strlen(m_zStkCd), _FBI::FBILEN_SYMBOL));
+	memcpy(pDeal->Len, len, strlen(len));
+	pDeal->DealTp[0] = _FBI::DEAL_TP_TEN_OP_C;
+	memcpy(pDeal->ArtcCd, m_zStkCd, min(strlen(m_zArtcCd),_FBI::FBILEN_SYMBOL));
+	memcpy(pDeal->StkCd, m_zStkCd, min(strlen(m_zStkCd), _FBI::FBILEN_SYMBOL));
 
-	sprintf(p->DealSeq, "%0*d", _FBI::FBILEN_DEAL_SEQ, pInfo->DealSeq);
-	sprintf(p->DealStatus, "%02d", pInfo->DealStatus);
+	sprintf(z, "%0*d", _FBI::FBILEN_DEAL_SEQ, pInfo->DealSeq);
+	memcpy(pDeal->DealSeq, z, _FBI::FBILEN_DEAL_SEQ);
 
-	//if(m_zNextCandleTm[0]!=NULL)
-	
+	sprintf(z, "%02d", pInfo->DealStatus);
+	memcpy(pDeal->DealStatus, z, sizeof(pDeal->DealStatus));
 
-	p->ETX[0] = _FBI::ETX;
-	*(p->ETX + 1) = 0x00;
+	pDeal->ETX[0] = _FBI::ETX;
+	*(pDeal->ETX + 1) = 0x00;
 
 	switch (pInfo->DealStatus)
 	{
 	case _FBI::DEAL_STATUS_ORD_1:
-		sprintf(p->Time, pInfo->tm_order1);
+		memcpy(pDeal->Time, pInfo->tm_order1, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_2:
-		sprintf(p->Time, pInfo->tm_order2);
+		memcpy(pDeal->Time, pInfo->tm_order2, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_3:
-		sprintf(p->Time, pInfo->tm_order3);
+		memcpy(pDeal->Time, pInfo->tm_order3, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_4:
-		sprintf(p->Time, pInfo->tm_order4);
+		memcpy(pDeal->Time, pInfo->tm_order4, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_5:
-		sprintf(p->Time, pInfo->tm_order5);
+		memcpy(pDeal->Time, pInfo->tm_order5, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_6:
-		sprintf(p->Time, pInfo->tm_order6);
+		memcpy(pDeal->Time, pInfo->tm_order6, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_7:
-		sprintf(p->Time, pInfo->tm_order7);
+		memcpy(pDeal->Time, pInfo->tm_order7, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_ORD_8:
-		sprintf(p->Time, pInfo->tm_order8);
+		memcpy(pDeal->Time, pInfo->tm_order8, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_WAIT_TENOP:
-		sprintf(p->Time, pInfo->tm_wait);
+		memcpy(pDeal->Time, pInfo->tm_wait, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_CHARTWAIT_TENOP:
-		sprintf(p->Time, pInfo->tm_chartwait);
+		memcpy(pDeal->Time, pInfo->tm_order1, sizeof(pDeal->Time));
 		break;
 	case _FBI::DEAL_STATUS_RESULTING_TENOP:
-		sprintf(p->Time, pInfo->tm_end);
+		memcpy(pDeal->Time, pInfo->tm_end, sizeof(pDeal->Time));
 		break;
 	default:
-		g_log.log(ERR/*NOTIFY*/, "[TENOP][%s](Status:%s)Update Error", pInfo->ArtcCd, _FBI::dealstatusTenOp(pInfo->DealStatus, z));
+		g_log.log(ERR/*NOTIFY*/, "[10M][%s](Status:%s)Update Error", 
+			pInfo->ArtcCd, _FBI::dealstatusTenOp(pInfo->DealStatus, z));
 		return;
 	}
-	memcpy(p->CandleTime, pInfo->tm_chart, sizeof(pInfo->tm_chart));
+	memcpy(pDeal->CandleTime, pInfo->tm_chart, min( sizeof(pDeal->CandleTime), sizeof(pInfo->tm_chart)));
 
 	//DB UPDATE
 	for (int i = 0; i < 3; i++)
@@ -973,7 +1015,7 @@ void CDealManagerTenOp::UpdateDealStatus(_FBI::ST_DEAL_INFO_TENOP* pInfo)
 		);
 		if (FALSE == db->ExecQuery(zQ))
 		{
-			g_log.log(ERR/*NOTIFY*/, "[TENOP]Update DEAL_MST error(%s)", zQ);
+			g_log.log(ERR/*NOTIFY*/, "[10M]Update DEAL_MST error(%s)", zQ);
 			Sleep(1000);
 			db->Close();
 			continue;
@@ -981,7 +1023,10 @@ void CDealManagerTenOp::UpdateDealStatus(_FBI::ST_DEAL_INFO_TENOP* pInfo)
 		else
 		{
 			if (g_bDebugLog) {
-				g_log.log(INFO, "[TENOP]Update DB DEAL_MST OK[%s][SEQ:%d][%s]", m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
+				if (strncmp(pInfo->ArtcCd, "CL", 2) == 0) {
+					g_log.log(INFO, "[10M]Update DB DEAL_MST OK[%s][SEQ:%d][%s]",
+						m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
+				}
 			}
 			break;
 		}
@@ -989,39 +1034,9 @@ void CDealManagerTenOp::UpdateDealStatus(_FBI::ST_DEAL_INFO_TENOP* pInfo)
 
 	// Result is sent after complete the result
 	if(pInfo->DealStatus != _FBI::DEAL_STATUS_RESULTING_TENOP)
-		SendToClient(p, 0);
+		SendToClient(pDeal, 0);
 }
 
-
-BOOL CDealManagerTenOp::SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt)
-{
-	if (nRecurCnt > 10)
-		return FALSE;
-
-	int nLen = sizeof(_FBI::PT_DEAL_STATUS);
-	char zSendBuffer[1024] = { 0, };
-	memcpy(zSendBuffer, (char*)pPacket, nLen);
-	zSendBuffer[nLen++] = 0x0a;
-
-	int nErrCode;
-	int res = m_pClient->SendData(zSendBuffer, nLen, &nErrCode);
-	if (res <= 0)
-	{
-		g_log.log(ERR, "[TENOP]SendToClient Error(%s)", m_pClient->GetMsg());
-		Sleep(1000);
-		if (InitClientConnect())
-		{
-			nRecurCnt++;
-			return SendToClient(pPacket, nRecurCnt);
-		}
-		return FALSE;
-	}
-	nRecurCnt = 0;
-	if (g_bDebugLog) {
-		g_log.log(INFO, "Send To Client DEAL UPDATE(%.*s)", nLen, zSendBuffer);
-	}
-	return TRUE;
-}
 
 
 
@@ -1037,11 +1052,11 @@ BOOL CDealManagerTenOp::InitClientConnect()
 
 	if (!m_pClient->Begin(zIP, atoi(zPort), 10))
 	{
-		g_log.log(ERR, "[TENOP][Connect To ClientAgent Error]%s", m_pClient->GetMsg());
+		g_log.log(ERR, "[10M][Connect To ClientAgent Error]%s", m_pClient->GetMsg());
 		return FALSE;
 	}
 	else {
-		g_log.log(LOGTP_SUCC, "[TENOP]TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP, zPort);
+		g_log.log(LOGTP_SUCC, "[10M]TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP, zPort);
 	}
 
 

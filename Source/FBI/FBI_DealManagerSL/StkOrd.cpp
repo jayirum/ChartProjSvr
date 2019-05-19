@@ -31,8 +31,8 @@ BOOL CStkOrd::Initialize(_FBI::ST_STK_INFO* p, unsigned int	nSaveThreadId)
 	memcpy(&m_stkInfo, p, sizeof(_FBI::ST_STK_INFO));
 
 	// create thread
-	m_hAsc = (HANDLE)_beginthreadex(NULL, 0, &Thread_OrderList, NULL, 0, &m_unAsc);
-	m_hDesc = (HANDLE)_beginthreadex(NULL, 0, &Thread_OrderList, NULL, 0, &m_unDesc);
+	m_hAsc = (HANDLE)_beginthreadex(NULL, 0, &OrderHandlerThread, NULL, 0, &m_unAsc);
+	m_hDesc = (HANDLE)_beginthreadex(NULL, 0, &OrderHandlerThread, NULL, 0, &m_unDesc);
 
 	return TRUE;
 }
@@ -47,13 +47,15 @@ VOID CStkOrd::Finalize()
 	DeleteCriticalSection(&m_csDesc);
 }
 
+
+
 VOID CStkOrd::RelayOrdAndPrc(int nMsg, void* pData)
 {
 	PostThreadMessage(m_unAsc, nMsg, 0, (LPARAM)pData);
 	PostThreadMessage(m_unDesc, nMsg, 0, (LPARAM)pData);
 }
 
-unsigned WINAPI CStkOrd::Thread_OrderList(LPVOID lp)
+unsigned WINAPI CStkOrd::OrderHandlerThread(LPVOID lp)
 {
 	CStkOrd* pThis = (CStkOrd*)lp;
 	MSG msg;
@@ -87,9 +89,10 @@ unsigned WINAPI CStkOrd::Thread_OrderList(LPVOID lp)
 */
 VOID CStkOrd::OrderProc(void* pOrdData)
 {
-
 	std::string sAscPrc, sDescPrc;
 	_FBI::ST_SLORD* pOrd = (_FBI::ST_SLORD*)pOrdData;
+	pOrd->sArtcCd = m_stkInfo.sArtcCd;
+	pOrd->sStkCd = m_stkInfo.sStkCd;
 
 	if (pOrd->cUpDn == 'U')
 	{
@@ -151,7 +154,6 @@ VOID CStkOrd::OrderProcAdd(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::strin
 	}
 	lstOrd.push_back(pOrd);
 	m_mapDesc[sDescPrc] = lstOrd;
-
 }
 
 
@@ -225,9 +227,9 @@ VOID CStkOrd::OrderProcCncl(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::stri
 */
 VOID CStkOrd::ScanOrdByPrc(void* pPrcData)
 {
-	double dNowPrc = 0.;
-	std::string sOrdPrc;
-	
+	std::string sOrdPrc, sNowPrc;
+	_FBI::ST_PRC_INFO* pNowPrc = (_FBI::ST_PRC_INFO*)pPrcData;
+
 	ITMAP_UP itAsc;
 	ITMAP_DN itDesc;
 	std::list<_FBI::ST_SLORD*>::iterator itList;
@@ -242,7 +244,7 @@ VOID CStkOrd::ScanOrdByPrc(void* pPrcData)
 		for (itAsc = m_mapAsc.begin(); itAsc != m_mapAsc.end(); )
 		{
 			sOrdPrc = (*itAsc).first;
-			int nComp = _FBI::ComparePrices(sOrdPrc, dNowPrc, _FBI::FBILEN_PRC, m_stkInfo.lDotCnt);
+			int nComp = _FBI::ComparePrices(sOrdPrc, pNowPrc->dPrc, _FBI::FBILEN_PRC, m_stkInfo.lDotCnt, &sNowPrc);
 			if (nComp > 0) {
 				itAsc++;
 				continue;
@@ -251,7 +253,9 @@ VOID CStkOrd::ScanOrdByPrc(void* pPrcData)
 			for (itList = (*itAsc).second.begin(); itList != (*itAsc).second.end(); itList++)
 			{
 				_FBI::ST_SLORD* pOrd = (*itList);
-				FireOrder(pOrd, sOrdPrc);
+				pOrd->sFiredPrc = sNowPrc;
+				pOrd->cWinLose = (pOrd->cUpDn == 'U') ? 'W' : 'L';
+				FireOrder(pOrd, sNowPrc);
 				delete pOrd;
 			}
 			itAsc = m_mapAsc.erase(itAsc);
@@ -267,7 +271,7 @@ VOID CStkOrd::ScanOrdByPrc(void* pPrcData)
 		for (itDesc = m_mapDesc.begin(); itDesc != m_mapDesc.end(); )
 		{
 			sOrdPrc = (*itDesc).first;
-			int nComp = _FBI::ComparePrices(sOrdPrc, dNowPrc, _FBI::FBILEN_PRC, m_stkInfo.lDotCnt);
+			int nComp = _FBI::ComparePrices(sOrdPrc, pNowPrc->dPrc, _FBI::FBILEN_PRC, m_stkInfo.lDotCnt, &sNowPrc);
 
 			if (nComp < 0) {
 				itDesc++;
@@ -277,7 +281,9 @@ VOID CStkOrd::ScanOrdByPrc(void* pPrcData)
 			for (itList = (*itDesc).second.begin(); itList != (*itDesc).second.end(); itList++)
 			{
 				_FBI::ST_SLORD* pOrd = (*itList);
-				FireOrder(pOrd, sOrdPrc);
+				pOrd->sFiredPrc = sNowPrc;
+				pOrd->cWinLose = (pOrd->cUpDn == 'D') ? 'W' : 'L';
+				FireOrder(pOrd, sNowPrc);
 				delete pOrd;
 			}
 
@@ -297,7 +303,7 @@ VOID CStkOrd::FireOrder(_FBI::ST_SLORD* pOrd, std::string sFiredPrc)
 	char* pData = g_memPool.get();
 	memcpy(pData, pOrd, sizeof(_FBI::ST_SLORD));
 	const int WM_ORD_FIRED = WM_USER + 519;
-	PostThreadMessage(m_nSaveThreadId, WM_ORD_FIRED, sizeof(_FBI::ST_SLORD), (LPARAM)pData);
+	PostThreadMessage(m_nSaveThreadId, _FBI::WM_ORD_FIRED, sizeof(_FBI::ST_SLORD), (LPARAM)pData);
 
 	// delete the other map
 	if(IsThisAscThread())
