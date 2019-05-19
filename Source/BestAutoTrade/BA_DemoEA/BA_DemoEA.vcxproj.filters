@@ -13,36 +13,48 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="NanoQ">
-      <UniqueIdentifier>{cc8c5cd0-bf92-4b98-8199-738da6d8a9aa}</UniqueIdentifier>
+    <Filter Include="Nano">
+      <UniqueIdentifier>{b9f68fa0-b83d-467f-89b1-bf8a2648ccd2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NanoQDll.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\Common\BARelayInc.cpp">
+      <Filter>Nano</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.cpp">
-      <Filter>NanoQ</Filter>
+    <ClCompile Include="..\Common\NanoQBase.cpp">
+      <Filter>Nano</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.cpp">
-      <Filter>NanoQ</Filter>
+    <ClCompile Include="..\Common\NanoQPipe.cpp">
+      <Filter>Nano</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\NanoQPubSub.cpp">
+      <Filter>Nano</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h">
-      <Filter>NanoQ</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQDll.h">
+    <ClInclude Include="Main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.h">
-      <Filter>NanoQ</Filter>
+    <ClInclude Include="..\Common\Demo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\NanoQBase.h">
+      <Filter>Nano</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\BARelayInc.h">
+      <Filter>Nano</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\NanoQPipe.h">
+      <Filter>Nano</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\NanoQPubSub.h">
+      <Filter>Nano</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

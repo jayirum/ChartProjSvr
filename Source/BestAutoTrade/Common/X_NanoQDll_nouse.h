@@ -10,14 +10,14 @@
 	enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 #endif
 
-
-NANOQAPI int W_Begin(char *pzChannelNm, int nSendTimeout);
+// enum QUEUE_TP {TP_INPROC, TP_INTERPROC};
+NANOQAPI int W_Begin(char *pzChannelNm, int nSendTimeout, int nQueueTp);
 NANOQAPI int W_Connect();
 NANOQAPI int W_SendData(char* pData, int nSendLen);
 NANOQAPI void W_Close();
 NANOQAPI void W_GetLastMsg(char* pMsg);
 
-NANOQAPI int R_Begin(char *pzChannelNm, int nRecvTimeout);
+NANOQAPI int R_Begin(char *pzChannelNm, int nRecvTimeout, int nQueueTp);
 NANOQAPI int R_RecvData(char* pData, int nBuffLen);
 NANOQAPI void R_SetCallback(char* pData, int nBuffLen, void* pCallBackFn);
 NANOQAPI void R_StopRecv();

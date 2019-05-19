@@ -35,9 +35,9 @@ void R_GetLastMsg(char* pMsg)
 	strcpy(pMsg, g_sMsgR);
 }
 
-int W_Begin(char *pzChannelNm, int nSendTimeout)
+int W_Begin(char *pzChannelNm, int nSendTimeout, int nQueueTp)
 {
-	if (!queWriter.Begin(pzChannelNm, nSendTimeout))
+	if (!queWriter.Begin(pzChannelNm, nSendTimeout, nQueueTp))
 	{
 		strcpy(g_sMsgW, queWriter.GetMsg());
 		return Q_ERROR;
@@ -78,9 +78,9 @@ void W_Close()
 //
 //
 /////////////////////////////////////////////////////////////////////////////
-int R_Begin(char *pzChannelNm, int nRecvTimeout)
+int R_Begin(char *pzChannelNm, int nRecvTimeout, int nQueueTp)
 {
-	if (!queReader.Begin(pzChannelNm, nRecvTimeout))
+	if (!queReader.Begin(pzChannelNm, nRecvTimeout, nQueueTp))
 	{
 		strcpy(g_sMsgR, queReader.GetMsg());
 		return Q_ERROR;

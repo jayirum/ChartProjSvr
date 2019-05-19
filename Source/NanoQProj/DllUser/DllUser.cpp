@@ -8,8 +8,9 @@
 
 BOOL WINAPI ControlHandler(DWORD dwCtrlType);
 
-typedef int (*QWDll_Begin)(char *, int);
-QWDll_Begin	QW_Begin;
+//typedef int (*QWDll_Begin)(char *, int, int);
+//QWDll_Begin	QW_Begin;
+int(*QW_Begin)(char *, int, int);
 
 typedef int(*QWDll_Connect)();
 QWDll_Connect	QW_Connect;
@@ -25,7 +26,7 @@ typedef void(*QWDll_GetLastMsg)(char*);
 QWDll_GetLastMsg	QW_GetLastMsg;
 
 
-typedef int (*RQDll_Begin)(char *, int );
+typedef int (*RQDll_Begin)(char *, int, int);
 RQDll_Begin	QR_Begin;
 
 typedef int (*QRDll_RecvData)(char* , int );
@@ -44,13 +45,14 @@ HMODULE g_hIns = NULL;
 char g_zMsg[1024];
 BOOL g_bContinue = TRUE;
 
+char g_channel[128];
 
 void Write()
 {
 	if (!InitDll())
 		return ;
 
-	int ret = QW_Begin("relay", 1000);
+	int ret = QW_Begin(g_channel, 1000, 1);
 	if (ret == Q_ERROR)
 	{
 		//QW_GetLastMsg(g_zMsg);
@@ -108,11 +110,11 @@ void Read()
 	if (!InitDll())
 		return;
 
-	int ret = QR_Begin("relay", 1000);
+	int ret = QR_Begin(g_channel, 1000, 1);
 	if (ret == Q_ERROR)
 	{
 		QR_GetLastMsg(g_zMsg);
-		printf("QW_Begin error(%s)\n", g_zMsg);
+		printf("QR_Begin error(%s)\n", g_zMsg);
 		return;
 	}
 	printf("ready to receive...\n");
@@ -145,14 +147,14 @@ void Read()
 
 int main(int argc, char** argv)
 {
-	if (argc < 2)
+	if (argc < 3)
 	{
-		printf("Usage : R => Reader, W => Writer");
+		printf("Usage : [R/W] [channel] ");
 		return 0;
 	}
 
 	SetConsoleCtrlHandler(ControlHandler, TRUE);
-
+	strcpy(g_channel, argv[2]);
 	if (*argv[1] == 'R' || *argv[1] == 'r')
 	{
 		Read();
@@ -183,9 +185,10 @@ BOOL InitDll()
 	
 
 	//ShowMessage(IntToStr((int)sizeof(TFutExec)));
-
-	QW_Begin = NULL;
-	QW_Begin = (QWDll_Begin)GetProcAddress(g_hIns, "W_Begin");
+	
+	//QW_Begin = NULL;
+	//QW_Begin = (QWDll_Begin)GetProcAddress(g_hIns, "W_Begin");
+	QW_Begin = (int(__cdecl *)(char *, int, int))GetProcAddress(g_hIns, "W_Begin");
 	if (QW_Begin == NULL)
 	{
 		printf("S_Begin function not found in the DLL !\n");

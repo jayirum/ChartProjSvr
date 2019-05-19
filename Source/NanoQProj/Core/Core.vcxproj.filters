@@ -30,10 +30,10 @@
     <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.cpp">
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPubSub.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.cpp">
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.cpp">
       <Filter>NanoQ</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,10 +41,10 @@
     <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.h">
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPubSub.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.h">
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.h">
       <Filter>NanoQ</Filter>
     </ClInclude>
   </ItemGroup>

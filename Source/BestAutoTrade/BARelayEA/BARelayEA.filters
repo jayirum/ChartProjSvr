@@ -13,36 +13,45 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="NanoQ">
-      <UniqueIdentifier>{cc8c5cd0-bf92-4b98-8199-738da6d8a9aa}</UniqueIdentifier>
+    <Filter Include="Common">
+      <UniqueIdentifier>{6a8acbd7-9558-4090-af28-709d754bcf0d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NanoQDll.cpp">
+    <ClCompile Include="BARelayLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\BARelayInc.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.cpp">
-      <Filter>NanoQ</Filter>
+      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.cpp">
-      <Filter>NanoQ</Filter>
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPubSub.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h">
-      <Filter>NanoQ</Filter>
+    <ClInclude Include="..\Common\BARelayInc.h">
+      <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQDll.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h">
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.h">
-      <Filter>NanoQ</Filter>
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPubSub.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

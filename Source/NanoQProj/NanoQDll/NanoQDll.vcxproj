@@ -152,8 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.cpp" />
+    <ClCompile Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -173,8 +172,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQBase.h" />
     <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQDll.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQReader.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQWriter.h" />
+    <ClInclude Include="..\..\IRUM_UTIL\NanoQ\NanoQPipe.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
