@@ -6272,3 +6272,11 @@ Source/NanoQProj/Debug/NanoQDll.lib
 Source/NanoQProj/Release/NanoQDll.lib
 Source/NanoQProj/Release/NanoQDll.exp
 Source/NanoQProj/Release/NanoQDll.dll
+Source/NanoQProj/Debug/NanoQDll.dll
+Source/NanoQProj/Release/NanoQDll.dll
+Source/BestAutoTrade/BA_LocalRelay/BA_LocalRelay.ini
+Source/_Bin/BA_DemoEA.exe
+Source/_Bin/BARelayEA.dll
+Source/BestAutoTrade/Debug/BARelayEA.lib
+Source/NanoQProj/Debug/NanoQDll.dll
+Source/NanoQProj/Release/NanoQDll.dll
