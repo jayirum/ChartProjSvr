@@ -6286,3 +6286,7 @@ Source/BestAutoTrade/BA_LocalRelay/Main - Copy.h
 Source/BestAutoTrade/Debug/BARelayEA.exp
 Source/NanoQProj/Debug/NanoQDll.dll
 Source/NanoQProj/Release/NanoQDll.dll
+Source/BestAutoTrade/BA_DemoEADll/Debug/BARelayEA.lib
+Source/_Bin/BA_DemoEADll_M.exe
+Source/_Bin/BA_DemoEADll_1.exe
+Source/_Bin/BA_DemoEADll.exe
