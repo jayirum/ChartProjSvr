@@ -138,7 +138,8 @@ void DoMaster()
 		printf("Send Order        : type 'O'\n");
 
 		scanf("%1s", zCommand);
-		zCommand[0] = _toupper(zCommand[0]);
+		if(!isupper(zCommand[0]))
+			zCommand[0] = _toupper(zCommand[0]);
 		if (zCommand[0] != 'R' && zCommand[0] != 'U' && zCommand[0] != 'O')
 			continue;
 
@@ -154,33 +155,36 @@ void DoMaster()
 		}
 		else if (zCommand[0] == TP_ORDER)
 		{
-			GetLocalTime(&st); sprintf(zTm, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
+			while (1) {
+				GetLocalTime(&st); sprintf(zTm, "%02d%02d%02d", st.wHour, st.wMinute, st.wSecond);
 
-			int randNum = rand();
-			double dPrc = 1.1 + ((double)randNum / 100000);
-			nRet = BASender_SendOrder(
-				g_accNo.Mine
-				, g_accNo.Master
-				, ++g_ordNo
-				, "EURUSD"
-				, "O"		// O:Open, C:Close
-				, "B"		// B:Buy, S:Sell
-				, 5
-				, dPrc
-				, 0
-				, 0
-				, 0.5
-				, "MK"
-				, zTm
-				, 0
-				, 0
-				, ""
-				, 0
-				, 0
-				, zSendBuffer
-				, nBufLen
-			);
-			g_log.log(INFO, "[%s][Sender_SendOrder PACKET](%s)\n",whoami, zSendBuffer);
+				int randNum = rand();
+				double dPrc = 1.1 + ((double)randNum / 100000);
+				nRet = BASender_SendOrder(
+					g_accNo.Mine
+					, g_accNo.Master
+					, ++g_ordNo
+					, "EURUSD"
+					, "O"		// O:Open, C:Close
+					, "B"		// B:Buy, S:Sell
+					, 5
+					, dPrc
+					, 0
+					, 0
+					, 0.5
+					, "MK"
+					, zTm
+					, 0
+					, 0
+					, ""
+					, 0
+					, 0
+					, zSendBuffer
+					, nBufLen
+				);
+				g_log.log(INFO, "[%s][Sender_SendOrder PACKET](%s)\n", whoami, zSendBuffer);
+				Sleep(3000);
+			}
 		} // if (zCommand[0] == 'O')
 		else 
 		{
