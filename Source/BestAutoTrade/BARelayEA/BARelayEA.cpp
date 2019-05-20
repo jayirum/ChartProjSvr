@@ -2,7 +2,7 @@
 //
 
 
-#define BARELAYEZ_EXPORTS
+#define BA_RELAY_EXPORTS
 
 #include "BARelayEA.h"
 #include "../Common/NanoQPipe.h"
@@ -15,66 +15,101 @@ CNanoQSub		g_Subscriber;
 
 BOOL	g_bInitSendChannel = FALSE;
 BOOL	g_bInitSlaveChannel = FALSE;;
-char	g_zMsg[1024];
+char	g_zSenderMsg[1024], g_zReceiverMsg[1024];
 
 
-int InitSendChannel(int nSendTimeout)
+char* Sender_GetMsg()	{ return g_zSenderMsg;}
+char* Receiver_GetMsg(){ return g_zReceiverMsg; }
+
+char* Sender_ChannelNm() { return g_Sender.ChannelNm(); }
+char* Receiver_ChannelNm() { return g_Subscriber.ChannelNm(); }
+
+int Sender_InitChannel(int nSendTimeout)
 {
 	if (!g_Sender.Begin(NULL, nSendTimeout, TP_INTERPROC))
 	{
 		g_bInitSendChannel = FALSE;
-		sprintf("InitSendChannel Failed:%s", g_Sender.GetMsg());
-		return (int)(_BARELAYEA::Q_ERROR);
+		sprintf(g_zSenderMsg, "[%s]InitSendChannel Failed:%s", 
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+		return (int)(_BA_RELAY::Q_ERROR);
 	}
+
+	if( !g_Sender.Connect())
+	{
+		g_bInitSendChannel = FALSE;
+		sprintf(g_zSenderMsg, "[%s]Connect Failed:%s",
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+		return (int)(_BA_RELAY::Q_ERROR);
+	}
+
 	g_bInitSendChannel = TRUE;
-	return (int)(_BARELAYEA::Q_SUCCESS);
+	return (int)(_BA_RELAY::Q_SUCCESS);
 }
 
 
-int DeInitSendChannel()
+int Sender_DeInitChannel()
 {
 	g_bInitSendChannel = FALSE;
 	g_Sender.End();
-	return _BARELAYEA::Q_SUCCESS;
+	return _BA_RELAY::Q_SUCCESS;
 }
 
-int InitSlaveChannel(char* pzMasterAccNo, int nSendTimeout)
+int Receiver_InitSlaveChannel(char* pzMasterAccNo, int nSendTimeout)
 {
 	if (!g_Subscriber.Begin(pzMasterAccNo, nSendTimeout, TP_INTERPROC))
 	{
 		g_bInitSlaveChannel = FALSE;
-		sprintf("InitSlaveChannel Failed:%s", g_Subscriber.GetMsg());
-		return _BARELAYEA::Q_ERROR;
+		sprintf(g_zReceiverMsg, "[%s]InitSlaveChannel Failed:%s", 
+			g_Subscriber.ChannelNm(), g_Subscriber.GetMsg());
+		return _BA_RELAY::Q_ERROR;
 	}
+
+	if(!g_Subscriber.Connect())
+	{
+		g_bInitSlaveChannel = FALSE;
+		sprintf(g_zReceiverMsg, "[%s]Connect Failed:%s",
+			g_Subscriber.ChannelNm(), g_Subscriber.GetMsg());
+		return _BA_RELAY::Q_ERROR;
+	}
+
 	g_bInitSlaveChannel = TRUE;
-	return _BARELAYEA::Q_SUCCESS;
+	return _BA_RELAY::Q_SUCCESS;
 }
 
-int DeInitSlaveChannel()
+int Receiver_DeInitSlaveChannel()
 {
 	g_bInitSlaveChannel = FALSE;
 	g_Subscriber.End();
-	return _BARELAYEA::Q_SUCCESS;
+	return _BA_RELAY::Q_SUCCESS;
 }
 
 
-int SendData(char* pData, int nSendLen)
+int Sender_SendData(char* pData, int nSendLen)
 {
+	SYSTEMTIME st;
+	char zTm[32];
+	GetLocalTime(&st);
+	sprintf(zTm, "%04d%02d%02d_%02d%02d%02d%03d",
+		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+
+	_BA_RELAY::Header* pH = (_BA_RELAY::Header*)pData;
+	memcpy(pH->Tm, zTm, sizeof(pH->Tm));
+
 	int nRet, nErrCode;
 	nRet = g_Sender.SendData(pData, nSendLen, &nErrCode);
-	if (nRet == _BARELAYEA::Q_ERROR)
+	if (nRet == _BA_RELAY::Q_ERROR)
 	{
-		if (nErrCode == _BARELAYEA::Q_ERROR)
+		if (nErrCode == _BA_RELAY::Q_ERROR)
 		{
 			//sprintf("SendData Failed:%s", g_Sender.GetMsg());
-			return _BARELAYEA::Q_ERROR;
+			return _BA_RELAY::Q_ERROR;
 		}
-		else if (nErrCode == _BARELAYEA::Q_TIMEOUT)
+		else if (nErrCode == _BA_RELAY::Q_TIMEOUT)
 		{
-			return _BARELAYEA::Q_TIMEOUT;
+			return _BA_RELAY::Q_TIMEOUT;
 		}
 	}
-	return nRet;	// receive length
+	return nRet;	// SEND length
 }
 
 /*
@@ -82,80 +117,93 @@ int SendData(char* pData, int nSendLen)
 		char System[5];
 		char Broker[5];
 		char AccNo[20];*/
-int RegisterAsMaster(char* pzMyAccNo)
+int Sender_RegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen)
 {
-	char zBuffer[1024] = { 0, };
-	int nStructLen = sizeof(_BARELAYEA::PACK_REG_MASTER);
-	_BARELAYEA::PACK_REG_MASTER * p = (_BARELAYEA::PACK_REG_MASTER *)zBuffer;
+	ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_REG_MASTER);
+	_BA_RELAY::PT_REG_MASTER * p = (_BA_RELAY::PT_REG_MASTER *)pSendBuf;
 	memset(p, 0x20, nStructLen);
-	memcpy(p->header.Code, _BARELAYEA::CODE_REG_MASTER, strlen(_BARELAYEA::CODE_REG_MASTER));
-	p->header.Type[0] = _BARELAYEA::TP_COMMAND;
+	memcpy(p->header.Code, _BA_RELAY::CODE_REG_MASTER, strlen(_BA_RELAY::CODE_REG_MASTER));
+	p->header.Type[0] = _BA_RELAY::TP_COMMAND;
 	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
+	memcpy(p->MasterAccNo, pzMyAccNo, strlen(pzMyAccNo));
 
-	int nRet = SendData(zBuffer, nStructLen);
-	if (nRet == _BARELAYEA::Q_ERROR)
-		sprintf("RegisterAsMaster failed(%s)", g_Sender.GetMsg());
+	p->Action[0] = TP_REG;
+
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]RegisterAsMaster failed(%s)", g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
 	return nRet;
 }
 
 
-int UnRegisterAsMaster(char* pzMyAccNo)
+int Sender_UnRegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen)
 {
-	char zBuffer[1024] = { 0, };
-	int nStructLen = sizeof(_BARELAYEA::PACK_UNREG_MASTER);
-	_BARELAYEA::PACK_UNREG_MASTER * p = (_BARELAYEA::PACK_UNREG_MASTER *)zBuffer;
+	ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_REG_MASTER);
+	_BA_RELAY::PT_REG_MASTER * p = (_BA_RELAY::PT_REG_MASTER *)pSendBuf;
 	memset(p, 0x20, nStructLen);
-	memcpy(p->header.Code, _BARELAYEA::CODE_UNREG_MASTER, strlen(_BARELAYEA::CODE_UNREG_MASTER));
-	p->header.Type[0] = _BARELAYEA::TP_COMMAND;
+	memcpy(p->header.Code, _BA_RELAY::CODE_REG_MASTER, strlen(_BA_RELAY::CODE_REG_MASTER));
+	p->header.Type[0] = _BA_RELAY::TP_COMMAND;
 	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
+	memcpy(p->MasterAccNo, pzMyAccNo, strlen(pzMyAccNo));
 
-	int nRet = SendData(zBuffer, nStructLen);
-	if (nRet == _BARELAYEA::Q_ERROR)
-		sprintf("UnRegisterAsMaster failed(%s)", g_Sender.GetMsg());
+	p->Action[0] = TP_UNREG;
+
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]UnRegisterAsMaster failed(%s)",
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
 	return nRet;
 }
 
-int RegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo)
+int Sender_RegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo, /*out*/char* pSendBuf, int nBufLen)
 {
-	char zBuffer[1024] = { 0, };
-	int nStructLen = sizeof(_BARELAYEA::PACK_REG_SLAVE);
-	_BARELAYEA::PACK_REG_SLAVE * p = (_BARELAYEA::PACK_REG_SLAVE *)zBuffer;
+	ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_REG_SLAVE);
+	_BA_RELAY::PT_REG_SLAVE * p = (_BA_RELAY::PT_REG_SLAVE *)pSendBuf;
 	memset(p, 0x20, nStructLen);
-	memcpy(p->header.Code, _BARELAYEA::CODE_REG_SLAVE, strlen(_BARELAYEA::CODE_REG_SLAVE));
-	p->header.Type[0] = _BARELAYEA::TP_COMMAND;
-	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
-	memcpy(p->MasterAccNo, pzMasterAccNo, strlen(pzMasterAccNo));
-
-	int nRet = SendData(zBuffer, nStructLen);
-	if (nRet == _BARELAYEA::Q_ERROR)
-		sprintf("RegisterAsSlave failed(%s)", g_Sender.GetMsg());
-	return nRet;
-}
-
-int UnRegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo)
-{
-	char zBuffer[1024] = { 0, };
-	int nStructLen = sizeof(_BARELAYEA::PACK_UNREG_SLAVE);
-	_BARELAYEA::PACK_UNREG_SLAVE * p = (_BARELAYEA::PACK_UNREG_SLAVE *)zBuffer;
-	memset(p, 0x20, nStructLen);
-	memcpy(p->header.Code, _BARELAYEA::CODE_UNREG_SLAVE, strlen(_BARELAYEA::CODE_UNREG_SLAVE));
-	p->header.Type[0] = _BARELAYEA::TP_COMMAND;
+	memcpy(p->header.Code, _BA_RELAY::CODE_REG_SLAVE, strlen(_BA_RELAY::CODE_REG_SLAVE));
+	p->header.Type[0] = _BA_RELAY::TP_COMMAND;
 	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
 	memcpy(p->MasterAccNo, pzMasterAccNo, strlen(pzMasterAccNo));
 
-	int nRet = SendData(zBuffer, nStructLen);
-	if (nRet == _BARELAYEA::Q_ERROR)
-		sprintf("UnRegisterAsSlave failed(%s)", g_Sender.GetMsg());
+	p->Action[0] = TP_REG;
+
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]RegisterAsSlave failed(%s)",
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
+	return nRet;
+}
+
+int Sender_UnRegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo, /*out*/char* pSendBuf, int nBufLen)
+{
+	ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_REG_SLAVE);
+	_BA_RELAY::PT_REG_SLAVE * p = (_BA_RELAY::PT_REG_SLAVE *)pSendBuf;
+	memset(p, 0x20, nStructLen);
+	memcpy(p->header.Code, _BA_RELAY::CODE_REG_SLAVE, strlen(_BA_RELAY::CODE_REG_SLAVE));
+	p->header.Type[0] = _BA_RELAY::TP_COMMAND;
+	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
+	memcpy(p->MasterAccNo, pzMasterAccNo, strlen(pzMasterAccNo));
+
+	p->Action[0] = TP_UNREG;
+
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]UnRegisterAsSlave failed(%s)",
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
 	return nRet;
 }
 
 
-void GetMsg(/*out*/char* pMsg)
-{
-	strcpy(g_zMsg, pMsg);
-}
 
-int SendOrder(
+int Sender_SendOrder(
 	char* pzMyAccNo
 	, char* pzMasterAccNo
 	, int nOrdNo
@@ -174,15 +222,17 @@ int SendOrder(
 	, char* psOpenedTm
 	, double dProfit
 	, double dSwap
+	, /*out*/char* pSendBuf
+	, int nBufLen
 )
 {
 	char temp[128];
-	char zBuffer[1024] = { 0, };
-	int nStructLen = sizeof(_BARELAYEA::PACK_MASTER_ORD);
-	_BARELAYEA::PACK_MASTER_ORD * p = (_BARELAYEA::PACK_MASTER_ORD *)zBuffer;
+	ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_MASTER_ORD);
+	_BA_RELAY::PT_MASTER_ORD * p = (_BA_RELAY::PT_MASTER_ORD *)pSendBuf;
 	memset(p, 0x20, nStructLen);
-	memcpy(p->header.Code, _BARELAYEA::CODE_MASTER_ORDER, strlen(_BARELAYEA::CODE_MASTER_ORDER));
-	p->header.Type[0] = _BARELAYEA::TP_ORDER;
+	memcpy(p->header.Code, _BA_RELAY::CODE_MASTER_ORDER, strlen(_BA_RELAY::CODE_MASTER_ORDER));
+	p->header.Type[0] = _BA_RELAY::TP_ORDER;
 	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
 	memcpy(p->MasterAccNo, pzMasterAccNo, strlen(pzMasterAccNo));
 	
@@ -211,10 +261,11 @@ int SendOrder(
 	sprintf(temp, "%.*f", nDecimalCnt, dOpendedPrc);
 	memcpy(p->OpendedPrc, temp, strlen(temp));
 
-	sprintf(temp, "%.*f", VOL_DECIMAL_CNT, dOpendedPrc);
+	sprintf(temp, "%.*f", nDecimalCnt, dOpendedPrc);
 	memcpy(p->OpenedLots, temp, strlen(temp));
 
-	memcpy(p->OpenedTm, psOpenedTm, strlen(psOpenedTm));
+	if(psOpenedTm)
+		memcpy(p->OpenedTm, psOpenedTm, strlen(psOpenedTm));
 
 	sprintf(temp, "%.2f", dProfit);
 	memcpy(p->Profit, temp, strlen(temp));
@@ -223,12 +274,29 @@ int SendOrder(
 	memcpy(p->Swap, temp, strlen(temp));
 
 
-	int nRet = SendData(zBuffer, nStructLen);
-	if (nRet == _BARELAYEA::Q_ERROR)
-		sprintf("UnRegisterAsSlave failed(%s)", g_Sender.GetMsg());
-
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]SendOrder failed(%s)",
+			g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
 	return nRet;
 }
 
 
+int Receiver_RecvData(/*out*/ char* pData, int nBuffLen)
+{
+	int nRet, nErrCode;
+	ZeroMemory(pData, nBuffLen);
+	nRet = g_Subscriber.RecvData(pData, nBuffLen, &nErrCode);
+	if (nRet == Q_ERROR)
+	{
+		if (nErrCode == Q_TIMEOUT)
+			nRet = Q_TIMEOUT;
+		else {
+			sprintf(g_zReceiverMsg, "[%s]SendOrder failed(%s)",
+				g_Subscriber.ChannelNm(), g_Subscriber.GetMsg());
+		}
+	}
+	return nRet;
+}
 

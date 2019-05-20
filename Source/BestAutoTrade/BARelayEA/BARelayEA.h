@@ -5,21 +5,21 @@
 #include "../Common/BARelayInc.h"
 
 
-#ifdef BARELAYEZ_EXPORTS
-#define BARELAYEZ extern "C" __declspec(dllexport)
+#ifdef BA_RELAY_EXPORTS
+#define BA_RELAY extern "C" __declspec(dllexport)
 #else 
-#define BARELAYEZ extern "C" __declspec(dllimport)
+#define BA_RELAY extern "C" __declspec(dllimport)
 enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 #endif
 
-BARELAYEZ int InitSendChannel(int nSendTimeout);
-BARELAYEZ int DeInitSendChannel();
+BA_RELAY int Sender_InitChannel(int nSendTimeout);
+BA_RELAY int Sender_DeInitChannel();
 
-BARELAYEZ int RegisterAsMaster(char* pzMyAccNo);
-BARELAYEZ int UnRegisterAsMaster(char* pzMyAccNo);
-BARELAYEZ int SendOrder(
-	char pzMyAccNo
-	, char pzMasterAccNo
+BA_RELAY int Sender_RegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen);
+BA_RELAY int Sender_UnRegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen);
+BA_RELAY int Sender_SendOrder(
+	char* pzMyAccNo
+	, char* pzMasterAccNo
 	, int nOrdNo
 	, char* pzSymbol
 	, char* pAction		// O:Open, C:Close
@@ -36,13 +36,22 @@ BARELAYEZ int SendOrder(
 	, char* psOpenedTm
 	, double dProfit
 	, double dSwap
+	, /*out*/char* pSendBuf
+	, int nBufLen
 );
 
 
-BARELAYEZ int InitSlaveChannel(char* pzMasterAccNo, int nSendTimeout);
-BARELAYEZ int DeInitSlaveChannel();
-BARELAYEZ int RegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo);
-BARELAYEZ int UnRegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo);
+BA_RELAY int Receiver_InitSlaveChannel(char* pzMasterAccNo, int nSendTimeout);
+BA_RELAY int Receiver_DeInitSlaveChannel();
 
-BARELAYEZ void GetMsg(/*out*/char* pMsg);
-BARELAYEZ int SendData(char* pData, int nSendLen);
+BA_RELAY int Sender_RegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo, /*out*/char* pSendBuf, int nBufLen);
+BA_RELAY int Sender_UnRegisterAsSlave(char* pzMyAccNo, char* pzMasterAccNo, /*out*/char* pSendBuf, int nBufLen);
+
+BA_RELAY int Sender_SendData(char* pData, int nSendLen);
+BA_RELAY int Receiver_RecvData(/*out*/ char* pData, int nBuffLen);
+
+BA_RELAY char* Sender_GetMsg();
+BA_RELAY char* Receiver_GetMsg();
+
+BA_RELAY char* Sender_ChannelNm();
+BA_RELAY char* Receiver_ChannelNm();

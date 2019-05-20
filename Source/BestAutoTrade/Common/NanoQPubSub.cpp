@@ -52,7 +52,8 @@ BOOL CNanoQPub::Begin(char* pzMyAccNo, int nSendTimeout, int nQueueTp, BOOL bCal
 
 VOID CNanoQPub::ThreadFunc()
 {
-	return;
+	while(!Is_TimeOfStop(INFINITE))
+	{ }
 }
 
 

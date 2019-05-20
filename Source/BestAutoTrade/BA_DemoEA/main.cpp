@@ -63,7 +63,8 @@ void Subscriber()
 
 void PipeWriter()
 {
-	if (!pipeWriter.Begin(DEF_RELAY_CHANNEL, DEF_RECV_TIMEOUT, 1, FALSE))
+	//if (!pipeWriter.Begin("ipc://BA_RELAY", DEF_SEND_TIMEOUT, 1, FALSE))
+	if (!pipeWriter.Begin(NULL, DEF_SEND_TIMEOUT, 1, FALSE))
 	{
 		strcpy(g_zMsg, pipeWriter.GetMsg());
 		printf("pipeWriter.Begin error(%s)\n", g_zMsg);

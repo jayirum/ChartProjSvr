@@ -33,7 +33,7 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 		{
 		case TP_PIPE_READER:
 		case TP_PIPE_WRITER:
-			sprintf(m_zChannelNm, "inproc://BA_RELAY");
+			sprintf(m_zChannelNm, "inproc://%s", RELAY_CHANNEL_NM);
 			break;
 		case TP_PUB:
 		case TP_SUB:
@@ -47,7 +47,7 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 		{
 		case TP_PIPE_READER:
 		case TP_PIPE_WRITER:
-			sprintf(m_zChannelNm, "ipc://BA_LOCAL_RELAY");
+			sprintf(m_zChannelNm, "ipc://%s", RELAY_CHANNEL_NM);
 			break;
 		case TP_PUB:
 		case TP_SUB:
@@ -130,6 +130,7 @@ int	CNanoQ::RecvDataEx()
 	}
 	return 0;
 }
+
 
 
 BOOL CNanoQ::Connect()

@@ -33,7 +33,9 @@
     <ClInclude Include="..\Common\NanoQPubSub.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="BARelayEA.h" />
+    <ClInclude Include="BARelayEA.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

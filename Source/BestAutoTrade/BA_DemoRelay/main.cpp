@@ -12,14 +12,20 @@
 #include "../Common/Demo.h"
 #include "./utils/err.c"	//important
 #include "Relay.h"
+#include "../../IRUM_UTIL/LogMsg.h"
 
 #pragma warning(disable:4996)
 
 BOOL WINAPI ControlHandler(DWORD dwCtrlType);
 
+CLogMsg		g_log;
+
+
 int main(int argc, char** argv)
 {
 	SetConsoleCtrlHandler(ControlHandler, TRUE);
+
+	g_log.OpenLog("./Log", "BA_DemoRelay");
 
 	CRelay relay;
 	if (!relay.Begin())

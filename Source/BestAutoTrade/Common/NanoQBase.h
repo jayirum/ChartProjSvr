@@ -17,7 +17,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "nanomsg.lib")
 
-using namespace _BARELAYEA;
+using namespace _BA_RELAY;
 
 typedef  void(__stdcall *PRecvCallBack)(void*, char*, int);	// class instance pointer, recv data, return value
 

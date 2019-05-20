@@ -6,14 +6,16 @@
 #include <Windows.h>
 #include <string>
 
-namespace _BARELAYEA
+namespace _BA_RELAY
 {
 	enum QUEUE_TP { TP_INPROC, TP_INTERPROC };
 	enum NANOMSG_TP { TP_PIPE_READER, TP_PIPE_WRITER, TP_PUB, TP_SUB };
 
 	enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 
-	
+	const char RELAY_CHANNEL_NM[] = "BA_RELAY";
+	//const int MAX_PUB_CHNNEL_CNT = 10;
+
 	const int LEN_CHANNEL_NM	= 30;
 	const int LEN_ACC_NO		= 20;
 	const int LEN_ORD_NO		= 10;
@@ -30,15 +32,16 @@ namespace _BARELAYEA
 
 	
 	const char CODE_REG_MASTER[]	= "1001";
-	const char CODE_UNREG_MASTER[]	= "1002";
-	const char CODE_REG_SLAVE[]		= "1003";
-	const char CODE_UNREG_SLAVE[]	= "1004";
-	const char CODE_MASTER_ORDER[]	= "1005";
-	const char CODE_PUBLISH_ORDER[]	= "1006";
+	const char CODE_REG_SLAVE[]		= "1002";
+	const char CODE_MASTER_ORDER[]	= "1003";
+	const char CODE_PUBLISH_ORDER[]	= "1004";
 
 	const char TP_COMMAND = 'C';
 	const char TP_ORDER = 'O';
+	const char TP_REG = 'R';
+	const char TP_UNREG = 'U';
 
+	char* Now(char* pBuf);
 
 	struct Header
 	{
@@ -47,53 +50,44 @@ namespace _BARELAYEA
 		char System[5];
 		char Broker[5];
 		char AccNo[LEN_ACC_NO];
+		char Tm[18];	//yymmdd_hhmmssmmm
 	};
 
-	struct PACK_REG_MASTER
+	struct PT_REG_MASTER
 	{
 		Header header;
-		char Reserved[10];
-	};
-
-	struct PACK_UNREG_MASTER
-	{
-		Header header;
-		char Reserved[10];
-	};
-
-	struct PACK_REG_SLAVE
-	{
-		Header header;
+		char Action[1];		// R, U
 		char MasterAccNo[LEN_ACC_NO];
 		char Reserved[10];
 	};
 
-	struct PACK_UNREG_SLAVE
+	struct PT_REG_SLAVE
 	{
 		Header header;
+		char Action[1];		// R, U
 		char MasterAccNo[LEN_ACC_NO];
 		char Reserved[10];
 	};
-	
-	struct PACK_TEST
+
+	struct PT_TEST
 	{
 		Header header;
 		char Data[100];
 	};
 
-	struct PACK_MASTER_ORD
+	struct PT_MASTER_ORD
 	{
 		Header header;
 		char MasterAccNo[LEN_ACC_NO];
 		char OrdNo[LEN_ORD_NO];
 		char Symbol[LEN_SYMBOL];
-		char Action[1];
-		char Side[1];
+		char Action[1];				//O:Open, C:Close
+		char Side[1];				// B, S
 		char OrdPrc[LEN_PRC];
 		char SLPrc[LEN_PRC];
 		char PTPrc[LEN_PRC];
 		char Lots[LEN_LOTS];
-		char OrdTp[LEN_ORD_TP];
+		char OrdTp[LEN_ORD_TP];		// MT, PD, SL, TP
 		char OrdTm[6];
 		char OpendedPrc[LEN_PRC];
 		char OpenedLots[LEN_PRC];
