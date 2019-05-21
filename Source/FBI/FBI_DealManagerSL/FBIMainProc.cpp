@@ -5,7 +5,7 @@
 #include "../../IRUM_UTIL/LogMsg.h"
 #include "../../IRUM_UTIL/MemPool.h"
 #include "../../IRUM_UTIL/Util.h"
-#include "../../IRUM_UTIL/TimeInterval.h"
+#include "../../IRUM_UTIL/IRExcept.h"
 #include "../common/FBIInc.h"
 #include <string.h>
 #include <memory.h>
@@ -15,12 +15,12 @@ extern CLogMsg	g_log;
 extern char		g_zConfig[_MAX_PATH];
 extern CMemPool	g_memPool;
 
-CFBIMainProc::CFBIMainProc():CBaseThread("FBIMain", TRUE)
+CFBIMainProc::CFBIMainProc()//:CBaseThread("FBIMain", TRUE)
 {
 	m_unSaveData = 0;
 	m_hSaveData = NULL;
 	m_pDBPool = NULL;
-	m_bContinue	= TRUE;
+	//m_bContinue	= TRUE;
 	
 	InitializeCriticalSection(&m_csStkOrd);
 }
@@ -50,6 +50,7 @@ BOOL CFBIMainProc::Initialize()
 	}
 
 	// SAVE THREAD
+#if 0 //TODO
 	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &SaveResultThread, NULL, 0, &m_unSaveData);
 	
 	if (!LoadStkInfo()) {
@@ -61,11 +62,13 @@ BOOL CFBIMainProc::Initialize()
 		g_log.log(NOTIFY, "CreateStkOrders Error. Terminate Application");
 		return FALSE;
 	}
-
-	//TODO.
+#endif
 	// Init SM
+	if (!InitializeSM())
+		return FALSE;
 
-	ResumeThread();
+	// This Thread
+	//ResumeThread();
 
 	//TODO
 	//CDBHandlerAdo db2(m_pDBPool->Get());
@@ -90,32 +93,47 @@ void CFBIMainProc::Finalize()
 
 BOOL CFBIMainProc::InitializeSM()
 {
-	if (!m_smPrc.Begin())
-	{
-		//TODO. LOG
-		return FALSE;
-	}
-
 	char zIp[32], zPort[32];
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_IP", zIp);
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_PORT", zPort);
-	
-	//if(!m_smPrc.AddDest())
 
-	//[SMSERVER_INFO]
-	//MARKET_IP = 110.4.89.204
-	//	MARKET_PORT = 7999
-	//	ORD_IP = 110.4.89.204
-	//	ORD_PORT = 6253
+	if (!m_smPrc.Begin())
+	{
+		g_log.log(NOTIFY, "SM PRC Begin Error. Terminate Application");
+		return FALSE;
+	}
+	if (!m_smPrc.ConnectSMSrv(zIp, atoi(zPort)))
+	{
+		g_log.log(NOTIFY, "SM PRC connect Error(IP:%s)(Port:%s) Terminate Application", zIp, zPort);
+		return FALSE;
+	}
+	m_smPrc.AddDest((char*)SISE_GW, (char*)"");	// MSG_MKT_CME_EXEC);
+	m_smPrc.SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMPrc);
+
+
+	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "ORDER_IP", zIp);
+	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "ORDER_PORT", zPort);
 
 	if (!m_smOrd.Begin())
 	{
-		//TODO. LOG
+		g_log.log(NOTIFY, "SM Ord Begin Error. Terminate Application");
 		return FALSE;
 	}
+	if (!m_smOrd.ConnectSMSrv(zIp, atoi(zPort)))
+	{
+		g_log.log(NOTIFY, "SM Ord connect Error(IP:%s)(Port:%s) Terminate Application", zIp, zPort);
+		return FALSE;
+	}
+	m_smOrd.AddDest((char*)ORD_REAL_GW, (char*)"");	// MSGR_GW_ORD_NEW);
+	m_smOrd.SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMOrd);
+
+	return TRUE;
 }
 VOID CFBIMainProc::DeInitializeSM()
-{}
+{
+	m_smPrc.End();
+	m_smOrd.End();
+}
 
 BOOL CFBIMainProc::CreateStkOrders()
 {
@@ -135,31 +153,108 @@ BOOL CFBIMainProc::CreateStkOrders()
 }
 
 
-long __stdcall CFBIMainProc::CallBackSMPrc(int index, char* WorkThread, char* Message)
+long WINAPI CFBIMainProc::CallBackSMPrc(int index, char* pCustomPtr, char* Message)
 {
-	/*
-	TODO
-	new ST_PRC_INFO
-	GetSymbol
-	Get StkOrd pointer
-	PostMsg to both threads
-	PostMsg to both threads => RelayOrdAndPrc(_FBI::WM_RECV_PRC, Pointer of Data)
-	*/
+	CFBIMainProc* pThis = (CFBIMainProc*)pCustomPtr;
+
+	char zMessage[128] = { 0, };
+	pThis->m_smPrc.GetSMMessage(zMessage);
+	if (strncmp(zMessage, MSG_MKT_FX_EXEC, strlen(zMessage)) != 0)
+		return 0;
+
+
+	char* pRecvData = g_memPool.get();
+	_FBI::TFutExec2 *FutExec = (_FBI::TFutExec2 *)pRecvData;
+
+	pThis->m_smPrc.GetBinaryFieldValue((char *)fldFXExec, sizeof(FutExec), (char*)FutExec);
+
+	string sSymbol = string(FutExec->issue);
+	map<string, CStkOrd*>::iterator it = pThis->m_mapStkOrd.find(sSymbol);
+	if (it == pThis->m_mapStkOrd.end())
+	{
+		g_memPool.release(pRecvData);
+		g_log.log(ERR, "PrcData with non-related symbol(%s)", FutExec->issue);
+		return -1;
+	}
+	((*it).second)->RelayOrdAndPrc(_FBI::WM_RECV_PRC, (void*)pRecvData);
 
 	return 0;
 }
 
-long __stdcall CFBIMainProc::CallBackSMOrd(int index, char* WorkThread, char* Message)
-{
-	/*
-	TODO
-	_FBI::ST_SLORD *pDn = new _FBI::ST_SLORD;
 
-	GetSymbol
-	Get StkOrd pointer
-	PostMsg to both threads => RelayOrdAndPrc(_FBI::WM_RECV_ORD, Pointer of Data)
-	*/
-	
+/*
+struct ST_SLORD
+{
+int		OrdNo;
+int		nOrdStatus;
+double	dOrdPrc;
+char	cUpDn;
+int		nTickCnt;
+double	dWinPrc;
+double	dLosePrc;
+char	cWinLose;	// W, L
+std::string sFiredPrc;
+std::string sArtcCd;
+std::string sStkCd;
+BOOL	bMain;
+};
+*/
+long __stdcall CFBIMainProc::CallBackSMOrd(int index, char* pCustomPtr, char* Message)
+{
+	CFBIMainProc* pThis = (CFBIMainProc*)pCustomPtr;
+	char zMessage[128] = { 0, };
+	pThis->m_smPrc.GetSMMessage(zMessage);
+	if (strncmp(zMessage, MSGR_GW_ORD_NEW, strlen(zMessage)) != 0)
+	{
+		return -1;
+	}
+
+	char* pRecvData = g_memPool.get();
+	char cOrdStatus[32] = { 0, };
+	char cUpDn[32] = { 0, };
+	char zSymbol[32] = { 0, };
+	CStkOrd* pStkThread;
+
+	_FBI::ST_SLORD *pOrd = (_FBI::ST_SLORD *)pRecvData;
+
+	try
+	{
+		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldSymbol, 0, zSymbol), pThis->m_smOrd.GetMsg());
+		pOrd->sStkCd = string(zSymbol);
+
+		map<string, CStkOrd*>::iterator it = pThis->m_mapStkOrd.find(pOrd->sStkCd);
+		if (it == pThis->m_mapStkOrd.end())
+		{
+			throw CIRExcept("OrdData with non-related symbol");
+		}
+		pStkThread = ((*it).second);
+
+		pThis->m_smOrd.GetIntegerFieldValue((char*)fldOrderID, 0, &pOrd->OrdNo);
+
+		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldOrdType, 1, cOrdStatus), pThis->m_smOrd.GetMsg());
+		if (cOrdStatus[0] == '0')	//fvPlcType_NEW
+			pOrd->nOrdStatus = _FBI::ORD_STATUS_ORD;
+		if (cOrdStatus[0] == '2')	//fvPlcType_CXL
+			pOrd->nOrdStatus = _FBI::ORD_STATUS_CNCL;
+
+		ASSERT_BOOL(pThis->m_smOrd.GetDoubleFieldValue((char*)fldPrice, 0, &pOrd->dOrdPrc), pThis->m_smOrd.GetMsg());
+
+		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldSide, 1, cUpDn), pThis->m_smOrd.GetMsg());
+		if (cUpDn[0] == '1')	//sell
+			pOrd->cUpDn = 'D';
+		else
+			pOrd->cUpDn = 'U';
+
+		ASSERT_BOOL(pThis->m_smOrd.GetIntegerFieldValue((char*)fldSTOPLossTick, 0, &pOrd->nTickCnt), pThis->m_smOrd.GetMsg());
+
+		pStkThread->RelayOrdAndPrc(_FBI::WM_ORD_RECV, pRecvData);
+	}
+	catch (CIRExcept e)
+	{
+		g_log.log(ERR, "%s", e.GetMsg());
+		g_memPool.release(pRecvData);
+		return -1;
+	}
 
 	return 0;
 }
@@ -188,12 +283,8 @@ unsigned WINAPI CFBIMainProc::SaveResultThread(LPVOID lp)
 				_FBI::ST_SLORD* pSlOrd = (_FBI::ST_SLORD*)msg.lParam;
 				CDBHandlerAdo db(pThis->m_pDBPool->Get());
 
-				sprintf(zQ, "EXEC AA_ORD_RESULT_SL "
-					"%d"		//@I_ORD_NO		INT
-					,",'%s'"	//@I_FIRED_PRC	VARCHAR(20)
-					,",'%s'"	//@I_WINLOSE		CHAR(1)		--W, L
-					,
-					pSlOrd->OrdNo
+				sprintf(zQ, "EXEC AA_ORD_RESULT_SL %d, '%s','%c'"
+					, pSlOrd->OrdNo
 					, pSlOrd->sFiredPrc.c_str()
 					, pSlOrd->cWinLose
 				);
@@ -337,9 +428,4 @@ VOID CFBIMainProc::ClearDealMap()
 	m_mapStkOrd.clear();
 	LeaveCriticalSection(&m_csStkOrd);
 
-}
-
-void CFBIMainProc::ThreadFunc()
-{
-	WaitForSingleObject(CBaseThread::m_hDie, INFINITE);
 }

@@ -16,6 +16,9 @@
     <Filter Include="Common">
       <UniqueIdentifier>{d6c08c49-b71e-42bb-8805-21a224e77985}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SmartMessage">
+      <UniqueIdentifier>{562a98fc-0ad1-4e77-92fd-ea55599ca81b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -73,6 +76,9 @@
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp">
+      <Filter>SmartMessage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
       <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
@@ -132,6 +138,12 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h">
+      <Filter>SmartMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SMDataTypes.h">
+      <Filter>SmartMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

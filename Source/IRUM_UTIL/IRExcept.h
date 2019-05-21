@@ -4,6 +4,8 @@
 #define ERR_BASE		90000
 #define ERR_COMM_INIT	ERR_BASE + 1
 
+#define ASSERT_BOOL(result, msg){ if(!result) throw CIRExcept(msg);}
+
 class CIRExcept
 {
 public:

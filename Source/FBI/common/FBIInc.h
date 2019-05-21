@@ -221,13 +221,14 @@ namespace _FBI
 		double	dOrdPrc;
 		char	cUpDn;
 		int		nTickCnt;
-		double	dWinPrc;
-		double	dLosePrc;
+
 		char	cWinLose;	// W, L
 		std::string sFiredPrc;
 		std::string sArtcCd;
 		std::string sStkCd;
 		BOOL	bMain;
+		double	dWinPrc;
+		double	dLosePrc;
 	};
 
 	struct ST_STK_INFO
@@ -244,4 +245,25 @@ namespace _FBI
 		std::string	sStkCd;
 		double		dPrc;
 	};
+
+
+	// Exec Price packet coming through SM server
+#pragma pack(push, 1)
+	struct TFutExec2
+	{
+		char issue[8 + 1];
+		double gap;
+		double cup;
+		double sip;
+		double hip;
+		double lip;
+		int vol;
+		double amt;
+		int time;
+		char side[1 + 1];
+		char ydiffSign[1 + 1];
+		char chgrate[6 + 1];
+	};
+
+#pragma pack(pop)
 }

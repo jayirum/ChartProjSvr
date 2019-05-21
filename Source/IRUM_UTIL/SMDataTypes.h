@@ -1,84 +1,46 @@
 #pragma once
 
-	enum  TCMDType { cmtIOCPEvent, cmtAccept, cmtDisconnect, cmtTR_CODE };
-	enum  TR_CODE { ctDestAdd, ctDestDel, ctDestPushSend, ctDestRRSend, ctDestRRSendResponse, ctUserID, ctDisconnect, ctUserConnectOk, ctUsersAlready, ctClientUniqKey };
-	enum  TDeliveryMode { Delivery_RR, Delivery_RR_Response, Delivery_Push };
+enum  TCMDType { cmtIOCPEvent, cmtAccept, cmtDisconnect, cmtTR_CODE };
+enum  TR_CODE { ctDestAdd, ctDestDel, ctDestPushSend, ctDestRRSend, ctDestRRSendResponse, ctUserID, ctDisconnect, ctUserConnectOk, ctUsersAlready, ctClientUniqKey };
+enum  TDeliveryMode { Delivery_RR, Delivery_RR_Response, Delivery_Push };
 
-	const int MESSAGE_TO_SEND = 0;
-	const int RECEIVED_MESSAGE = 1;
-	const int RESPOND_MESSAGE = 2;
-
-	/*
-		0 - success
-		else - fail
-	*/
-	typedef long int(__stdcall *TInitialize)();
-
-	typedef long int(__stdcall *TSMClientConnect)(int index, char* host, long int port);
-
-	typedef long int(__stdcall *TSMClientDisconnect)(int index);
-
-	typedef bool(__stdcall *TSMClientIsConnected)(int index);
-
-	typedef long int(__stdcall *TSMSetMessageParameters)(int index, int messtype,
-		TDeliveryMode DeliveryMode, char* Destination, char* Msg);
-
-	typedef long int(__stdcall *TSMSetMessageBinaryField)(int index, int messtype,
-		char* FieldName, char* Data, int DataSize);
-
-	typedef long int(__stdcall *TSMSetMessageStringField)(int index, int messtype,
-		char* FieldName, char* Str);
-
-	typedef long int(__stdcall *TSMSetMessageIntegerField)(int index, int messtype,
-		char* FieldName, int Val);
-
-	typedef long int(__stdcall *TSMSendMessage)(int index, int messtype);
-
-	typedef char* (__stdcall *TSMGetClientUniqKey)(int index);
-
-	typedef char* (__stdcall *TSMGetClientIP)(int index);
-
-	typedef long int(__stdcall *TSMEventAddDestination)(int index, char* Dest, char* Msg);
-
-	typedef long int(__stdcall *TSMEventRemoveDestination)(int index, char* Dest, char* Msg);
-
-	typedef long int(__stdcall *TSMEventAllRemoveDestination)(int index);
-
-	typedef long int(__stdcall *TSMGetReceivedCnt)(int index);
-
-	typedef long int(__stdcall *TSMSetWorkEventCallBack)(int index, char* CallBackProc);
-
-	typedef char* (__stdcall *TSMMessageGetBinaryFieldValue)(int index, int messtype, char* FieldName);
-
-	typedef char* (__stdcall *TSMMessageGetStringFieldValue)(int index, int messtype, char* FieldName);
-
-	typedef int(__stdcall *TSMMessageGetIntegerFieldValue)(int index, int messtype, char* FieldName);
-
-	typedef long int(__stdcall *TSMGetObjectsNumber)();
-
-	typedef long int(__stdcall *TSMGetMaximumObjectsNumber)();
-
-	typedef long int(__stdcall *TSMCreateInstance)();
-
-	typedef int(__stdcall *TSMMessageGetDeliveryType)(int index, int messtype);
-
-	typedef int(__stdcall *TSMSendResponse)(int index, int messtype);
-
-	typedef int(__stdcall *TSMGetDeliveryModeOfRecvMsg)(int index);
-
-	typedef char*(__stdcall *TSMGetDestinationOfRecvMsg)(int index);
-
-	typedef char*(__stdcall *TSMGetMsgOfRecvMsg)(int index);
-
-	typedef int(__stdcall *TSMGetClientSessionOfRecvMsg)(int index);
-
-	typedef int(__stdcall *TSMSMessageToSMessageEx)(int index);
-
-	typedef int(__stdcall *TSetSMMessageHeader)(int index, int DeliveryMode, char* pDest, char* pMsg, int ClientSession);
+const int MESSAGE_TO_SEND = 0;
+const int RECEIVED_MESSAGE = 1;
+const int RESPOND_MESSAGE = 2;
 
 
-	//function SMSetMessageParameters(DeliveryMode : TDeliveryMode; Destination : PChar; Msg : PChar) : integer;
-	//function SMSetMessageField(FieldName : PChar; Data : Pointer; DataSize : integer) : integer; stdcall;
+typedef int(__stdcall *TInitialize)();
+typedef int(__stdcall *TSMClientConnect)(int index, char* host, long int port);
+typedef int(__stdcall *TSMClientDisconnect)(int index);
+typedef bool(__stdcall *TSMClientIsConnected)(int index);
+typedef int(__stdcall *TSMSetMessageParameters)(int index, int messtype, TDeliveryMode DeliveryMode, char* Destination, char* Msg);
+typedef int(__stdcall *TSMSetMessageBinaryField)(int index, int messtype, char* FieldName, char* Data, int DataSize);
+typedef int(__stdcall *TSMSetMessageStringField)(int index, int messtype, char* FieldName, char* Str);
+typedef int(__stdcall *TSMSetMessageIntegerField)(int index, int messtype, char* FieldName, int Val);
+typedef int(__stdcall *TSMSendMessage)(int index, int messtype);
+typedef char* (__stdcall *TSMGetClientUniqKey)(int index);
+typedef char* (__stdcall *TSMGetClientIP)(int index);
+typedef int(__stdcall *TSMEventAddDestination)(int index, char* Dest, char* Msg);
+typedef int(__stdcall *TSMEventRemoveDestination)(int index, char* Dest, char* Msg);
+typedef int(__stdcall *TSMEventAllRemoveDestination)(int index);
+typedef int(__stdcall *TSMGetReceivedCnt)(int index);
+typedef int(__stdcall *TSMSetWorkEventCallBack)(int index, char* CallBackProc, char* pCustomPtr);
+typedef char* (__stdcall *TSMMessageGetBinaryFieldValue)(int index, int messtype, char* FieldName);
+typedef char* (__stdcall *TSMMessageGetStringFieldValue)(int index, int messtype, char* FieldName);
+typedef int(__stdcall *TSMMessageGetIntegerFieldValue)(int index, int messtype, char* FieldName);
+typedef double(__stdcall *TSMMessageGetDoubleFieldValue)(int index, int messtype, char* FieldName);
+typedef int(__stdcall *TSMGetObjectsNumber)();
+typedef int(__stdcall *TSMGetMaximumObjectsNumber)();
+typedef int(__stdcall *TSMCreateInstance)();
+typedef int(__stdcall *TSMMessageGetDeliveryMode)(int index, int messtype);
+typedef int(__stdcall *TSMSendResponse)(int index, int messtype);
+typedef char* (__stdcall *TSMMessageGetDestination)(int index, int messtype);
+typedef char* (__stdcall *TSMMessageGetMsg)(int index, int messtype);
+typedef int(__stdcall *TSMMessageGetClientSession)(int index, int messtype);
+typedef int(__stdcall *TSMSMessageToSMessageEx)(int index);
+typedef char* (__stdcall *TSMGetMsgOfRecvMsg)(int index);
+typedef int(__stdcall *TSetSMMessageHeader)(int index, int DeliveryMode, char* Destination, char* Msg, int ClientSession);
+
 
 
 	// CLENT  [] => SERVER ( Request & Reply )
@@ -94,7 +56,7 @@
 
 	// GW
 	const char   ORDER_GW[] = "\\ORDER\\GW\\";
-	const char   *SISE_GW = "\\SISE\\GW\\";
+	const char   SISE_GW[] = "\\SISE\\GW\\";
 	const char   EXEC_GW[] = "\\EXEC\\GW\\";
 
 	// REAL GW
@@ -566,7 +528,7 @@
 	const char  MSG_MKT_OPT_HOGA[] = "\\MKT\\OPT\\HOGA\\";
 	const char  MSG_MKT_OPT_EXEC[] = "\\MKT\\OPT\\EXEC\\";
 	const char  MSG_MKT_FX_HOGA[] = "\\MKT\\FX\\HOGA\\";
-	const char  *MSG_MKT_FX_EXEC = "\\MKT\\FX\\EXEC\\";
+	const char  MSG_MKT_FX_EXEC[] = "\\MKT\\FX\\EXEC\\";
 	const char  MSG_MKT_CME_HOGA[] = "\\MKT\\CME\\HOGA\\";
 	const char  MSG_MKT_CME_EXEC[] = "\\MKT\\CME\\EXEC\\";
 	const char  MSG_MKT_CME_MAST[] = "\\MKT\\CME\\MAST\\";

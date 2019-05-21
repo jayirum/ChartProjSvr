@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <stdio.h>
 
-typedef long(__stdcall *RECV_CALLBACK)(int index, char* WorkThread, char*);
+typedef long(__stdcall *RECV_CALLBACK)(int , char*, char*);
 
 class CSmartMessage
 {
@@ -17,13 +17,15 @@ public:
 	BOOL ConnectSMSrv(char* pzIp, long lPort);
 	VOID DisConnectSMSrv();
 	BOOL AddDest(char* pDest, char* pMsg);
-	void SetRecvCallBackFn();// (RECV_CALLBACK RecvCallBack);
-	
+	void SetRecvCallBackFn(LPVOID lpCustomPtr, RECV_CALLBACK fnCallBack);
+	//static long __stdcall callbackTest(int index, char* WorkThread, char*);
 
-	BOOL GetMsgOfRecvMsg(_Out_ char* pValue);
 	BOOL GetBinaryFieldValue(char* pFieldName, int nValSize, _Out_ char* pValue);
 	BOOL GetStringFieldValue(char* pFieldName, int nValSize, _Out_ char* pValue);
 	BOOL GetIntegerFieldValue(char* pFieldName, int nValSize, _Out_ int* pValue);
+	BOOL GetDoubleFieldValue(char* pFieldName, int nValSize, _Out_ double* pValue);
+	BOOL GetSMDestination(_Out_ char* pzDest);
+	BOOL GetSMMessage(_Out_ char* pzMessage);
 
 	BOOL SMessageToSMessage();
 	BOOL SetHeaderOfSMessage(int nDeliveryMode, char* pDest, char* pMsg, int ClientSession);
@@ -32,8 +34,10 @@ public:
 	BOOL SetIntegerFieldValue(char* pFieldName, int nData);
 	BOOL SendData();
 
+	
 
 	char* GetMsg() { return m_zMsg; }
+	char		m_msg[123];
 private:
 	BOOL CreateInstance();
 	long GetCurrInstanceCnt();
@@ -44,6 +48,7 @@ private:
 	HINSTANCE	m_hIns;
 	long		m_lIdx;
 	char		m_zMsg[1024];
+	LPVOID		m_lpCallBackCustomPtr;
 };
 
 

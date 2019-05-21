@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1302A6CF-495E-4D2A-B0B3-85E3D1EFA821}</ProjectGuid>
+    <ProjectGuid>{83E8A8D5-56FD-4355-B6FB-176CF5A23B72}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>FBI_DealManager</RootNamespace>
+    <RootNamespace>DllTester</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,14 +71,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../../_bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>../../_bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,12 +88,11 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\poco-1.7.8\Data\include;C:\poco-1.7.8\Data\ODBC\include;C:\poco-1.7.8\Foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>../../_bin/$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>D:\ChartProjSvr\Source\_Bin\DllTester.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -120,14 +117,12 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\poco-1.7.8\Data\include;C:\poco-1.7.8\Data\ODBC\include;C:\poco-1.7.8\Foundation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>../../_bin/$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,51 +146,10 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\ChartShmUtilFixed.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
-    <ClCompile Include="..\common\FBIInc.cpp" />
-    <ClCompile Include="FBIMainProc.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="StkOrd.cpp" />
+    <ClCompile Include="DllTester.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\ChartShmUtilFixed.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\IRUM_Common.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\MemPool.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\SMDataTypes.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\Util.h" />
-    <ClInclude Include="..\common\FBIInc.h" />
-    <ClInclude Include="FBIMainProc.h" />
-    <ClInclude Include="Main.h" />
-    <ClInclude Include="StkOrd.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="FBI_DealManagerSL.ini" />
+    <ClInclude Include="SMDataTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
