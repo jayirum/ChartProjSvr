@@ -1,6 +1,7 @@
 
 #include "SmartMessage.h"
 #include "Util.h"
+
 TInitialize Initialize;
 TSMClientConnect SMClientConnect;
 TSMClientDisconnect SMClientDisconnect;
@@ -20,16 +21,17 @@ TSMSetWorkEventCallBack SMSetWorkEventCallBack;
 TSMMessageGetBinaryFieldValue SMMessageGetBinaryFieldValue;
 TSMMessageGetStringFieldValue SMMessageGetStringFieldValue;
 TSMMessageGetIntegerFieldValue SMMessageGetIntegerFieldValue;
+TSMMessageGetDoubleFieldValue SMMessageGetDoubleFieldValue;
 TSMGetObjectsNumber SMGetObjectsNumber;
 TSMGetMaximumObjectsNumber SMGetMaximumObjectsNumber;
 TSMCreateInstance SMCreateInstance;
-TSMMessageGetDeliveryType SMMessageGetDeliveryType;
+TSMMessageGetDeliveryMode SMMessageGetDeliveryMode;
 TSMSendResponse SMSendResponse;
-TSMGetDeliveryModeOfRecvMsg SMGetDeliveryModeOfRecvMsg;
-TSMGetDestinationOfRecvMsg SMGetDestinationOfRecvMsg;
-TSMGetMsgOfRecvMsg SMGetMsgOfRecvMsg;
-TSMGetClientSessionOfRecvMsg SMGetClientSessionOfRecvMsg;
+TSMMessageGetDestination SMMessageGetDestination;
+TSMMessageGetMsg SMMessageGetMsg;
+TSMMessageGetClientSession SMMessageGetClientSession;
 TSMSMessageToSMessageEx SMSMessageToSMessageEx;
+TSMGetMsgOfRecvMsg SMGetMsgOfRecvMsg;
 TSetSMMessageHeader SetSMMessageHeader;
 
 
@@ -79,67 +81,114 @@ VOID CSmartMessage::DisConnectSMSrv()
 	SMClientDisconnect(m_lIdx);
 }
 
+//
+//#pragma pack(push, 1)
+//struct TFutExec2
+//{
+//	//TFutExec = packed record
+//	char issue[8 + 1];
+//	//issue : array[0..8] of char;
+//	double gap;
+//	//gap : real;
+//	double cup;
+//	//cup : real;
+//	double sip;
+//	//sip : real;
+//	double hip;
+//	//hip : real;
+//	double lip;
+//	//lip : real;
+//	int vol;
+//	//vol : integer;
+//	double amt;
+//	//amt : real;
+//	int time;
+//	//time: integer;
+//	char side[1 + 1];
+//	//side: array[0..1] of char;
+//	char ydiffSign[1 + 1];
+//	//ydiffSign : array[0..1] of char;
+//	char chgrate[6 + 1];
+//	//chgrate   : array[0..6]  of char
+//	//end;
+//};
+//
+//#pragma pack(pop)
+//long int __stdcall MyCallBack(int index, char* WorkThread, char* Message)
+//{
+//	index = 0;
+//	char* fv = SMMessageGetBinaryFieldValue(index, RECEIVED_MESSAGE, (char *)fldFXExec);
+//	TFutExec2 FutExec;
+//	memcpy(&FutExec, fv, sizeof(FutExec));
+//	//ShowMessage(FutExec.issue);
+//
+//	char deststr[255];
+//	char msgstr[255];
+//	char* destination = SMMessageGetDestination(index, RECEIVED_MESSAGE);
+//	strcpy(deststr, destination);
+//
+//	char* msg = SMMessageGetMsg(index, RECEIVED_MESSAGE);
+//	strcpy(&msgstr[0], msg);
+//
+//	printf("[dest](%s)__[msg](%s)\n", deststr, msgstr);
+//	//printf("[dest](%s)\n", deststr);
+//
+//	printf("[IDX:%d](ISSUE:%s)(TIME:%d) (%.5f)(%.5f)\n",
+//		index, FutExec.issue, FutExec.time, FutExec.cup, FutExec.hip);
+//
+//	//TFutExec2 st;
+//	//GetBinaryFieldValue((char *)fldFXExec, sizeof(TFutExec2), (char*)&st);
+//
+//
+//	//char msg[128];
+//	//GetMsgOfRecvMsg(msg);
+//	//printf("MSG===>%s\n", msg);
+//	//if (strcmp(msg, (char*)MSG_MKT_CME_HOGA) == 0)
+//	//{
+//	//	printf("[HOGA][%s](%.5f)(%.5f)(%.5f)(%.5f)\n",
+//	//		st.issue, st.cup, st.sip, st.hip, st.lip);
+//	//}
+//	//if (strcmp(msg, (char*)MSG_MKT_FX_EXEC) == 0)
+//	//{
+//	//	printf("[EXEC][%s](%.5f)(%.5f)(%.5f)(%.5f)\n",
+//	//		st.issue, st.cup, st.sip, st.hip, st.lip);
+//	//}
+//	
+//	return 0;
+//}
+//
+//long __stdcall CSmartMessage::callbackTest(int index, char* WorkThread, char* pMsg)
+//{
+//	CSmartMessage* pThis = (CSmartMessage*)WorkThread;
+//
+//	printf("%s\n", pThis->m_msg);
+//
+//	index = 0;
+//	char* fv = SMMessageGetBinaryFieldValue(index, RECEIVED_MESSAGE, (char *)fldFXExec);
+//	TFutExec2 FutExec;
+//	memcpy(&FutExec, fv, sizeof(FutExec));
+//	//ShowMessage(FutExec.issue);
+//
+//	char deststr[255];
+//	char msgstr[255];
+//	char* destination = SMMessageGetDestination(index, RECEIVED_MESSAGE);
+//	strcpy(deststr, destination);
+//
+//	char* msg = SMMessageGetMsg(index, RECEIVED_MESSAGE);
+//	strcpy(&msgstr[0], msg);
+//
+//	printf("[dest2](%s)__[msg](%s)\n", deststr, msgstr);
+//	//printf("[dest](%s)\n", deststr);
+//
+//	printf("[IDX2:%d](ISSUE:%s)(TIME:%d) (%.5f)(%.5f)\n",
+//		index, FutExec.issue, FutExec.time, FutExec.cup, FutExec.hip);
+//	return 1;
+//}
 
-#pragma pack(push, 1)
-struct TFutExec2
+//void CSmartMessage::SetRecvCallBackFn()// (RECV_CALLBACK RecvCallBack)
+void CSmartMessage::SetRecvCallBackFn(LPVOID lpCustomPtr, RECV_CALLBACK fnCallBack)
 {
-	//TFutExec = packed record
-	char issue[8 + 1];
-	//issue : array[0..8] of char;
-	double gap;
-	//gap : real;
-	double cup;
-	//cup : real;
-	double sip;
-	//sip : real;
-	double hip;
-	//hip : real;
-	double lip;
-	//lip : real;
-	int vol;
-	//vol : integer;
-	double amt;
-	//amt : real;
-	int time;
-	//time: integer;
-	char side[1 + 1];
-	//side: array[0..1] of char;
-	char ydiffSign[1 + 1];
-	//ydiffSign : array[0..1] of char;
-	char chgrate[6 + 1];
-	//chgrate   : array[0..6]  of char
-	//end;
-};
-
-#pragma pack(pop)
-long int __stdcall MyCallBack(int index, char* WorkThread, char* Message)
-{
-	TFutExec2 st;
-	GetBinaryFieldValue((char *)fldFXExec, sizeof(TFutExec2), (char*)&st);
-
-
-	char msg[128];
-	GetMsgOfRecvMsg(msg);
-	printf("MSG===>%s\n", msg);
-	if (strcmp(msg, (char*)MSG_MKT_CME_HOGA) == 0)
-	{
-		printf("[HOGA][%s](%.5f)(%.5f)(%.5f)(%.5f)\n",
-			st.issue, st.cup, st.sip, st.hip, st.lip);
-	}
-	if (strcmp(msg, (char*)MSG_MKT_FX_EXEC) == 0)
-	{
-		printf("[EXEC][%s](%.5f)(%.5f)(%.5f)(%.5f)\n",
-			st.issue, st.cup, st.sip, st.hip, st.lip);
-	}
-
-
-
-
-	return 0;
-}
-void CSmartMessage::SetRecvCallBackFn()// (RECV_CALLBACK RecvCallBack)
-{
-	SMSetWorkEventCallBack(m_lIdx, (char*)MyCallBack);
+	SMSetWorkEventCallBack(m_lIdx, (char*)(RECV_CALLBACK)fnCallBack, (char*)lpCustomPtr);
 }
 
 BOOL CSmartMessage::AddDest( char* pDest, char* pMsg)
@@ -155,10 +204,23 @@ BOOL CSmartMessage::AddDest( char* pDest, char* pMsg)
 	return TRUE;
 }
 
-BOOL CSmartMessage::GetMsgOfRecvMsg(_Out_ char* pValue)
+
+BOOL CSmartMessage::GetSMDestination(_Out_ char* pzDest)
+{
+	char* pDest = SMMessageGetDestination(m_lIdx, RECEIVED_MESSAGE);
+	if (!pDest)
+		return FALSE;
+
+	strcpy(pzDest, pDest);
+	return TRUE;
+}
+
+BOOL CSmartMessage::GetSMMessage(_Out_ char* pzMessage)
 {
 	char* pMsg = SMGetMsgOfRecvMsg(m_lIdx);
-	strcpy(pValue, pMsg);
+	if (!pMsg)
+		return FALSE;
+	strcpy(pzMessage, pMsg);
 	return TRUE;
 }
 
@@ -185,7 +247,10 @@ BOOL CSmartMessage::GetStringFieldValue(char* pFieldName, int nValSize, char* pV
 		return FALSE;
 	}
 
-	memcpy(pValue, pResult, nValSize);
+	if (nValSize == 0)
+		strcpy(pValue, pResult);
+	else
+		memcpy(pValue, pResult, nValSize);
 	return TRUE;
 }
 
@@ -202,6 +267,21 @@ BOOL CSmartMessage::GetIntegerFieldValue(char* pFieldName, int nValSize, int* pV
 	*pValue = nResult;
 	return TRUE;
 }
+
+
+BOOL CSmartMessage::GetDoubleFieldValue(char* pFieldName, int nValSize, double* pValue)
+{
+	int nResult = SMMessageGetDoubleFieldValue(m_lIdx, RECEIVED_MESSAGE, pFieldName);
+	if (nResult == -99999)
+	{
+		sprintf(m_zMsg, "SMMessageGetDoubleFieldValue Error(%s)", pFieldName);
+		return FALSE;
+	}
+
+	*pValue = nResult;
+	return TRUE;
+}
+
 
 BOOL CSmartMessage::SMessageToSMessage()
 {
@@ -401,6 +481,14 @@ BOOL CSmartMessage::Begin()
 			return FALSE;
 		}
 
+		SMMessageGetDoubleFieldValue = NULL;
+		SMMessageGetDoubleFieldValue = (TSMMessageGetDoubleFieldValue)GetProcAddress(m_hIns, "SMMessageGetDoubleFieldValue");
+		if (SMMessageGetDoubleFieldValue == NULL)
+		{
+			sprintf(m_zMsg, "SMMessageGetDoubleFieldValue function not found in the DLL !");
+			return FALSE;
+		}
+
 
 		SMGetObjectsNumber = NULL;
 		SMGetObjectsNumber = (TSMGetObjectsNumber)GetProcAddress(m_hIns, "SMGetObjectsNumber");
@@ -450,19 +538,19 @@ BOOL CSmartMessage::Begin()
 			return FALSE;
 		}
 
-		SMGetDeliveryModeOfRecvMsg = NULL;
-		SMGetDeliveryModeOfRecvMsg = (TSMGetDeliveryModeOfRecvMsg)GetProcAddress(m_hIns, "SMGetDeliveryModeOfRecvMsg");
-		if (SMGetDeliveryModeOfRecvMsg == NULL)
+		SMMessageGetDeliveryMode = NULL;
+		SMMessageGetDeliveryMode = (TSMMessageGetDeliveryMode)GetProcAddress(m_hIns, "SMMessageGetDeliveryMode");
+		if (SMMessageGetDeliveryMode == NULL)
 		{
-			sprintf(m_zMsg, "SMGetDeliveryModeOfRecvMsg function not found in the DLL !");
+			sprintf(m_zMsg, "SMMessageGetDeliveryMode function not found in the DLL !");
 			return FALSE;
 		}
 
-		SMGetDestinationOfRecvMsg = NULL;
-		SMGetDestinationOfRecvMsg = (TSMGetDestinationOfRecvMsg)GetProcAddress(m_hIns, "SMGetDestinationOfRecvMsg");
-		if (SMGetDestinationOfRecvMsg == NULL)
+		SMMessageGetDestination = NULL;
+		SMMessageGetDestination = (TSMMessageGetDestination)GetProcAddress(m_hIns, "SMMessageGetDestination");
+		if (SMMessageGetDestination == NULL)
 		{
-			sprintf(m_zMsg, "SMGetDestinationOfRecvMsg function not found in the DLL !");
+			sprintf(m_zMsg, "SMMessageGetDestination function not found in the DLL !");
 			return FALSE;
 		}
 
@@ -474,11 +562,11 @@ BOOL CSmartMessage::Begin()
 			return FALSE;
 		}
 
-		SMGetClientSessionOfRecvMsg = NULL;
-		SMGetClientSessionOfRecvMsg = (TSMGetClientSessionOfRecvMsg)GetProcAddress(m_hIns, "SMGetClientSessionOfRecvMsg");
-		if (SMGetClientSessionOfRecvMsg == NULL)
+		SMMessageGetClientSession = NULL;
+		SMMessageGetClientSession = (TSMMessageGetClientSession)GetProcAddress(m_hIns, "SMMessageGetClientSession");
+		if (SMMessageGetDestination == NULL)
 		{
-			sprintf(m_zMsg, "SMGetClientSessionOfRecvMsg function not found in the DLL !");
+			sprintf(m_zMsg, "SMMessageGetClientSession function not found in the DLL !");
 			return FALSE;
 		}
 
@@ -497,6 +585,15 @@ BOOL CSmartMessage::Begin()
 			sprintf(m_zMsg, "SetSMMessageHeader function not found in the DLL !");
 			return FALSE;
 		}
+
+		SMMessageGetMsg = NULL;
+		SMMessageGetMsg = (TSMMessageGetMsg)GetProcAddress(m_hIns, "SMMessageGetMsg");
+		if (SMMessageGetMsg == NULL)
+		{
+			sprintf(m_zMsg, "SMMessageGetMsg function not found in the DLL !");
+			return FALSE;
+		}
+		
 
 		if (Initialize() != 0)
 			return FALSE;

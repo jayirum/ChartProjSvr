@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../IRUM_UTIL/BaseThread.h"
+//#include "../../IRUM_UTIL/BaseThread.h"
 #include "../../IRUM_UTIL/ADOFunc.h"
 #include "../../IRUM_UTIL/SmartMessage.h"
 #include <map>
@@ -8,11 +8,12 @@
 #include <list>
 #include "StkOrd.h"
 
+using namespace std;
 
-typedef std::map<std::string, CStkOrd*>::iterator	IT_MAP;
+typedef map<string, CStkOrd*>::iterator	IT_MAP;
 
 // CFBIMainProc dialog
-class CFBIMainProc : public CBaseThread
+class CFBIMainProc //: public CBaseThread
 {
 // Construction
 public:
@@ -24,11 +25,11 @@ public:
 	VOID Finalize();
 
 private:
-	VOID ThreadFunc();
+	//VOID ThreadFunc();
 	static unsigned WINAPI SaveResultThread(LPVOID lp);
 
-	long __stdcall CallBackSMPrc(int index, char* WorkThread, char* Message);
-	long __stdcall CallBackSMOrd(int index, char* WorkThread, char* Message);
+	static long WINAPI CallBackSMPrc(int index, char* pCustomPtr, char* Message);
+	static long WINAPI CallBackSMOrd(int index, char* pCustomPtr, char* Message);
 
 	BOOL	LoadStkInfo();
 	BOOL	CreateStkOrders();
@@ -47,9 +48,9 @@ private:
 	HANDLE			m_hSaveData;
 	unsigned int	m_unSaveData;
 
-	std::list<_FBI::ST_STK_INFO>	m_lstStkInfo;
-	std::map<std::string, CStkOrd*>	m_mapStkOrd;
-	CRITICAL_SECTION				m_csStkOrd;
+	list<_FBI::ST_STK_INFO>	m_lstStkInfo;
+	map<string, CStkOrd*>	m_mapStkOrd;
+	CRITICAL_SECTION		m_csStkOrd;
 
 	CSmartMessage	m_smPrc;
 	CSmartMessage	m_smOrd;
