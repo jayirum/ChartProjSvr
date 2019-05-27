@@ -9,13 +9,14 @@
 #define BA_RELAY extern "C" __declspec(dllexport)
 #else 
 #define BA_RELAY extern "C" __declspec(dllimport)
-enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
+//enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 #endif
 
 BA_RELAY int Sender_InitChannel(int nSendTimeout);
 BA_RELAY int Sender_DeInitChannel();
 
 BA_RELAY int Sender_RegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen);
+BA_RELAY int Sender_RegisterAsMasterEA(char* pzMyAccNo, /*out*/char* pSendBuf);
 BA_RELAY int Sender_UnRegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen);
 BA_RELAY int Sender_SendOrder(
 	char* pzMyAccNo
