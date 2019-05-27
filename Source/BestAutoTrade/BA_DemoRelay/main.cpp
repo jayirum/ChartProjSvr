@@ -25,12 +25,11 @@ int main(int argc, char** argv)
 {
 	SetConsoleCtrlHandler(ControlHandler, TRUE);
 
-	g_log.OpenLog("./Log", "BA_DemoRelay");
-
+	g_log.OpenLog(".", "BA_DemoRelay");
+	
 	CRelay relay;
 	if (!relay.Begin())
 		return 0;
-
 
 	getchar();
 

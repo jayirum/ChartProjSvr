@@ -2,6 +2,7 @@
 #include "../Common/BARelayInc.h"
 #include "Main.h"
 #include "../../IRUM_UTIL/LogMsg.h"
+#include "../../IRUM_UTIL/Util.h"
 extern CLogMsg		g_log;
 
 CRelay::CRelay()
@@ -42,13 +43,13 @@ VOID CRelay::RegUnregMaster(char* pData)
 	char zAcc[128];
 	_BA_RELAY::PT_REG_MASTER* p = (_BA_RELAY::PT_REG_MASTER*)pData;
 	sprintf(zAcc, "%.*s", sizeof(p->MasterAccNo), p->MasterAccNo);
-
+	CUtil::RTrim(zAcc, strlen(zAcc));
 	string	sAcc = zAcc;
 	UINT	nSlaveCnt = 0;
 
 	Lock();
 	map<string, PUB_CHANNEL*>::iterator it = m_mapMaster.find(sAcc);
-
+	
 	// This is the first time to register as Master
 	if (it == m_mapMaster.end())
 	{ 
@@ -104,6 +105,9 @@ VOID CRelay::RegUnregSlave(char* pData)
 	sprintf(zMaster, "%.*s", sizeof(p->MasterAccNo), p->MasterAccNo);
 	sprintf(zSlave, "%.*s", sizeof(p->header.AccNo), p->header.AccNo);
 
+	CUtil::RTrim(zMaster, strlen(zMaster));
+	CUtil::RTrim(zSlave, strlen(zSlave));
+
 	string	sMasterAcc = zMaster;
 	string	sSlaveAcc = zSlave;
 	UINT	nSlaveCnt = 0;
@@ -152,6 +156,7 @@ VOID CRelay::PublishDeInit(CNanoQPub* pPub)
 BOOL CRelay::PublishInit(const char* psMasterAcc, CNanoQPub* pPub)
 {
 	if (!pPub->Begin( (char*)psMasterAcc, DEF_SEND_TIMEOUT, TP_INTERPROC, FALSE))
+	//if (!pPub->Begin((char*)psMasterAcc, DEF_SEND_TIMEOUT, TP_TCP, FALSE))
 	{
 		g_log.log(ERR,"[%s]PublishInit publisher.Begin error(%s)\n", psMasterAcc, pPub->GetMsg());
 		return FALSE;
@@ -185,6 +190,7 @@ BOOL CRelay::RecvQInit()
 		m_recvQ = new CNanoQReader();
 
 	if (!m_recvQ->Begin(NULL, DEF_RECV_TIMEOUT, TP_INTERPROC, TRUE)) {
+	//if (!m_recvQ->Begin(NULL, DEF_RECV_TIMEOUT, TP_TCP, TRUE)) {
 		g_log.log(ERR, "RecvQInit CNanoQReader.Begin error(%s)\n", m_recvQ->GetMsg());
 		return FALSE;
 	}
@@ -209,7 +215,7 @@ VOID CRelay::RecvQDeInit()
 // class instance pointer, recv data, return value
 void WINAPI CRelay::RecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen)
 {
-	g_log.log(INFO,"[RECV]%.*s\n", nRecvLen, pRecvBuf);
+	g_log.log(INFO,"[RECV][LEN:%d](%.*s)\n", nRecvLen, nRecvLen, pRecvBuf);
 
 	CRelay* pThis = (CRelay*)pClassInstance;
 
@@ -217,11 +223,11 @@ void WINAPI CRelay::RecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen)
 
 	if ( strncmp(pH->Code, CODE_REG_MASTER, sizeof(pH->Code))==0) {
 		g_log.log(INFO, "Reg/Unreg Master Packet. RegUnregMaster start");
-		return pThis->RegUnregMaster(pRecvBuf);
+		pThis->RegUnregMaster(pRecvBuf);
 	}
 	if (strncmp(pH->Code, CODE_REG_SLAVE, sizeof(pH->Code))==0) {
 		g_log.log(INFO, "Reg/Unreg Slave Packet. RegUnregSlave start");
-		return pThis->RegUnregSlave(pRecvBuf);
+		pThis->RegUnregSlave(pRecvBuf);
 	}
 	if (strncmp(pH->Code, CODE_MASTER_ORDER, sizeof(pH->Code))==0) {
 		g_log.log(INFO, "Master Order Packet. PublishOrder start");
@@ -289,6 +295,7 @@ VOID CRelay::PublishOrder(char* pData)
 	PT_MASTER_ORD* pOrd = (PT_MASTER_ORD*)pData;
 	char zMasterAcc[32];
 	sprintf(zMasterAcc, "%.*s", sizeof(pOrd->MasterAccNo), pOrd->MasterAccNo);
+	CUtil::RTrim(zMasterAcc, strlen(zMasterAcc));
 	string sMasterAcc = zMasterAcc;
 
 	map<string, PUB_CHANNEL*>::iterator it = m_mapMaster.find(sMasterAcc);
@@ -299,17 +306,24 @@ VOID CRelay::PublishOrder(char* pData)
 	}
 
 	char temp[128];
-	char szBuffer[1024] = { 0, };
-	int nBufLen = sizeof(szBuffer);
+	//char szBuffer[1024] = { 0, };
+	//int nBufLen = sizeof(szBuffer);
 
-	PT_REG_SLAVE* pPack = (PT_REG_SLAVE*)szBuffer;
-	memset(pPack, 0x20, sizeof(PT_REG_SLAVE));
+	//PT_REG_SLAVE* pPack = (PT_REG_SLAVE*)szBuffer;
+	//memset(pPack, 0x20, sizeof(PT_REG_SLAVE));
 
-	memcpy(pPack->header.Code, CODE_REG_SLAVE, sizeof(pPack->header.Code));
-	pPack->header.Type[0] = TP_ORDER;
-	memcpy(pPack->header.AccNo, sMasterAcc.c_str(), sMasterAcc.size());
-	memcpy(pPack->header.Tm, Now(temp), sizeof(pPack->header.Tm));
+	//memcpy(pPack->header.Code, CODE_REG_SLAVE, sizeof(pPack->header.Code));
+	//pPack->header.Type[0] = TP_ORDER;
+	//memcpy(pPack->header.AccNo, sMasterAcc.c_str(), sMasterAcc.size());
+	//memcpy(pPack->header.Tm, Now(temp), sizeof(pPack->header.Tm));
+
+	// store master ticket on comment
+	sprintf(temp, "%.*s", sizeof(pOrd->Ticket), pOrd->Ticket);
+	char zComment[30];
+	sprintf(zComment, "BA[%d]", atoi(temp));
+	memcpy(pOrd->Comments, zComment, strlen(zComment));
 
 	PUB_CHANNEL* pChannel = (*it).second;
-	PublishData(&pChannel->pub, (char*)pPack, sizeof(PT_REG_SLAVE));
+	PublishData(&pChannel->pub, (char*)pOrd, sizeof(PT_MASTER_ORD));
+
 }
