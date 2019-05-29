@@ -19,7 +19,6 @@ TSMEventAllRemoveDestination SMEventAllRemoveDestination;
 TSMGetReceivedCnt SMGetReceivedCnt;
 TSMSetWorkEventCallBack SMSetWorkEventCallBack;
 TSMMessageGetBinaryFieldValue SMMessageGetBinaryFieldValue;
-TSMMessageGetBinaryFieldValueEx SMMessageGetBinaryFieldValueEx;
 TSMMessageGetStringFieldValue SMMessageGetStringFieldValue;
 TSMMessageGetIntegerFieldValue SMMessageGetIntegerFieldValue;
 TSMMessageGetDoubleFieldValue SMMessageGetDoubleFieldValue;
@@ -51,16 +50,14 @@ CSmartMessage::~CSmartMessage()
 
 VOID CSmartMessage::End()
 {
-	if(m_hIns)
-		FreeLibrary(m_hIns);
-	m_hIns = NULL;
+	FreeLibrary(m_hIns);
 }
 
 
 BOOL CSmartMessage::CreateInstance()
 {
 	m_lIdx = SMCreateInstance();
-	m_lIdx  -= 1;
+	m_lIdx -= 1;
 	return (m_lIdx > -1);
 }
 
@@ -228,29 +225,8 @@ BOOL CSmartMessage::GetSMMessage(_Out_ char* pzMessage)
 	return TRUE;
 }
 
-#pragma pack(push, 1)
-struct TFutExec3
+BOOL CSmartMessage::GetBinaryFieldValue(char* pFieldName, int nValSize, char* pValue)
 {
-	char issue[9 + 1];
-	double gap;
-	double cup;
-	double sip;
-	double hip;
-	double lip;
-	int vol;
-	double amt;
-	int time;
-	char side[1 + 1];
-	char ydiffSign[1 + 1];
-	char chgrate[6 + 1];
-};
-
-#pragma pack(pop)
-BOOL CSmartMessage::GetBinaryFieldValue(char* pFieldName, int nValSize, void* pValue)
-{
-	TFutExec3 pack;
-	ZeroMemory(&pack, sizeof(TFutExec3));
-
 	char* pResult = SMMessageGetBinaryFieldValue(m_lIdx, RECEIVED_MESSAGE, pFieldName);
 	if (!pResult)
 	{
@@ -262,18 +238,6 @@ BOOL CSmartMessage::GetBinaryFieldValue(char* pFieldName, int nValSize, void* pV
 	return TRUE;
 }
 
-int CSmartMessage::GetBinaryFieldValueEx(char* pFieldName, int nValSize, void* pValue)
-{
-	//TFutExec3 pack;
-	//ZeroMemory(&pack, sizeof(TFutExec3));
-
-	int ret = SMMessageGetBinaryFieldValueEx(m_lIdx, pFieldName, (void*)pValue);
-	//printf("(%s)(cup:%f)(sip:%f)(hip:%f)(lip:%f)\n",
-	//	pack.issue, pack.cup, pack.sip, pack.hip, pack.lip);
-
-	//memcpy(pValue, &pack, nValSize);
-	return (ret);
-}
 
 BOOL CSmartMessage::GetStringFieldValue(char* pFieldName, int nValSize, char* pValue)
 {
@@ -502,14 +466,6 @@ BOOL CSmartMessage::Begin()
 			return FALSE;
 		}
 
-		SMMessageGetBinaryFieldValueEx = NULL;
-		SMMessageGetBinaryFieldValueEx = (TSMMessageGetBinaryFieldValueEx)GetProcAddress(m_hIns, "SMMessageGetBinaryFieldValueEx");
-		if (SMMessageGetBinaryFieldValue == NULL)
-		{
-			sprintf(m_zMsg, "SMMessageGetBinaryFieldValueEx function not found in the DLL !");
-			return FALSE;
-		}
-		
 		SMMessageGetStringFieldValue = NULL;
 		SMMessageGetStringFieldValue = (TSMMessageGetStringFieldValue)GetProcAddress(m_hIns, "SMMessageGetStringFieldValue");
 		if (SMMessageGetStringFieldValue == NULL)

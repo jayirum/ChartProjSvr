@@ -6,11 +6,11 @@
 #include <map>
 #include <string>
 #include <list>
-#include "StkOrd.h"
+#include "StkOrdManager.h"
 
 using namespace std;
 
-typedef map<string, CStkOrd*>::iterator	IT_MAP;
+typedef map<string, CStkOrdManager*>::iterator	IT_MAP;
 
 // CFBIMainProc dialog
 class CFBIMainProc //: public CBaseThread
@@ -32,14 +32,15 @@ private:
 	static long WINAPI CallBackSMOrd(int index, char* pCustomPtr, char* Message);
 
 	BOOL	LoadStkInfo();
-	BOOL	CreateStkOrders();
+	BOOL	CreateStkOrdManagers();
 	BOOL	InitializeSM();
 	VOID	DeInitializeSM();
 	VOID	ClearDealMap();
+	VOID	SendToClient();
 
 	//IT_MAP* GetMapIterator() { return new IT_MAP; }
 	//VOID	ReleaseMapIterator(IT_MAP* pIt) { delete pIt; }
-	//CStkOrd* CStkOrdFactory(const std::string *sStkCd) { return new CStkOrd(*sStkCd); }
+	//CStkOrdManager* CStkOrdFactory(const std::string *sStkCd) { return new CStkOrdManager(*sStkCd); }
 
 private:
 	CDBPoolAdo		*m_pDBPool;
@@ -49,7 +50,7 @@ private:
 	unsigned int	m_unSaveData;
 
 	list<_FBI::ST_STK_INFO>	m_lstStkInfo;
-	map<string, CStkOrd*>	m_mapStkOrd;
+	map<string, CStkOrdManager*>	m_mapStkOrd;
 	CRITICAL_SECTION		m_csStkOrd;
 
 	CSmartMessage	m_smPrc;

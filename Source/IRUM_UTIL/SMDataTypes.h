@@ -40,7 +40,7 @@ typedef int(__stdcall *TSMMessageGetClientSession)(int index, int messtype);
 typedef int(__stdcall *TSMSMessageToSMessageEx)(int index);
 typedef char* (__stdcall *TSMGetMsgOfRecvMsg)(int index);
 typedef int(__stdcall *TSetSMMessageHeader)(int index, int DeliveryMode, char* Destination, char* Msg, int ClientSession);
-
+typedef int(__stdcall *TSMMessageGetBinaryFieldValueEx)(int index, char* FieldName, void * pResult);
 
 
 	// CLENT  [] => SERVER ( Request & Reply )

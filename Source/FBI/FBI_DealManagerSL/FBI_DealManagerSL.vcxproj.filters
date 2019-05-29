@@ -69,9 +69,6 @@
     <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="StkOrd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -80,6 +77,9 @@
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="StkOrdManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -131,9 +131,6 @@
     <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="StkOrd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -145,6 +142,9 @@
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="StkOrdManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

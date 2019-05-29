@@ -9,12 +9,20 @@ void _FBI::Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out)
 	*out = z;
 }
 
-int _FBI::ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen, std::string* sPrc2)
+/*
+	if dPrc1 > sPrc2 ==> >0
+	if dPrc1 < sPrc2 ==> <0
+*/
+int _FBI::ComparePrices(double dPrc1, std::string sPrc2, int nTotLen, int nDotLen, _Out_ std::string* sPrc1)
 {
-	char z[128];
-	sprintf(z, "%0*.*f", nTotLen, nDotLen, dPrc2);
-	*sPrc2 = z;
-	return sPrc1.compare(z);
+	//char z[128];
+	//sprintf(z, "%0*.*f", nTotLen, nDotLen, dPrc1);
+	//*sPrc1 = z;
+
+	_FBI::Dbl2Str(dPrc1, _FBI::FBILEN_PRC, nDotLen, sPrc1);
+
+	//a positive value if the operand(sPrc1) string is greater than the parameter string(sPrc2).
+	return sPrc1->compare(sPrc2);
 }
 
 char* _FBI::dealstatus(const int status, char* pzStatus)

@@ -169,7 +169,7 @@
     <ClCompile Include="..\common\FBIInc.cpp" />
     <ClCompile Include="FBIMainProc.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="StkOrd.cpp" />
+    <ClCompile Include="StkOrdManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h" />
@@ -192,7 +192,7 @@
     <ClInclude Include="..\common\FBIInc.h" />
     <ClInclude Include="FBIMainProc.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="StkOrd.h" />
+    <ClInclude Include="StkOrdManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FBI_DealManagerSL.ini" />

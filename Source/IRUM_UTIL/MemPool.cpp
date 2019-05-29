@@ -119,17 +119,18 @@ char*	CMemPool::get()
 
 void	CMemPool::release(char* ptr)
 {
-//	printf("\t\t-----------release(%x)\n", ptr);
 	if (!ptr)
 		return;
 	LOCK();
 	__try {
-		if (m_listPool.size() < m_nMaxAlloc) {
+		//if (m_listPool.size() < m_nMaxAlloc) 
+		{
 			m_listPool.push_back(ptr);
-			//printf("mem push:%d.%x\n", m_listPool.size(),ptr);
 		}			
-		else
-			delete[] ptr;
+		//else
+		//{
+		//	delete[] ptr;
+		//}
 	}
 	__finally {
 		UNLOCK();
