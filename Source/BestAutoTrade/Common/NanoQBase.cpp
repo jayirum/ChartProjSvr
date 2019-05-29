@@ -55,6 +55,20 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 			break;
 		}
 	}
+	if (m_tpQueue == TP_TCP)
+	{
+		switch (m_tpNanomsg)
+		{
+		case TP_PIPE_READER:
+		case TP_PIPE_WRITER:
+			sprintf(m_zChannelNm, "tcp://110.4.89.206:22121");
+			break;
+		case TP_PUB:
+		case TP_SUB:
+			sprintf(m_zChannelNm, "tcp://110.4.89.206:22122");
+			break;
+		}
+	}
 
 	return TRUE;
 }

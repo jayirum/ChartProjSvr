@@ -3,12 +3,13 @@
 #pragma warning(disable:4503)
 
 
-#define BA_RELAY_EXPORTS
+//#define BA_RELAY_EXPORTS
 
 #include "main.h"
 #include <Windows.h>
 #include <stdio.h>
 #include "../BARelayEA/BARelayEA.h"
+#include "../BAUtils/BAUtils.h"
 #include <stdlib.h>
 #include "../../IRUM_UTIL/LogMsg.h"
 

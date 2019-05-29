@@ -48,6 +48,8 @@ public:
 	VOID	LOCK(){ EnterCriticalSection(&m_cs); };
 	VOID	UNLOCK(){ LeaveCriticalSection(&m_cs); };
 	BOOL	isOpenLog(){ return (m_fd>0); };
+
+	char	*GetFileName() { return m_szFileName; }
 	
 //private:
 	int		m_fd;

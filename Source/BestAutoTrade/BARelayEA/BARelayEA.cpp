@@ -137,6 +137,27 @@ int Sender_RegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen)
 	return nRet;
 }
 
+int Sender_RegisterAsMasterEA(char* pzMyAccNo, /*out*/char* pSendBuf)
+{
+	//ZeroMemory(pSendBuf, nBufLen);
+	int nStructLen = sizeof(_BA_RELAY::PT_REG_MASTER);
+	_BA_RELAY::PT_REG_MASTER * p = (_BA_RELAY::PT_REG_MASTER *)pSendBuf;
+	memset(p, 0x20, nStructLen);
+	memcpy(p->header.Code, _BA_RELAY::CODE_REG_MASTER, strlen(_BA_RELAY::CODE_REG_MASTER));
+	p->header.Type[0] = _BA_RELAY::TP_COMMAND;
+	memcpy(p->header.AccNo, pzMyAccNo, strlen(pzMyAccNo));
+	memcpy(p->MasterAccNo, pzMyAccNo, strlen(pzMyAccNo));
+
+	p->Action[0] = TP_REG;
+
+	int nRet = Sender_SendData(pSendBuf, nStructLen);
+	if (nRet == _BA_RELAY::Q_ERROR) {
+		sprintf(g_zSenderMsg, "[%s]RegisterAsMaster failed(%s)", g_Sender.ChannelNm(), g_Sender.GetMsg());
+	}
+	return nRet;
+}
+
+
 
 int Sender_UnRegisterAsMaster(char* pzMyAccNo, /*out*/char* pSendBuf, int nBufLen)
 {

@@ -34,6 +34,7 @@ BOOL CLog::OpenLog(char* psPath, char* pFileName)
 	sprintf_s(m_szDate, "%04d%02d%02d", st.wYear, st.wMonth, st.wDay);
 	lstrcpy( m_szPath, psPath);
 	sprintf_s(m_szFileName, "%s\\%s_%s.log", m_szPath, pFileName, m_szDate);
+
 	//LOCK();
 	Close();
 
