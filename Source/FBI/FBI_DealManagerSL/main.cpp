@@ -61,8 +61,8 @@ int  _Start()
 	CUtil::GetConfig(g_zConfig, "DIR", "LOG", szDir);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_IP", szNotificationServer);
 	CUtil::GetConfig(g_zConfig, "NOTIFICATION", "NOTIFICATION_SERVER_PORT", szNotificationPort);
-
-	g_log.OpenLogEx(szDir, EXENAME, szNotificationServer, atoi(szNotificationPort), SERVICENAME);
+	printf("Config File:%s\n", g_zConfig);
+	g_log.OpenLog(szDir, EXENAME);
 
 	g_log.log(LOGTP_SUCC, "-----------------------------------------------------");
 	g_log.log(LOGTP_SUCC, "Version[%s] %s", __DATE__, __APP_VERSION);

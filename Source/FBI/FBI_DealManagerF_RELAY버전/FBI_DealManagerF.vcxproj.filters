@@ -16,9 +16,6 @@
     <Filter Include="Common">
       <UniqueIdentifier>{d6c08c49-b71e-42bb-8805-21a224e77985}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SmartMessage">
-      <UniqueIdentifier>{562a98fc-0ad1-4e77-92fd-ea55599ca81b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -26,6 +23,9 @@
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\IRUM_Common.cpp">
       <Filter>Common</Filter>
@@ -39,14 +39,23 @@
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\common\FBIInc.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="DealManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="FBIMainProc.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp">
       <Filter>Common</Filter>
@@ -63,22 +72,16 @@
     <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\ADOFunc.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp">
-      <Filter>SmartMessage</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
-    <ClCompile Include="StkOrdManager.cpp">
+    <ClCompile Include="DealManagerTenOp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\BaseThread.h">
       <Filter>Common</Filter>
@@ -95,14 +98,23 @@
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
+      <Filter>Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\FBIInc.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="DealManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="FBIMainProc.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h">
       <Filter>Common</Filter>
@@ -119,23 +131,11 @@
     <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\ADOFunc.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h">
-      <Filter>SmartMessage</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\SMDataTypes.h">
-      <Filter>SmartMessage</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="StkOrdManager.h">
+    <ClInclude Include="DealManagerTenOp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="FBI_DealManagerSL.ini" />
+    <None Include="FBI_DealManagerF.ini" />
   </ItemGroup>
 </Project>

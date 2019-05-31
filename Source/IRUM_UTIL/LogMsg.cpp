@@ -13,8 +13,8 @@
 BOOL CLogMsg::OpenLogEx(char* psPath, char* pFileName, char* szIP,
 	int nPort, char* szApplicationName)
 {
-	strcpy(m_szNotifyServerIP, szIP); m_csmNotifyThread.setNotifyServerIP(m_szNotifyServerIP);
-	m_nNotifyServerPort = nPort; m_csmNotifyThread.setNotifyServerPort(m_nNotifyServerPort);
+	//strcpy(m_szNotifyServerIP, szIP); m_csmNotifyThread.setNotifyServerIP(m_szNotifyServerIP);
+	//m_nNotifyServerPort = nPort; m_csmNotifyThread.setNotifyServerPort(m_nNotifyServerPort);
 	GetComputerNameIntoString();
 	strcpy(m_szNotifyServerOwnApplicationName, szApplicationName);
 	return OpenLog(psPath, pFileName);
@@ -31,7 +31,7 @@ CSendMsg::CSendMsg() :CBaseThread("SendMsg")
 CSendMsg::~CSendMsg()
 {
 	StopThread();
-	delete(m_pMonitorClient);
+	//delete(m_pMonitorClient);
 	DeleteCriticalSection(&m_cs);
 }
 
@@ -41,6 +41,8 @@ VOID CSendMsg::ThreadFunc()
 	//std::printf("CSendMsg thread:%d\n", getMyThreadID());
 	while (TRUE)
 	{
+		if (Is_TimeOfStop(1))
+			return;
 
 		DWORD dwRet = MsgWaitForMultipleObjects(1, (HANDLE*)&m_hDie, FALSE, 10, QS_ALLPOSTMESSAGE);
 		if (dwRet == WAIT_OBJECT_0)
@@ -243,13 +245,13 @@ VOID	CLogMsg::logMsg(ST_LOGMSG* p)
 				m_pool->Restore(p);
 
 				//notification send to Server
-				if (nNotify == 1)
-				{
-					sprintf(p->msg, "%s;%s;%s", m_szNotifyServerOwnHostName, m_szNotifyServerOwnApplicationName, buff);
-					//fn_SendMessage(tmpbuff, 10);
-					PostThreadMessage(m_csmNotifyThread.getMyThreadID(), WM_LOGMSG_LOG, (WPARAM)0, (LPARAM)p);
+				//if (nNotify == 1)
+				//{
+				//	sprintf(p->msg, "%s;%s;%s", m_szNotifyServerOwnHostName, m_szNotifyServerOwnApplicationName, buff);
+				//	//fn_SendMessage(tmpbuff, 10);
+				//	PostThreadMessage(m_csmNotifyThread.getMyThreadID(), WM_LOGMSG_LOG, (WPARAM)0, (LPARAM)p);
 
-				}
+				//}
 			}
 		}
 		__except (ReportException(GetExceptionCode(), "LogMsg::logMsg", m_szMsg))
@@ -435,30 +437,30 @@ BOOL CSendMsg::fn_SendMessage(char* szMessage, int nTimeOut)
 	char szAppName[MAX_PATH];
 	char szIPAddress[MAX_PATH];
 	char szMsg[MAX_PATH];
-	int nErrorCode;
+	//int nErrorCode;
 
 	sprintf(szAppName, "%s", m_szAppName);
 	sprintf(szIPAddress, "%s", m_szNotifyServerIP);
 	sprintf(szMsg, "%s", szMessage);
-	if (m_pMonitorClient == NULL)
-		 m_pMonitorClient = new CTcpClient(szAppName);
-	BOOL ret;
-	if (!m_pMonitorClient->IsConnected())
-	{
-		if (!m_pMonitorClient->Begin(szIPAddress, m_nNotifyServerPort, nTimeOut))
-		{
-			//TODO : Logging must be done by main caller
-			return FALSE;
-		}
-	}
+	//if (m_pMonitorClient == NULL)
+	//	 m_pMonitorClient = new CTcpClient(szAppName);
+	//BOOL ret;
+	//if (!m_pMonitorClient->IsConnected())
+	//{
+	//	if (!m_pMonitorClient->Begin(szIPAddress, m_nNotifyServerPort, nTimeOut))
+	//	{
+	//		//TODO : Logging must be done by main caller
+	//		return FALSE;
+	//	}
+	//}
 
-	if (m_pMonitorClient->SendData(szMsg, strlen(szMsg), &nErrorCode) < 0)
-	{
-		//TODO : Logging must be done by main caller
-		m_pMonitorClient->End();
-		return FALSE;
-	}
+	//if (m_pMonitorClient->SendData(szMsg, strlen(szMsg), &nErrorCode) < 0)
+	//{
+	//	//TODO : Logging must be done by main caller
+	//	m_pMonitorClient->End();
+	//	return FALSE;
+	//}
 
-	ret = true;
+	bool ret = true;
 	return ret;
 }

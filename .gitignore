@@ -1,4 +1,4 @@
-*.suo
+﻿*.suo
 *.ilk
 *.pch
 *.lastbuildstate
@@ -6574,6 +6574,12 @@ Source/_Bin/SmartMessage.dll_org
 Source/SmartMessage/SmartMessage/SmartMessage.bpg
 Source/SmartMessage/SmartMessage/SmartMessage.dpr
 Source/SmartMessage/SmartMessage/SmartMessage.bpg
+Source/FBI/FBI_DealManagerSL/Debug/fbimainproc.obj.enc
+Source/_Bin/SmartMessage.dll
+Source/_Bin/SmartMessage.dll
+Source/_Bin/FBI_DealManagerSL.ini
+Source/_Bin/SmartMessage.dpr
+Source/_Bin/SmartMessage.dll
 Source/_Bin/BA_DemoRelayFix.exe
 Source/_Bin/BAUtils.dll
 Source/_Bin/Test.exe

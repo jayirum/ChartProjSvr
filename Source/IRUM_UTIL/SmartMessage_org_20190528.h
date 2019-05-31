@@ -20,8 +20,7 @@ public:
 	void SetRecvCallBackFn(LPVOID lpCustomPtr, RECV_CALLBACK fnCallBack);
 	//static long __stdcall callbackTest(int index, char* WorkThread, char*);
 
-	BOOL GetBinaryFieldValue(char* pFieldName, int nValSize, _Out_ void* pValue);
-	int GetBinaryFieldValueEx(char* pFieldName, int nValSize, _Out_ void* pValue);
+	BOOL GetBinaryFieldValue(char* pFieldName, int nValSize, _Out_ char* pValue);
 	BOOL GetStringFieldValue(char* pFieldName, int nValSize, _Out_ char* pValue);
 	BOOL GetIntegerFieldValue(char* pFieldName, int nValSize, _Out_ int* pValue);
 	BOOL GetDoubleFieldValue(char* pFieldName, int nValSize, _Out_ double* pValue);

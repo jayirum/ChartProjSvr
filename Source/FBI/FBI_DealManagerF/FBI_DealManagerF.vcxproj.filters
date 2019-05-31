@@ -16,6 +16,9 @@
     <Filter Include="Common">
       <UniqueIdentifier>{d6c08c49-b71e-42bb-8805-21a224e77985}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SmartMessage">
+      <UniqueIdentifier>{c47ae21b-cfda-44c5-bfca-f5a5bce44fa9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -39,9 +42,6 @@
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -53,9 +53,6 @@
     </ClCompile>
     <ClCompile Include="FBIMainProc.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
-      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp">
       <Filter>Common</Filter>
@@ -74,6 +71,12 @@
     </ClCompile>
     <ClCompile Include="DealManagerTenOp.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp">
+      <Filter>SmartMessage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IRUM_UTIL\IRExcept.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -98,9 +101,6 @@
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
-      <Filter>Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -112,9 +112,6 @@
     </ClInclude>
     <ClInclude Include="FBIMainProc.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
-      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h">
       <Filter>Common</Filter>
@@ -133,6 +130,15 @@
     </ClInclude>
     <ClInclude Include="DealManagerTenOp.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h">
+      <Filter>SmartMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\SMDataTypes.h">
+      <Filter>SmartMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\IRUM_UTIL\IRExcept.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

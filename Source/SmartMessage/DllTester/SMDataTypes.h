@@ -26,6 +26,7 @@ typedef int (__stdcall *TSMSetWorkEventCallBack)(int index, char* CallBackProc, 
 typedef char* (__stdcall *TSMMessageGetBinaryFieldValue)(int index, int messtype, char* FieldName);
 typedef char* (__stdcall *TSMMessageGetStringFieldValue)(int index, int messtype, char* FieldName);
 typedef int (__stdcall *TSMMessageGetIntegerFieldValue)(int index, int messtype, char* FieldName);
+typedef int(__stdcall *SMMessageGetDoubleFieldValue)(int index, int messtype, char* FieldName);
 typedef int (__stdcall *TSMGetObjectsNumber)();
 typedef int (__stdcall *TSMGetMaximumObjectsNumber)();
 typedef int (__stdcall *TSMCreateInstance)();

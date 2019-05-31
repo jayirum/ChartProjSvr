@@ -23,6 +23,7 @@ namespace _FBI
 	enum EN_DEAL_TP {
 		DEAL_TP_ONE_OP = 0
 		,DEAL_TP_TEN_OP
+		,DEAL_TP_SL
 	};
 	const char DEAL_TP_ONE_OP_C = '0';
 	const char DEAL_TP_TEN_OP_C = '1';
@@ -89,7 +90,7 @@ namespace _FBI
 	const int WM_RESULT_START	= WM_USER + 516;
 	const int WM_ORD_RECV		= WM_USER + 517;
 	const int WM_RECV_ORD		= WM_ORD_RECV;
-	const int WM_RECV_PRC		= WM_USER + 518;
+	const int WM_RECV_PRC		= WM_USER + 618;
 	const int WM_ORD_FIRED		= WM_USER + 519;
 	
 	const int RT_SUCCESS = 0;
@@ -110,7 +111,7 @@ namespace _FBI
 	char* chartName(char* psDate, char* psTime, _Out_ char* pzChartNm);
 
 	void Dbl2Str(double in, int nTotLen, int nDotLen, std::string* out);
-	int ComparePrices(std::string sPrc1, double dPrc2, int nTotLen, int nDotLen, std::string* sPrc2);
+	int ComparePrices(double dPrc1, std::string sPrc2, int nTotLen, int nDotLen, _Out_ std::string* sPrc1);
 
 	struct HEADER
 	{
@@ -216,19 +217,23 @@ namespace _FBI
 	// FBI_Order ==> FBI_DealManagerSL
 	struct ST_SLORD
 	{
-		int		OrdNo;
-		int		nOrdStatus;
-		double	dOrdPrc;
-		char	cUpDn;
-		int		nTickCnt;
+		int			OrdNo;		// client
+		int			nOrdStatus;	// client
+		double		dOrdPrc;	// client
+		char		cUpDn;		// client
+		int			nTickCnt;	// client
+		std::string	sUserId;	// client
 
-		char	cWinLose;	// W, L
+		double		dWinPrc;	// calculated
+		double		dLosePrc;	// calculated
+		std::string sWinPrc;
+		std::string sLosePrc;
+
+		char		cWinLose;	// W, L
 		std::string sFiredPrc;
 		std::string sArtcCd;
 		std::string sStkCd;
-		BOOL	bMain;
-		double	dWinPrc;
-		double	dLosePrc;
+		BOOL		bMain;
 	};
 
 	struct ST_STK_INFO
@@ -248,10 +253,24 @@ namespace _FBI
 
 
 	// Exec Price packet coming through SM server
+//TFutExec = packed record
+//issue : array[0..8] of char;    // 종목코드
+//gap: real;                     // 전일대비(권배락시는 기준가대비)
+//cup: real;                     // 현재가
+//sip: real;                     // 시가
+//hip: real;                     // 고가
+//lip: real;                     // 저가
+//vol: integer;                  // 누적거래량
+//amt: real;                     // 누적거래대금
+//time: integer;                  // time
+//side: array[0..1] of char;      // side
+//ydiffSign: array[0..1] of char;   //전일대비기호  (5:하락 2:상승 )
+//chgrate: array[0..6]  of char  //; _chgrate   : char;  // [float ,  6.2] 등락율
+//end;
 #pragma pack(push, 1)
 	struct TFutExec2
 	{
-		char issue[8 + 1];
+		char issue[9 + 1];
 		double gap;
 		double cup;
 		double sip;
@@ -263,6 +282,23 @@ namespace _FBI
 		char side[1 + 1];
 		char ydiffSign[1 + 1];
 		char chgrate[6 + 1];
+	};
+
+	struct SMPACK_FX_EXEC
+	{
+		char issue[9 + 1];
+		char gap[11];
+		char cup[11];
+		char sip[11];
+		char hip[11];
+		char lip[11];
+		char vol[11];
+		char amt[11];
+		char time[11];
+		char side[1 + 1];
+		char ydiffSign[1 + 1];
+		char chgrate[6 + 1];
+		char execvol[11];
 	};
 
 #pragma pack(pop)

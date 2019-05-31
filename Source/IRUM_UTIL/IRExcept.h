@@ -5,6 +5,7 @@
 #define ERR_COMM_INIT	ERR_BASE + 1
 
 #define ASSERT_BOOL(result, msg){ if(!result) throw CIRExcept(msg);}
+#define ASSERT_ZERO(result, msg){ if(result!=0) throw CIRExcept(msg);}
 
 class CIRExcept
 {

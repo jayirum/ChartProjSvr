@@ -163,7 +163,7 @@ public:
 		return (dw==STILL_ACTIVE);
 	};
 
-
+	VOID CloseThreadHandle() { if (m_hThread) CloseHandle(m_hThread); m_hThread = NULL; }
 public:
 /**	\brief Thread Handle
 */

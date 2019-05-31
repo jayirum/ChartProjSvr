@@ -61,6 +61,7 @@ var
     ObjectsNumber : integer;
 
     FutExec : TFutExec;
+    CS1: TRTLCriticalSection;
 
     UniqKey : Array[0..255] of byte;
     ClientIP : Array[0..255] of byte;
@@ -70,7 +71,12 @@ type CharPointer = ^char;
 procedure TMyObject.OnThreadWorkEvent(WorkThread: TWorkThread; SMessage: TSMessage; var Handled: Boolean);
 var resi, i1 : integer;
     ownerindex : integer;
+
 begin
+
+try
+
+  EnterCriticalSection(CS1);
 
   ownerindex := -1;
   for i1 := 0 to MAX_INSTANCES_NUMBER - 1 Do
@@ -95,13 +101,9 @@ begin
     resi := WorkEventCallBacks[ownerindex](ownerindex, Addr(WorkThread), Addr(SMessage));
   end;
 
-  (*if resi <> 0 then
-  begin
-    WorkThread.SendResponse(RespondMessages[ownerindex]);
-    ShowMessage('Response sent !');
-  end;       *)
-
-  //ShowMessage(IntToStr(resi));
+finally
+  LeaveCriticalSection(CS1);
+end;
 
 end;
 
@@ -208,6 +210,8 @@ begin
 
   //ShowMessage(IntToStr(SizeOf(FutExec)));
   //ShowMessage('Debug output : Initialize inside DLL !');
+
+  InitializeCriticalSection(CS1);
 
 end;
 
@@ -548,6 +552,7 @@ end;
 
 function SMMessageGetDeliveryType(index, messtype : integer) : integer; stdcall;
 begin
+
   if messtype = RECEIVED_MESSAGE then
   begin
     Result := Ord(LastReceivedMessages[index].DeliveryMode);
@@ -559,6 +564,66 @@ begin
   if messtype = MESSAGE_TO_SEND then
   begin
     Result := Ord(MessagesToSend[index].DeliveryMode);
+  end;
+
+end;
+
+function SMMessageGetDestination(index, messtype : integer) : PChar; stdcall;
+begin
+
+  if messtype = RECEIVED_MESSAGE then
+  begin
+    StringValue[index] := LastReceivedMessages[index].Destination;
+  end;
+  if messtype = RESPOND_MESSAGE then
+  begin
+    StringValue[index] := RespondMessages[index].Destination;
+  end;
+  if messtype = MESSAGE_TO_SEND then
+  begin
+    StringValue[index] := MessagesToSend[index].Destination;
+  end;
+
+  ConvertStringToPChar(StringValue[index], Addr(PCharValue[index]));
+  Result := Addr(PCharValue[index]);
+
+end;
+
+function SMMessageGetMsg(index, messtype : integer) : PChar; stdcall;
+begin
+
+  if messtype = RECEIVED_MESSAGE then
+  begin
+    StringValue[index] := LastReceivedMessages[index].Msg;
+  end;
+  if messtype = RESPOND_MESSAGE then
+  begin
+    StringValue[index] := RespondMessages[index].Msg;
+  end;
+  if messtype = MESSAGE_TO_SEND then
+  begin
+    StringValue[index] := MessagesToSend[index].Msg;
+  end;
+
+  ConvertStringToPChar(StringValue[index], Addr(PCharValue[index]));
+  Result := Addr(PCharValue[index]);
+
+end;
+
+function SMMessageGetClientSession(index, messtype : integer) : integer; stdcall;
+begin
+
+  if messtype = RECEIVED_MESSAGE then
+  begin
+    Result := LastReceivedMessages[index].ClientSession;
+  end;
+  if messtype = RESPOND_MESSAGE then
+  begin
+    Result := RespondMessages[index].ClientSession;
+  end;
+  if messtype = MESSAGE_TO_SEND then
+  begin
+    Result := MessagesToSend[index].ClientSession;
   end;
 
 end;
@@ -591,10 +656,19 @@ exports // Make available to calling applications
   SMCreateInstance,
   SMGetClientIP,
   SMSMessageToSMessage,
-  SMSendResponse;
+  SMSendResponse,
+  SMMessageGetDestination,
+  SMMessageGetMsg,
+  SMMessageGetClientSession;
 
 begin
 
-
-
 end.
+
+
+// function which need to be implemented
+
+//SMGetDeliveryModeOfRecvMsg -  SMMessageGetDeliveryType
+//SMGetDestinationOfRecvMsg - SMMessageGetDestination
+//SMGetMsgOfRecvMsg - SMMessageGetMsg
+//SMGetClientSessionOfRecvMsg -

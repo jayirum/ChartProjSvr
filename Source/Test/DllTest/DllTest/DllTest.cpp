@@ -59,12 +59,8 @@ TSMMessageGetIntegerFieldValue SMMessageGetIntegerFieldValue;
 TSMGetObjectsNumber SMGetObjectsNumber;
 TSMGetMaximumObjectsNumber SMGetMaximumObjectsNumber;
 TSMCreateInstance SMCreateInstance;
-TSMMessageGetDeliveryType SMMessageGetDeliveryType;
 TSMSendResponse SMSendResponse;
-TSMGetDeliveryModeOfRecvMsg SMGetDeliveryModeOfRecvMsg;
-TSMGetDestinationOfRecvMsg SMGetDestinationOfRecvMsg;
 TSMGetMsgOfRecvMsg SMGetMsgOfRecvMsg;
-TSMGetClientSessionOfRecvMsg SMGetClientSessionOfRecvMsg;
 TSMSMessageToSMessageEx SMSMessageToSMessageEx;
 TSetSMMessageHeader SetSMMessageHeader;
 
@@ -277,21 +273,6 @@ int InitDLL(void)
 		return FALSE;
 	}
 
-	SMGetDeliveryModeOfRecvMsg = NULL;
-	SMGetDeliveryModeOfRecvMsg = (TSMGetDeliveryModeOfRecvMsg)GetProcAddress(g_hIns, "SMGetDeliveryModeOfRecvMsg");
-	if (SMGetDeliveryModeOfRecvMsg == NULL)
-	{
-		printf( "SMGetDeliveryModeOfRecvMsg function not found in the DLL !");
-		return FALSE;
-	}
-
-	SMGetDestinationOfRecvMsg = NULL;
-	SMGetDestinationOfRecvMsg = (TSMGetDestinationOfRecvMsg)GetProcAddress(g_hIns, "SMGetDestinationOfRecvMsg");
-	if (SMGetDestinationOfRecvMsg == NULL)
-	{
-		printf( "SMGetDestinationOfRecvMsg function not found in the DLL !");
-		return FALSE;
-	}
 
 	SMGetMsgOfRecvMsg = NULL;
 	SMGetMsgOfRecvMsg = (TSMGetMsgOfRecvMsg)GetProcAddress(g_hIns, "SMGetMsgOfRecvMsg");
@@ -301,13 +282,6 @@ int InitDLL(void)
 		return FALSE;
 	}
 
-	SMGetClientSessionOfRecvMsg = NULL;
-	SMGetClientSessionOfRecvMsg = (TSMGetClientSessionOfRecvMsg)GetProcAddress(g_hIns, "SMGetClientSessionOfRecvMsg");
-	if (SMGetClientSessionOfRecvMsg == NULL)
-	{
-		printf( "SMGetClientSessionOfRecvMsg function not found in the DLL !");
-		return FALSE;
-	}
 
 	SMSMessageToSMessageEx = NULL;
 	SMSMessageToSMessageEx = (TSMSMessageToSMessageEx)GetProcAddress(g_hIns, "SMSMessageToSMessageEx");
@@ -403,7 +377,7 @@ void recvData()
 	//
 	//
 	int resi;
-	resi = SMSetWorkEventCallBack(g_lIdx, (char *)CallBackProc);
+	resi = SMSetWorkEventCallBack(g_lIdx, (CHAR*)&g_cnt, (char *)CallBackProc);
 
 
 

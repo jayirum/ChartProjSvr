@@ -14,14 +14,15 @@ extern char		g_zConfig[_MAX_PATH];
 extern CMemPool	g_memPool;
 
 
-CDealManager::CDealManager(char* pzStkCd, char* pzArtcCd, int nIdx, unsigned int	nToClientThread) : CBaseThread(pzStkCd)
+CDealManager::CDealManager(char* pzStkCd, char* pzArtcCd, int nIdx) : CBaseThread(pzStkCd)
 {
 	strcpy(m_zStkCd, pzStkCd);
 	strcpy(m_zArtcCd, pzArtcCd);
-
-	m_chartShm			= NULL;
-	m_nIdx				= nIdx;
-	m_unToClientThread	= nToClientThread;
+	m_pClient = NULL;
+	m_chartShm = NULL;
+	m_nIdx = nIdx;
+	//m_nLoggingCnt = 0;
+	//ZeroMemory(m_zNextCandleTm, sizeof(m_zNextCandleTm));
 }
 
 
@@ -59,8 +60,12 @@ BOOL CDealManager::Initialize()
 		}
 	}
 
+	//if (!InitClientConnect())	return FALSE;
+
 	if (!InitChartShm())
 		return FALSE;
+
+//	if (!LoadDealInfo())	return FALSE;
 
 	ResumeThread();
 	
@@ -182,25 +187,17 @@ BOOL CDealManager::LoadDealInfo()
 
 		_FBI::ST_DEAL_INFO* pInfo = new _FBI::ST_DEAL_INFO;
 		ZeroMemory(pInfo, sizeof(_FBI::ST_DEAL_INFO));
-
 		pInfo->DealSeq = db->GetLong("DEAL_SEQ");
-		
+		//db->GetStr("TM_ORD_START", pInfo->tm_order);		// hh:mm:ss
 		db->GetStr("ARTC_CD", pInfo->ArtcCd);
-		
 		strcpy(pInfo->tm_order, zOrderTime);
-		
 		db->GetStr("TM_WAIT_START", pInfo->tm_wait);
-		
 		db->GetStr("TM_CHARTWAIT_START", pInfo->tm_chartwait);
-		
 		db->GetStr("TM_END", pInfo->tm_end);
-		
 		db->GetStr("TM_CHART", pInfo->tm_chart);
-		
-		pInfo->DealStatus	= (_FBI::EN_DEAL_SATTUS)db->GetLong("DEAL_STATUS");
-		pInfo->DurationMin	= db->GetLong("DURATION");
-		pInfo->DateTp		= nDealDateTp;
-		
+		pInfo->DealStatus = (_FBI::EN_DEAL_SATTUS)db->GetLong("DEAL_STATUS");
+		pInfo->DurationMin = db->GetLong("DURATION");
+		pInfo->DateTp = nDealDateTp;
 		if (nDealDateTp == _FBI::DATETP_TRADE)
 			strcpy(pInfo->Date, zTradeDt);
 		else
@@ -232,6 +229,14 @@ VOID CDealManager::ThreadFunc()
 		return;
 	}
 
+	while (!InitClientConnect() )
+	{
+		if (!m_bContinue)
+			return;
+
+		Sleep(3000);
+	}
+
 	while (TRUE)
 	{
 		DWORD dwRet = MsgWaitForMultipleObjects(1, (HANDLE*)&m_hDie, FALSE, _FBI::TIMEOUT_CHECK_DEAL, QS_ALLPOSTMESSAGE);
@@ -246,9 +251,7 @@ VOID CDealManager::ThreadFunc()
 		}
 		else if (dwRet == WAIT_TIMEOUT)
 		{
-			//+--------------------------------------
 			DealManage();
-			//+--------------------------------------
 		}
 
 		MSG msg;
@@ -257,6 +260,7 @@ VOID CDealManager::ThreadFunc()
 			switch (msg.message)
 			{
 			case _FBI::WM_RECV_API_CHART:
+				//m_chartMap.Save((char*)msg.lParam);
 				g_memPool.release((char*)msg.lParam);
 				break;
 			case _FBI::WM_TERMINATE:
@@ -295,54 +299,78 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 	CDealManager* pThis = (CDealManager*)lp;
 
 	// Deal 정보
-	int		nDealSeq;
-	char	zChartNm[32];
+	int nDealSeq;
+	char zChartNm[32];
+	char zClientSendBuf[1024] = { 0, };
+	char z[128];
 
+	_FBI::PT_DEAL_STATUS *cPack = (_FBI::PT_DEAL_STATUS *)zClientSendBuf;
+	int nCPackLen = sizeof(_FBI::PT_DEAL_STATUS);
+	
 	ST_SHM_CHART_UNIT	chartData;
-	_FBI::ST_DEAL_INFO	recvData; 
-	
-	MSG		msg;
-	int		nComp;
-	char	UpDown[2] = { 0 , };
-	char	zOpen[32];
-	char	zClose[32];
-	
+	MSG msg;
+	int nComp;
+	char UpDown[2] = { 0 , };
+	char zOpen[32], zClose[32];
+	_FBI::ST_DEAL_INFO recvData;
 	while(GetMessage(&msg, NULL, 0,0))
 	{
-		if (msg.message == _FBI::WM_TERMINATE)		break;
-		if (msg.message != _FBI::WM_RESULT_START)	continue;
+		if (msg.message == _FBI::WM_TERMINATE)
+			break;
+
+		if (msg.message != _FBI::WM_RESULT_START)
+			continue;
 
 		// Have enough time to get the lastest chart data
 		Sleep(pThis->m_nResultWaitSec);
 
 		memcpy(&recvData, (_FBI::ST_DEAL_INFO*)msg.lParam, sizeof(_FBI::ST_DEAL_INFO));
+		_FBI::ST_DEAL_INFO * pDeal = (_FBI::ST_DEAL_INFO *)&recvData;	// msg.lParam;
 		g_memPool.release((char*)msg.lParam);
 
-		_FBI::ST_DEAL_INFO * pDeal = (_FBI::ST_DEAL_INFO *)&recvData;	// msg.lParam;
-		
 		nDealSeq = pDeal->DealSeq;
 		pThis->m_chartShm->ComposeChartName(pDeal->Date, pDeal->tm_end, TP_1MIN, zChartNm);
 
 		// CHART 를 가져온다.
 		ZeroMemory(&chartData, sizeof(chartData));
-		BOOL bRet		= FALSE;
+		BOOL bRet=FALSE;
 		int nRetriedCnt = 0;
 
-		bRet = pThis->ReadChartShm(TP_1MIN, zChartNm, pDeal->tm_end, chartData, nRetriedCnt);
+		int nSleep = 100;
+		int nTotRetrySec = 10;
+		int nTotRetryCnt = nTotRetrySec * 1000 / nSleep;
+		for (nRetriedCnt = 0; nRetriedCnt < nTotRetryCnt; nRetriedCnt++)	// 10초.
+		{
+			bRet = pThis->m_chartShm->GetChartData(pThis->m_zStkCd, TP_1MIN, zChartNm, chartData);
+			if (bRet)
+				break;
+			if (nRetriedCnt >= 10)	// 1초 
+			{
+				if (strncmp(pThis->m_zArtcCd, "HSI", 3) != 0 && strncmp(pThis->m_zArtcCd, "SCN", 3) != 0)
+				{
+					g_log.log(ERR, "[%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)"
+						, pThis->m_zStkCd, pDeal->tm_end, zChartNm, pThis->m_chartShm->getmsg());
+				}
+			}
+			Sleep(100);
+		}
 		if (!bRet)
 		{
 			if (strncmp(pThis->m_zArtcCd, "HSI", 3) != 0 && strncmp(pThis->m_zArtcCd, "SCN", 3) != 0)
-				g_log.log(NOTIFY, "[%s](END_TM:%s)(CHART_TM:%s)(%s)There is no chart.Resulting Failed!!!", pThis->m_zStkCd, pDeal->tm_end, zChartNm);
-
+			{
+				g_log.log(NOTIFY, "[%s](END_TM:%s)(CHART_TM:%s)(%s)There is no chart.Resulting Failed!!!"
+					, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
+			}
 			*UpDown = 'E';
 			strcpy(zOpen, "0");
 			strcpy(zClose, "0");
 		}
 		else
 		{
-			if (nRetriedCnt > 0) 
-				g_log.log(INFO, "[RETRY:%d][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Ok(%s)", nRetriedCnt, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
-			
+			if (nRetriedCnt > 0) {
+				g_log.log(INFO, "[RETRY:%d][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Ok(%s)"
+					, nRetriedCnt, pThis->m_zStkCd, pDeal->tm_end, zChartNm);
+			}
 			// Deal 정보와 비교한다.
 			nComp = strncmp(chartData.open, chartData.close, sizeof(chartData.open));
 			if (nComp > 0)			*UpDown = 'D';
@@ -352,111 +380,86 @@ unsigned WINAPI CDealManager::Thread_ResultProcByChart(LPVOID lp)
 			sprintf(zClose, "%.*s", sizeof(chartData.close), chartData.close);
 		}
 
-		// Save the result on DB and Send to Client
-		pThis->SaveAndSendResult(pDeal, UpDown[0], zOpen, zClose, zChartNm);
-		
-		// delete DealInfo
-		pThis->DealErase(nDealSeq);
+		//DB UPDATE
+		for (int i = 0; i < 3; i++)
+		{
+			CDBHandlerAdo db(pThis->m_pDBPool->Get());
+			char zQ[1024];
+
+			sprintf(zQ, "EXEC AA_ORD_RESULT "
+				"'%s'"
+				",%d"
+				",%d"
+				",'%c'"
+				",'%s'"
+				",'%s'"
+				",'%s'"
+				, pThis->m_zStkCd
+				, nDealSeq
+				, TP_1MIN
+				, UpDown[0]
+				, zOpen
+				, zClose
+				, zChartNm
+			);
+
+			//if (g_bDebugLog) {
+			//	g_log.log(INFO, "[Result](%s)", zQ);
+			//}
+			if (FALSE == db->ExecQuery(zQ))
+			{
+				g_log.log(ERR/*NOTIFY*/, "Result Error(AA_ORD_RESULT) error(%s)", zQ);
+				Sleep(1000);
+				db->Close();
+				continue;
+			}
+			else
+			{
+				//if (g_bDebugLog) {
+				//	g_log.log(INFO, "[주문처리 성공][%s][SEQ:%d][CHART_NM:%s][OPEN:%.10s][CLOSE:%.10s]",
+				//		pThis->m_zArtcCd, nDealSeq, zChartNm, chartData.open, chartData.close);
+				//}
+
+				// send to Client
+				memset(cPack, 0x20, nCPackLen);
+				cPack->STX[0] = _FBI::STX;
+
+				char len[32];
+				sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
+				memcpy(cPack->Len, len, strlen(len));
+				
+				cPack->DealTp[0] = _FBI::DEAL_TP_ONE_OP_C;
+
+				memcpy(cPack->ArtcCd, pThis->m_zArtcCd, min(sizeof(cPack->ArtcCd), strlen(pThis->m_zArtcCd)));
+				memcpy(cPack->StkCd, pThis->m_zStkCd, min(sizeof(cPack->StkCd), strlen(pThis->m_zStkCd)));
+				sprintf(z, "%d", nDealSeq);
+				memcpy(cPack->DealSeq, z, strlen(z));
+				memcpy(cPack->DealStatus, "05", 2);
+				//cPack->DealStatus[0] = '5';
+				cPack->OrdResult[0] = *UpDown;
+				memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
+
+				// yyyymmddhhmm => hh:mm
+				//sprintf(pThis->m_zNextCandleTm, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
+				//sprintf(cPack->CandleTime, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
+				memcpy(cPack->CandleTime, pDeal->tm_chart, min(sizeof(cPack->CandleTime),sizeof(pDeal->tm_chart)));
+				
+				cPack->ETX[0] = _FBI::ETX;
+				*(cPack->ETX + 1) = 0x00;
+
+				pThis->SendToClient(cPack, 0);
+
+				// delete DealInfo
+				pThis->DealErase(nDealSeq);
+				break;
+			} // else of if (FALSE == db->ExecQuery(zQ))
+		} // for (int i = 0; i < 3; i++) for DB
+
+		//g_memPool.release((char*)pDeal);
 
 	} // while(GetMessage(&msg, NULL, 0,0))
 
 	return 0;
-}
-
-
-
-BOOL CDealManager::ReadChartShm(CHART_TP ChartTp, char* pzChartNm, char* pzTmEnd, _Out_ ST_SHM_CHART_UNIT& chart, _Out_ int& refRetryCnt)
-{
-	int nSleep			= 100;
-	int nTotRetrySec	= 10;
-	int nTotRetryCnt	= nTotRetrySec * 1000 / nSleep;
-	BOOL bRet			= FALSE;
-	for (refRetryCnt = 0; refRetryCnt < nTotRetryCnt; refRetryCnt++)	// 10초.
-	{
-		bRet = m_chartShm->GetChartData(m_zStkCd, TP_1MIN, pzChartNm, chart);
-		if (bRet)
-			break;
-		if (refRetryCnt >= 10)	// 1초 이후 부터는 로깅한다.
-		{
-			if (strncmp(m_zArtcCd, "HSI", 3) != 0 && strncmp(m_zArtcCd, "SCN", 3) != 0)
-				g_log.log(ERR, "[ 3M][%s](END_TM:%s)(CHART_TM:%s)Get Chartdata Error(%s)", m_zStkCd, pzTmEnd, pzChartNm, m_chartShm->getmsg());
-		}
-		Sleep(nSleep);
-	}
-
-	return bRet;
-}
-
-
-VOID CDealManager::SaveAndSendResult(_FBI::ST_DEAL_INFO *pDeal, char UpDown, char* pzOpen, char* pzClose, char* pzChartNm)
-{
-	char z[128];
-	int nDealSeq = pDeal->DealSeq;
-	//DB UPDATE
-	for (int i = 0; i < 3; i++)
-	{
-		CDBHandlerAdo db(m_pDBPool->Get());
-		char zQ[1024];
-
-		sprintf(zQ, "EXEC AA_ORD_RESULT "
-			"'%s'"
-			",%d"
-			",%d"
-			",'%c'"
-			",'%s'"
-			",'%s'"
-			",'%s'"
-			, m_zStkCd
-			, nDealSeq
-			, TP_1MIN
-			, UpDown
-			, pzOpen
-			, pzClose
-			, pzChartNm
-		);
-
-		if (FALSE == db->ExecQuery(zQ))
-		{
-			g_log.log(ERR/*NOTIFY*/, "Result Error(AA_ORD_RESULT) error(%s)", zQ);
-			Sleep(1000);
-			db->Close();
-			continue;
-		}
-
-		// send to Client
-		char* pData = g_memPool.get();
-		
-		_FBI::PT_DEAL_STATUS *cPack = (_FBI::PT_DEAL_STATUS *)pData;
-		int nCPackLen				= sizeof(_FBI::PT_DEAL_STATUS);
-
-		memset(cPack, 0x20, nCPackLen);
-		cPack->STX[0] = _FBI::STX;
-
-		char len[32];
-		sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
-		memcpy(cPack->Len, len, strlen(len));
-
-		cPack->DealTp[0] = _FBI::DEAL_TP_ONE_OP_C;
-
-		memcpy(cPack->ArtcCd,	m_zArtcCd,	min(sizeof(cPack->ArtcCd), strlen(m_zArtcCd)));
-		memcpy(cPack->StkCd,	m_zStkCd,	min(sizeof(cPack->StkCd), strlen(m_zStkCd)));
-		sprintf(z, "%d", nDealSeq);
-		memcpy(cPack->DealSeq, z, strlen(z));
-		memcpy(cPack->DealStatus, "05", 2);
-		cPack->OrdResult[0] = UpDown;
-		memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
-
-		// yyyymmddhhmm => hh:mm
-		memcpy(cPack->CandleTime, pDeal->tm_chart, min(sizeof(cPack->CandleTime), sizeof(pDeal->tm_chart)));
-
-		cPack->ETX[0] = _FBI::ETX;
-		*(cPack->ETX + 1) = 0x00;
-
-		PostThreadMessage(m_unToClientThread, _FBI::WM_RESULT_START, 0, (LPARAM)cPack);
-
-		break;
-
-	} // for (int i = 0; i < 3; i++) for DB
 }
 
 // 1초마다 DB UPDATE
@@ -550,12 +553,13 @@ BOOL CDealManager::DealManageInner()
 	for (it = m_mapDeal.begin(); it != m_mapDeal.end(); )
 	{
 		sOrdTm.clear();
-		pInfo		= NULL;
-		nDealSeq	= (*it).first;
-		pInfo		= (*it).second;
+		pInfo = NULL;
+		nDealSeq = (*it).first;
+		pInfo = (*it).second;
 
 		GetLocalTime(&st);
-		sprintf(zNowFull, "%04d%02d%02d%02d:%02d:%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+		sprintf(zNowFull, "%04d%02d%02d%02d:%02d:%02d", 
+			st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 		nCompareLen = strlen(zNowFull)-3;	// HH:MM 까지만 비교 		
 
 		// 결과시간 지났는데 아직 미시작인건 삭제한다.
@@ -657,10 +661,10 @@ BOOL CDealManager::DealOrd(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo)
 	}
 	else if (pInfo->DealStatus == _FBI::DEAL_STATUS_NONSTART)
 	{
-		if (g_bDebugLog) {
-			g_log.log(INFO, "(%s)(SEQ:%d)/주문/(현재:%s)(DEAL주문시간:%s%s) <주문>으로 UPDATE",
-				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_order);
-		}
+		//if (g_bDebugLog) {
+		//	g_log.log(INFO, "(%s)(SEQ:%d)/주문/(현재:%s)(DEAL주문시간:%s%s) <주문>으로 UPDATE",
+		//		pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_order);
+		//}
 		// update.
 		pInfo->DealStatus = _FBI::DEAL_STATUS_ORD;
 		UpdateDealStatus(pInfo);
@@ -695,10 +699,10 @@ BOOL CDealManager::DealWait(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo)
 	}
 	else if (pInfo->DealStatus == _FBI::DEAL_STATUS_ORD)
 	{
-		if (g_bDebugLog) {
-			g_log.log(INFO, "(%s)(SEQ:%d)/(현재:%s)(DEAL대기시간:%s%s) <대기>로 UPDATE",
-				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_wait, _FBI::dealstatus(pInfo->DealStatus, status));
-		}
+		//if (g_bDebugLog) {
+		//	g_log.log(INFO, "(%s)(SEQ:%d)/(현재:%s)(DEAL대기시간:%s%s) <대기>로 UPDATE",
+		//		pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_wait, _FBI::dealstatus(pInfo->DealStatus, status));
+		//}
 
 		// update.
 		pInfo->DealStatus = _FBI::DEAL_STATUS_WAIT;
@@ -764,10 +768,10 @@ BOOL CDealManager::DealResulting(char* pzNowFull, _FBI::ST_DEAL_INFO* pInfo)
 	else if (pInfo->DealStatus == _FBI::DEAL_STATUS_CHARTWAIT)
 	{
 		// update.
-		if (g_bDebugLog) {
-			g_log.log(INFO, "(%s)(SEQ:%d)/(현재:%s)(DEAL결과시간:%s%s) <결과>로 UPDATE",
-				pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_end);
-		}
+		//if (g_bDebugLog) {
+		//	g_log.log(INFO, "(%s)(SEQ:%d)/(현재:%s)(DEAL결과시간:%s%s) <결과>로 UPDATE",
+		//		pInfo->ArtcCd, pInfo->DealSeq, pzNowFull, pInfo->Date, pInfo->tm_end);
+		//}
 
 		pInfo->DealStatus = _FBI::DEAL_STATUS_RESULTING;
 		UpdateDealStatus(pInfo);
@@ -819,21 +823,19 @@ void CDealManager::UpdateDealStatus(_FBI::ST_DEAL_INFO* pInfo)
 {
 	// send to the client
 	char z[128];
-	char len[32];
-	char* packet = g_memPool.get();
-
+	char packet[1024] = { 0, };
 	_FBI::PT_DEAL_STATUS* p = (_FBI::PT_DEAL_STATUS*)packet;
 	memset(p, 0x20, sizeof(_FBI::PT_DEAL_STATUS));
 
 	p->STX[0] = _FBI::STX;
 
+	char len[32];
 	sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
 	memcpy(p->Len, len, strlen(len));
-
 	p->DealTp[0] = _FBI::DEAL_TP_ONE_OP_C;
-	
-	memcpy(p->ArtcCd,	m_zStkCd, min(strlen(m_zArtcCd),_FBI::FBILEN_SYMBOL));
-	memcpy(p->StkCd,	m_zStkCd, min(strlen(m_zStkCd), _FBI::FBILEN_SYMBOL));
+	memcpy(p->ArtcCd, m_zStkCd, min(strlen(m_zArtcCd),_FBI::FBILEN_SYMBOL));
+	memcpy(p->StkCd, m_zStkCd, min(strlen(m_zStkCd), _FBI::FBILEN_SYMBOL));
+
 
 	sprintf(z, "%0*d", _FBI::FBILEN_DEAL_SEQ, pInfo->DealSeq);
 	memcpy(p->DealSeq, z, _FBI::FBILEN_DEAL_SEQ);
@@ -884,15 +886,263 @@ void CDealManager::UpdateDealStatus(_FBI::ST_DEAL_INFO* pInfo)
 		}
 		else
 		{
-			if (g_bDebugLog) {
-				g_log.log(INFO, "Update DB DEAL_MST OK[%s][SEQ:%d][%s]", m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
-			}
+			//if (g_bDebugLog) {
+			//	g_log.log(INFO, "Update DB DEAL_MST OK[%s][SEQ:%d][%s]", m_zArtcCd, pInfo->DealSeq, _FBI::dealstatus(pInfo->DealStatus, z));
+			//}
 			break;
 		}
 	}
 
 	// Result is sent after complete the result
-	if (pInfo->DealStatus != _FBI::DEAL_STATUS_RESULTING)
-		PostThreadMessage(m_unToClientThread, _FBI::WM_RESULT_START, 0, (LPARAM)p);
+	if(pInfo->DealStatus!= _FBI::DEAL_STATUS_RESULTING)
+		SendToClient(p, 0);
 }
 
+
+BOOL CDealManager::SendToClient(_FBI::PT_DEAL_STATUS* pPacket, int nRecurCnt)
+{
+	if (nRecurCnt > 10)
+		return FALSE;
+
+	int nLen = sizeof(_FBI::PT_DEAL_STATUS);
+	char zSendBuffer[1024] = { 0, };
+	memcpy(zSendBuffer, (char*)pPacket, nLen);
+	zSendBuffer[nLen++] = 0x0a;
+
+	int nErrCode;
+	int res = m_pClient->SendData(zSendBuffer, nLen, &nErrCode);
+	if (res <= 0)
+	{
+		g_log.log(ERR, "SendToClient Error(%s)", m_pClient->GetMsg());
+		Sleep(1000);
+		if (InitClientConnect())
+		{
+			nRecurCnt++;
+			return SendToClient(pPacket, nRecurCnt);
+		}
+		return FALSE;
+	}
+	nRecurCnt = 0;
+
+	//if (g_bDebugLog) 
+	{
+		if (strncmp(pPacket->ArtcCd, "CL", 2) == 0) {
+			g_log.log(INFO, "[3M]Send To Client(%.*s)", nLen, zSendBuffer);
+		}
+	}
+	return TRUE;
+}
+
+
+
+BOOL CDealManager::InitClientConnect()
+{
+	if (m_pClient)
+		delete m_pClient;
+
+	m_pClient = new CTcpClient("DealManager");
+	char zIP[32], zPort[32];
+	CUtil::GetConfig(g_zConfig, "DEAL_UPDATE", "IP", zIP);
+	CUtil::GetConfig(g_zConfig, "DEAL_UPDATE", "PORT", zPort);
+
+	if (!m_pClient->Begin(zIP, atoi(zPort), 10))
+	{
+		g_log.log(ERR, "[Connect To ClientAgent Error]%s", m_pClient->GetMsg());
+		return FALSE;
+	}
+	else {
+		g_log.log(LOGTP_SUCC, "TCP CLIENT Initialize and connect OK(IP:%s)(PORT:%s)", zIP, zPort);
+	}
+
+
+	return TRUE;
+}
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CChartMap
+//////////////////////////////////////////////////////////////////////////////////////////////
+//CChartMap::CChartMap()
+//{
+//	InitializeCriticalSection(&m_csChart);
+//}
+//
+//CChartMap::~CChartMap()
+//{
+//	EnterCriticalSection(&m_csChart);
+//	std::map<std::string, _FBI::PT_API_CHART*>::iterator it2;
+//	for (it2 = m_mapChart.begin(); it2 != m_mapChart.end(); ++it2)
+//	{
+//		_FBI::PT_API_CHART* p = (*it2).second;
+//		delete p;
+//	}
+//	m_mapChart.clear();
+//	DeleteCriticalSection(&m_csChart);
+//}
+//
+//
+//VOID CChartMap::Save(char* pChartData)
+//{
+//	_FBI::PT_API_CHART* p = (_FBI::PT_API_CHART*)pChartData;
+//
+//	_FBI::PT_API_CHART* pNew = new _FBI::PT_API_CHART;
+//	memcpy(pNew, p, sizeof(_FBI::PT_API_CHART));
+//
+//	char zChartNm[32] = { 0, };
+//	_FBI::chartName(p->Date, p->ChartTime, zChartNm);
+//
+//	EnterCriticalSection(&m_csChart);
+//	m_mapChart[zChartNm] = pNew;
+//	LeaveCriticalSection(&m_csChart);
+//
+//	//if (m_sFirstChartNm.compare(zChartNm) > 0)
+//	//	m_sFirstChartNm = std::string(zChartNm);
+//}
+//
+//VOID CChartMap::DeleteAfterOrerProc(_In_ std::string sChartNm)
+//{
+//	EnterCriticalSection(&m_csChart);
+//	m_mapChart.erase(sChartNm);
+//	LeaveCriticalSection(&m_csChart);
+//}
+//
+//
+//// return : chart name
+//_FBI::PT_API_CHART* CChartMap::GetFirstChart(_Out_ std::string *psChartNm)
+//{
+//	_FBI::PT_API_CHART* p = NULL;
+//
+//	if (m_mapChart.empty())
+//		return NULL;
+//
+//	EnterCriticalSection(&m_csChart);
+//	*psChartNm = (*m_mapChart.begin()).first;
+//	p = (*m_mapChart.begin()).second;
+//	LeaveCriticalSection(&m_csChart);
+//	return p;
+//}
+//
+//_FBI::PT_API_CHART* CChartMap::GetNextChart(_In_ std::string sPrevChartNm, _Out_ std::string *psChartNm)
+//{
+//	_FBI::PT_API_CHART* p = NULL;
+//
+//	EnterCriticalSection(&m_csChart);
+//	std::map<std::string, _FBI::PT_API_CHART*>::iterator it = m_mapChart.find(sPrevChartNm);
+//	if (it == m_mapChart.end())
+//	{
+//		LeaveCriticalSection(&m_csChart);
+//		return NULL;
+//	}
+//
+//	it++;
+//
+//	if (it == m_mapChart.end())
+//	{
+//		LeaveCriticalSection(&m_csChart);
+//		return NULL;
+//	}
+//
+//	*psChartNm = (*it).first;
+//	p = (*it).second;
+//	LeaveCriticalSection(&m_csChart);
+//	return p;
+//}
+
+
+
+#if 0	// shm 을 이용하기 때문에 이 로직 불필요
+/*
+struct PT_API_CHART
+{
+char	STX[1];
+char	Len[4];
+char	StkCd[FBILEN_SYMBOL];
+char	Date[8];
+char	ChartType[1];	// m:minute, h:hour, d:day
+char	TimeFrame[3];	// 001: 1min, 005
+char	ChartTime[5];	// hh:mm
+char	Open[FBILEN_PRC];
+char	High[FBILEN_PRC];
+char	Low[FBILEN_PRC];
+char	Close[FBILEN_PRC];
+char	Volume[FBILEN_VOLUME];
+char	ETX[1];
+};
+
+DB 의 당일 차트정보를 로딩해서 MAP 에 저장
+*/
+BOOL CDealManager::LoadChartInfo()
+{
+	char zQ[1024];
+	char z[1024];
+	char zDt[32], zTm[32];
+
+	CUtil::GetConfig(g_zConfig, "SQL", "LOAD_CHART_DATA", z);
+	sprintf(zQ, z, m_zArtcCd);
+
+	CDBHandlerAdo db(m_pDBPool->Get());
+	//sprintf(zQ, "SELECT TRADE_DT, CHART_TP, CHART_NM, OPEN_PRC, HIGH_PRC, LOW_PRC, CLOSE_PRC, CNTR_QTY "
+	//	" FROM AA_CHART_DATA_MIN_01 WHERE SYMBOL='%s' ORDER BY CHART_NM", m_zStkCd);
+	if (FALSE == db->ExecQuery(zQ))
+	{
+		g_log.log(ERR/*NOTIFY*/, "Load Chart Error(%s)(%s)", db->GetError(), zQ);
+		return FALSE;
+	}
+	while (db->IsNextRow())
+	{
+		_FBI::PT_API_CHART* pChart = new _FBI::PT_API_CHART;
+		memset(pChart, 0x20, sizeof(_FBI::PT_API_CHART));
+
+		db->GetStr("TRADE_DT", z);
+		memcpy(pChart->StkCd, m_zStkCd, min(sizeof(pChart->StkCd), strlen(z)));
+
+		// yyyymmddhhss
+		db->GetStr("CHART_NM", z);
+		sprintf(zDt, "%.8s", z);
+		sprintf(zTm, "%.2s:%.2s", z + 8, z + 10);
+
+		memcpy(pChart->Date, zDt, sizeof(pChart->Date));
+		pChart->ChartType[0] = 'M';
+		memcpy(pChart->TimeFrame, "001", 3);
+		memcpy(pChart->ChartTime, zTm, sizeof(pChart->ChartTime));
+
+		sprintf(z, "%.5f", db->GetDbl("OPEN_PRC"));
+		memcpy(pChart->Open, z, min(sizeof(pChart->Open), strlen(z)));
+
+		sprintf(z, "%.5f", db->GetDbl("HIGH_PRC"));
+		memcpy(pChart->High, z, min(sizeof(pChart->High), strlen(z)));
+
+		sprintf(z, "%.5f", db->GetDbl("LOW_PRC"));
+		memcpy(pChart->Low, z, min(sizeof(pChart->Low), strlen(z)));
+
+		sprintf(z, "%.5f", db->GetDbl("CLOSE_PRC"));
+		memcpy(pChart->Close, z, min(sizeof(pChart->Close), strlen(z)));
+
+		m_chartMap.Save((char*)pChart);
+
+		db->Next();
+	}
+	db->Close();
+	g_log.log(INFO, "Succeeded in DealInfo[%s]", m_zArtcCd);
+	return TRUE;
+}
+#endif 
