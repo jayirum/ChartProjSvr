@@ -15,7 +15,7 @@
 #include <io.h>
 #include "BaseThread.h" //todo after completion - remove ../
 #include <list>
-#include "TcpClient.h"
+//#include "TcpClient.h"
 
 #define DEF_LOG_LEN 4096
 
@@ -66,7 +66,7 @@ private:
 	char	m_szNotifyServerIP[_MAX_PATH];
 	int		m_nNotifyServerPort;
 	char	m_szAppName[DEF_LOG_LEN];
-	CTcpClient *m_pMonitorClient;
+	//CTcpClient *m_pMonitorClient;
 
 	VOID	LOCK() { EnterCriticalSection(&m_cs); };
 	VOID	UNLOCK() { LeaveCriticalSection(&m_cs); };
@@ -123,5 +123,5 @@ private:
 
 	CLogMsgPool		*m_pool;
 
-	CSendMsg		m_csmNotifyThread;
+	//CSendMsg		m_csmNotifyThread;
 };
