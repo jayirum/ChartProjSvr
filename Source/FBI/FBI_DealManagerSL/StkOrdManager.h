@@ -14,6 +14,8 @@
 #include <string>
 #include <functional>
 
+using namespace std;
+
 /*
 	string : fire price
 */
@@ -28,11 +30,11 @@ enum EN_DIRECTION{EN_ASC, EN_DESC};
 class CStkOrdManager
 {
 public:
-	CStkOrdManager(std::string sStkCd);
-	~CStkOrdManager();
+	CStkOrdManager	(std::string sStkCd);
+	~CStkOrdManager	();
 
-	BOOL Initialize(_FBI::ST_STK_INFO* p, unsigned int	nSaveThreadId);
-	VOID Finalize();
+	BOOL Initialize	(_FBI::ST_STK_INFO* p, unsigned int	nSaveThreadId);
+	VOID Finalize	();
 
 	// FBIMainProc calls this function when it gets order / tick
 	VOID RelayOrdAndPrc(int nMsg, void* pData, int nDataSize);
@@ -42,35 +44,34 @@ private:
 	////////////////////////////////////////////////////////////////////////////
 	// Thread Function. Be created 2 - one is for Up, the other is for Down
 	static unsigned WINAPI OrderHandlerThread(LPVOID lp);
-	static unsigned WINAPI ScanOrderThread(LPVOID lp);
 
 	// add order / delete order
 	VOID OrderProc(void* pOrdData);
 
 	// check fire against every tick
-	VOID ScanOrdByPrc(void* pPrcData);
+	VOID ScanOrdByPrc	(void* pPrcData);
 
-	VOID OrderProcAdd(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
-	VOID OrderProcCncl(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
+	VOID OrderProcAdd	(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
+	VOID OrderProcCncl	(_FBI::ST_SLORD* pOrd, std::string sAscPrc, std::string sDescPrc);
 
-	VOID FireOrder(_FBI::ST_SLORD* pOrd, std::string sFiredPrc);
-	BOOL DeleteOrder(EN_DIRECTION enDirection, std::string sOrdPrc, int nOrdNo);
+	VOID FireOrder		(_FBI::ST_SLORD* pOrd, std::string sFiredPrc);
+	BOOL DeleteOrder	(EN_DIRECTION enDirection, std::string sOrdPrc, int nOrdNo);
 	////////////////////////////////////////////////////////////////////////////
 
 
 	unsigned int GetOppositeThreadId();
-	inline BOOL IsThisAscThread() { return (GetCurrentThreadId() == m_unAsc); }
-	char* GetThreadName(char* pzName);
+	inline BOOL IsThisAscThread	() { return (GetCurrentThreadId() == m_unAsc); }
+	char* GetThreadName			(char* pzName);
 
-	inline VOID LockAsc() { EnterCriticalSection(&m_csAsc); }
-	inline VOID LockDesc() { EnterCriticalSection(&m_csDesc); }
-	inline VOID UnLockAsc() { LeaveCriticalSection(&m_csAsc); }
-	inline VOID UnLockDesc() { LeaveCriticalSection(&m_csDesc); }
+	inline VOID LockAsc		() { EnterCriticalSection(&m_csAsc); }
+	inline VOID LockDesc	() { EnterCriticalSection(&m_csDesc); }
+	inline VOID UnLockAsc	() { LeaveCriticalSection(&m_csAsc); }
+	inline VOID UnLockDesc	() { LeaveCriticalSection(&m_csDesc); }
 
 private:
 	std::string			m_sStkCd;
-	HANDLE				m_hAsc, m_hDesc;
-	unsigned int		m_unAsc, m_unDesc;
+	HANDLE				m_hAsc,		m_hDesc;
+	unsigned int		m_unAsc,	m_unDesc;
 	unsigned int		m_nSaveThreadId;
 
 	_FBI::ST_STK_INFO	m_stkInfo;

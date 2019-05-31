@@ -158,11 +158,9 @@
     <ClCompile Include="..\..\IRUM_UTIL\Log.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\LogMsg.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Prop.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\SharedMem.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\SmartMessage.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\TimeUtils.cpp" />
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp" />
@@ -180,12 +178,10 @@
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="..\..\IRUM_UTIL\LogMsg.h" />
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Prop.h" />
     <ClInclude Include="..\..\IRUM_UTIL\SharedMem.h" />
     <ClInclude Include="..\..\IRUM_UTIL\SmartMessage.h" />
     <ClInclude Include="..\..\IRUM_UTIL\SMDataTypes.h" />
-    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TimeUtils.h" />
     <ClInclude Include="..\..\IRUM_UTIL\Util.h" />

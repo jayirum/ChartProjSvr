@@ -39,9 +39,6 @@
     <ClCompile Include="..\..\IRUM_UTIL\MemPool.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\TcpClient.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\Util.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -50,9 +47,6 @@
     </ClCompile>
     <ClCompile Include="FBIMainProc.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\IRUM_UTIL\PktHandler.cpp">
-      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp">
       <Filter>Common</Filter>
@@ -101,9 +95,6 @@
     <ClInclude Include="..\..\IRUM_UTIL\MemPool.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\TcpClient.h">
-      <Filter>Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\Util.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -112,9 +103,6 @@
     </ClInclude>
     <ClInclude Include="FBIMainProc.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\IRUM_UTIL\PktHandler.h">
-      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h">
       <Filter>Common</Filter>

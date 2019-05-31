@@ -23,6 +23,7 @@ namespace _FBI
 	enum EN_DEAL_TP {
 		DEAL_TP_ONE_OP = 0
 		,DEAL_TP_TEN_OP
+		,DEAL_TP_SL
 	};
 	const char DEAL_TP_ONE_OP_C = '0';
 	const char DEAL_TP_TEN_OP_C = '1';
@@ -216,22 +217,23 @@ namespace _FBI
 	// FBI_Order ==> FBI_DealManagerSL
 	struct ST_SLORD
 	{
-		int		OrdNo;		// client
-		int		nOrdStatus;	// client
-		double	dOrdPrc;	// client
-		char	cUpDn;		// client
-		int		nTickCnt;	// client
+		int			OrdNo;		// client
+		int			nOrdStatus;	// client
+		double		dOrdPrc;	// client
+		char		cUpDn;		// client
+		int			nTickCnt;	// client
+		std::string	sUserId;	// client
 
-		double	dWinPrc;	// calculated
-		double	dLosePrc;	// calculated
+		double		dWinPrc;	// calculated
+		double		dLosePrc;	// calculated
 		std::string sWinPrc;
 		std::string sLosePrc;
 
-		char	cWinLose;	// W, L
+		char		cWinLose;	// W, L
 		std::string sFiredPrc;
 		std::string sArtcCd;
 		std::string sStkCd;
-		BOOL	bMain;
+		BOOL		bMain;
 	};
 
 	struct ST_STK_INFO

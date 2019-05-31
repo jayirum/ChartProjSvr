@@ -16,7 +16,7 @@ extern CLogMsg	g_log;
 extern char		g_zConfig[_MAX_PATH];
 extern CMemPool	g_memPool;
 
-CFBIMainProc::CFBIMainProc()//:CBaseThread("FBIMain", TRUE)
+CFBIMainProc::CFBIMainProc():CBaseThread("FBIMain", TRUE)
 {
 	m_unSaveData = 0;
 	m_hSaveData = NULL;
@@ -55,7 +55,6 @@ BOOL CFBIMainProc::Initialize()
 	}
 
 
-
 	// SAVE THREAD
 	m_hSaveData = (HANDLE)_beginthreadex(NULL, 0, &SaveResultThread, this, 0, &m_unSaveData);
 	
@@ -70,17 +69,17 @@ BOOL CFBIMainProc::Initialize()
 	}
 
 
-	// This Thread
-	//ResumeThread();
+	char zQ[512];
+	CDBHandlerAdo db2(m_pDBPool->Get());
+	sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'FBI_DealManagerSL', '초기화 성공.' ");
+	if (FALSE == db2->ExecQuery(zQ))
+	{
+		g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
+	}
+	db2->Close();
 
-	//TODO
-	//CDBHandlerAdo db2(m_pDBPool->Get());
-	//sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 성공.' ", zStCd);
-	//if (FALSE == db2->ExecQuery(zQ))
-	//{
-	//	g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
-	//}
-	//db2->Close();
+
+	CBaseThread::ResumeThread();
 
 	g_log.log(INFO, "Init OK");
 	return TRUE;
@@ -88,12 +87,118 @@ BOOL CFBIMainProc::Initialize()
 
 void CFBIMainProc::Finalize()
 {
+	ClearDealMap();
 	DeInitializeSM();
 	SAFE_DELETE(m_pDBPool);
-	ClearDealMap();
 	DeleteCriticalSection(&m_csStkOrd);
 }
 
+
+VOID CFBIMainProc::ThreadFunc()
+{
+	LoadNcntrInfo();
+	Is_TimeOfStop(INFINITE);
+}
+
+
+/*
+// Load non-cntr orders
+[ORD_NO]
+,[USER_ID]
+,[ARTC_CD]
+,[STK_CD]
+,[UPDOWN]
+,[ORD_STATUS]
+,[ORD_PRC]
+,[SL_TICK]
+*/
+VOID CFBIMainProc::LoadNcntrInfo()
+{
+	char	zQ[1024]	= { 0, };
+	char	zTemp[128]	= { 0, };
+	int		nIdx		= 0;
+	_FBI::ST_SLORD	stOrdInfo;
+
+	CDBHandlerAdo db(m_pDBPool->Get());
+
+	sprintf(zQ, "EXEC AA_LOAD_NCNTR_ORD");
+
+	if (FALSE == db->ExecQuery(zQ))
+	{
+		g_log.log(ERR/*NOTIFY*/, "Load Non Cntr Error(%s)", zQ);
+	}
+	else
+	{
+		while (db->IsNextRow())
+		{
+			ZeroMemory(&stOrdInfo, sizeof(stOrdInfo));
+
+			stOrdInfo.OrdNo = db->GetLong("ORD_NO");
+
+			if (db->GetStrWithLen("USER_ID", 20, zTemp) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadNcntrInfo(USER_ID) Error(%s)", db->GetError());
+				return ;
+			}
+			CUtil::RTrim(zTemp,strlen(zTemp));
+			stOrdInfo.sUserId = zTemp;
+
+			if (db->GetStrWithLen("ARTC_CD", 20, zTemp) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadNcntrInfo(ARTC_CD) Error(%s)", db->GetError());
+				return;
+			}
+			CUtil::RTrim(zTemp, strlen(zTemp));
+			stOrdInfo.sArtcCd = zTemp;
+
+			if (db->GetStrWithLen("STK_CD", 20, zTemp) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadNcntrInfo(STK_CD) Error(%s)", db->GetError());
+				return;
+			}
+			CUtil::RTrim(zTemp, strlen(zTemp));
+			stOrdInfo.sStkCd = zTemp;
+
+			if (db->GetStrWithLen("UPDOWN", 20, zTemp) == NULL)
+			{
+				g_log.log(NOTIFY, "LoadNcntrInfo(UPDOWN) Error(%s)", db->GetError());
+				return;
+			}
+			stOrdInfo.cUpDn = zTemp[0];
+
+			stOrdInfo.nOrdStatus	= db->GetLong	("ORD_STATUS");
+			stOrdInfo.dOrdPrc		= db->GetDouble	("ORD_PRC");
+			stOrdInfo.nTickCnt		= db->GetLong	("SL_TICK");
+
+			g_log.log(INFO, "LoadNcntr(UserId:%s)(OrdNo:%d)(ArtcCd:%s)(StkCd:%s)(UpDn:%c)(OrdStatus:%d)(OrdPrc:%f)(SLTick:%d)"
+				, stOrdInfo.sUserId.c_str()
+				, stOrdInfo.OrdNo
+				, stOrdInfo.sArtcCd.c_str()
+				, stOrdInfo.sStkCd.c_str()
+				, stOrdInfo.cUpDn
+				, stOrdInfo.nOrdStatus
+				, stOrdInfo.dOrdPrc
+				, stOrdInfo.nTickCnt
+			);
+
+			map<string, CStkOrdManager*>::iterator it = m_mapStkOrd.find(stOrdInfo.sStkCd);
+			if (it == m_mapStkOrd.end())
+			{
+				g_log.log(ERR, "[LoadNcntr] This symbol is not related(%s)", stOrdInfo.sStkCd.c_str());
+			}
+			else
+			{
+				CStkOrdManager* pStkThread = ((*it).second);
+				pStkThread->RelayOrdAndPrc(_FBI::WM_ORD_RECV, (char*)&stOrdInfo, sizeof(_FBI::ST_SLORD));
+			}
+			
+			db->Next();
+
+		} // while (db->IsNextRow())
+	} // else
+	db->Close();
+	g_log.log(INFO, "Succeeded in LoadNcntr...");
+}
 
 BOOL CFBIMainProc::InitializeSM()
 {
@@ -101,12 +206,14 @@ BOOL CFBIMainProc::InitializeSM()
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_IP", zIp1);
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "MARKET_PORT", zPort1);
 
-	if (!m_smPrc.Begin())
+	m_smPrc = new CSmartMessage;
+
+	if (!m_smPrc->Begin())
 	{
 		g_log.log(NOTIFY, "SM PRC Begin Error. Terminate Application");
 		return FALSE;
 	}
-	if (!m_smPrc.ConnectSMSrv(zIp1, atoi(zPort1)))
+	if (!m_smPrc->ConnectSMSrv(zIp1, atoi(zPort1)))
 	{
 		g_log.log(NOTIFY, "SM PRC connect Error(IP:%s)(Port:%s) Terminate Application", zIp1, zPort1);
 		return FALSE;
@@ -114,34 +221,36 @@ BOOL CFBIMainProc::InitializeSM()
 
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "ORDER_IP", zIp2);
 	CUtil::GetConfig(g_zConfig, "SMSERVER_INFO", "ORDER_PORT", zPort2);
-
-	if (!m_smOrd.Begin())
+	m_smOrd = new CSmartMessage;
+	if (!m_smOrd->Begin())
 	{
 		g_log.log(NOTIFY, "SM Ord Begin Error. Terminate Application");
 		return FALSE;
 	}
-	if (!m_smOrd.ConnectSMSrv(zIp2, atoi(zPort2)))
+	if (!m_smOrd->ConnectSMSrv(zIp2, atoi(zPort2)))
 	{
 		g_log.log(NOTIFY, "SM Ord connect Error(IP:%s)(Port:%s) Terminate Application", zIp2, zPort2);
 		return FALSE;
 	}
 
 
-	m_smPrc.AddDest((char*)SISE_GW, (char*)"");	// MSG_MKT_FX_EXEC);
-	m_smPrc.SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMPrc);
+	m_smPrc->AddDest((char*)SISE_GW, (char*)"");	// MSG_MKT_FX_EXEC);
+	m_smPrc->SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMPrc);
 	g_log.log(NOTIFY, "SM PRC Connect & AddDest Ok(IP:%s)(Port:%s)", zIp1, zPort1);
 
 
-	m_smOrd.AddDest((char*)ORD_REAL_GW, (char*)"");	// MSGR_GW_ORD_NEW);
-	m_smOrd.SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMOrd);
-	g_log.log(NOTIFY, "SM ORD Connect & AddDest Ok(IP:%s)(Port:%s)", zIp2, zPort2);
+	m_smOrd->AddDest((char*)ORD_REAL_GW, (char*)MSGR_GW_ORD_NEW);	// MSGR_GW_ORD_NEW);
+	m_smOrd->SetRecvCallBackFn((LPVOID)this, (RECV_CALLBACK)CallBackSMOrd);
+	g_log.log(NOTIFY, "SM ORD Connect & AddDest Ok(IP:%s)(Port:%s)(%s)(%s)", zIp2, zPort2, ORD_REAL_GW, MSGR_GW_ORD_NEW);
 
 	return TRUE;
 }
 VOID CFBIMainProc::DeInitializeSM()
 {
-	m_smPrc.End();
-	m_smOrd.End();
+	m_smPrc->DisConnectSMSrv();
+	m_smOrd->DisConnectSMSrv();
+	delete m_smPrc;
+	delete m_smOrd;
 }
 
 BOOL CFBIMainProc::CreateStkOrdManagers()
@@ -164,6 +273,7 @@ BOOL CFBIMainProc::CreateStkOrdManagers()
 
 long WINAPI CFBIMainProc::CallBackSMPrc(int index, char* pCustomPtr, char* Message)
 {
+	
 	CFBIMainProc* pThis = (CFBIMainProc*)pCustomPtr;
 
 	if (strncmp(Message, MSG_MKT_FX_EXEC, strlen(Message)) != 0)
@@ -172,7 +282,7 @@ long WINAPI CFBIMainProc::CallBackSMPrc(int index, char* pCustomPtr, char* Messa
 
 	char pRecvData[_FBI::MEM_BLOCK_SIZE] = { 0, };
 	//char* pRecvData = new char[_FBI::MEM_BLOCK_SIZE]
-	int nSize = pThis->m_smPrc.GetBinaryFieldValueEx((char *)fldFXExec, 0, pRecvData);	// (char*)&FutExec);
+	int nSize = pThis->m_smPrc->GetBinaryFieldValueEx((char *)fldFXExec, 0, pRecvData);	// (char*)&FutExec);
 	if (!nSize)
 		return 0;
 
@@ -190,10 +300,6 @@ long WINAPI CFBIMainProc::CallBackSMPrc(int index, char* pCustomPtr, char* Messa
 		return -1;
 	}
 
-	if (strncmp(pack->issue, "CL", 2) != 0)
-	{
-		g_log.log(ERR,"STK ERROR(%s)\n", pack->issue);
-	}
 	((*it).second)->RelayOrdAndPrc(_FBI::WM_RECV_PRC, (void*)pRecvData, nSize);
 	return 0;
 }
@@ -219,24 +325,43 @@ BOOL	bMain;
 long __stdcall CFBIMainProc::CallBackSMOrd(int index, char* pCustomPtr, char* Message)
 {
 	CFBIMainProc* pThis = (CFBIMainProc*)pCustomPtr;
-	if (strncmp(Message, MSGR_GW_ORD_NEW, strlen(Message)) != 0)
+	if (strncmp(Message, MSGR_GW_ORD_NEW, strlen(Message)) != 0 &&
+		strncmp(Message, MSG_ORD_FX_CXL, strlen(Message)) != 0
+		)
 	{
+		printf("return(%s)\n", Message);
 		return -1;
 	}
 
 	char pRecvData[_FBI::MEM_BLOCK_SIZE] = { 0, };
-	char cOrdStatus[32] = { 0, };
-	char cUpDn[32] = { 0, };
-	char zSymbol[32] = { 0, };
+	char cOrdStatus	[32] = { 0, };
+	char cUpDn		[32] = { 0, };
+	char zSymbol	[32] = { 0, };
+	char zUserId	[32] = { 0, };
+	char zType		[32] = { 0, };
+	char zSMMessage	[32] = { 0, };
+	char zDealTp[32] = { 0, };
+	strcpy(zSMMessage, Message);
+
 	CStkOrdManager* pStkThread;
 
 	_FBI::ST_SLORD *pOrd = (_FBI::ST_SLORD *)pRecvData;
 
 	try
 	{
-		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldSymbol, 0, zSymbol), pThis->m_smOrd.GetMsg());
+		ASSERT_BOOL(pThis->m_smOrd->GetStringFieldValue((char*)fldOrdType, 0, zDealTp), pThis->m_smOrd->GetMsg());
+		if (atoi(zDealTp) != _FBI::DEAL_TP_SL) {
+			printf("Not sl(%s)\n", zDealTp);
+			return -1;
+		}
+
+		ASSERT_BOOL(pThis->m_smOrd->GetStringFieldValue((char*)fldSymbol, 0, zSymbol), pThis->m_smOrd->GetMsg());
 		pOrd->sStkCd = string(zSymbol);
 
+		ASSERT_BOOL(pThis->m_smOrd->GetStringFieldValue((char*)fldHDUserID, 0, zUserId), pThis->m_smOrd->GetMsg());
+		pOrd->sUserId = string(zUserId);
+		
+		
 		map<string, CStkOrdManager*>::iterator it = pThis->m_mapStkOrd.find(pOrd->sStkCd);
 		if (it == pThis->m_mapStkOrd.end())
 		{
@@ -244,24 +369,34 @@ long __stdcall CFBIMainProc::CallBackSMOrd(int index, char* pCustomPtr, char* Me
 		}
 		pStkThread = ((*it).second);
 
-		pThis->m_smOrd.GetIntegerFieldValue((char*)fldOrderID, 0, &pOrd->OrdNo);
+		ASSERT_BOOL(pThis->m_smOrd->GetIntegerFieldValue((char*)fldOrderID, 0, &pOrd->OrdNo), pThis->m_smOrd->GetMsg());
 
-		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldOrdType, 1, cOrdStatus), pThis->m_smOrd.GetMsg());
-		if (cOrdStatus[0] == '0')	//fvPlcType_NEW
+		ASSERT_BOOL(pThis->m_smOrd->GetStringFieldValue((char*)fldOrdType, 1, cOrdStatus), pThis->m_smOrd->GetMsg());
+		if (strncmp(zSMMessage, MSGR_GW_ORD_NEW, strlen(zSMMessage))==0)	//fvPlcType_NEW
+		{
 			pOrd->nOrdStatus = _FBI::ORD_STATUS_ORD;
-		if (cOrdStatus[0] == '2')	//fvPlcType_CXL
+			strcpy(zType, "NEW ORD");
+		}
+		if (strncmp(zSMMessage, MSG_ORD_FX_CXL, strlen(zSMMessage))==0)	//fvPlcType_CXL
+		{
 			pOrd->nOrdStatus = _FBI::ORD_STATUS_CNCL;
+			strcpy(zType, "CNCL ORD");
+		}
+		ASSERT_BOOL(pThis->m_smOrd->GetDoubleFieldValue((char*)fldPrice, 0, &pOrd->dOrdPrc), pThis->m_smOrd->GetMsg());
 
-		ASSERT_BOOL(pThis->m_smOrd.GetDoubleFieldValue((char*)fldPrice, 0, &pOrd->dOrdPrc), pThis->m_smOrd.GetMsg());
-
-		ASSERT_BOOL(pThis->m_smOrd.GetStringFieldValue((char*)fldSide, 2, cUpDn), pThis->m_smOrd.GetMsg());
+		ASSERT_BOOL(pThis->m_smOrd->GetStringFieldValue((char*)fldSide, 2, cUpDn), pThis->m_smOrd->GetMsg());
 		if (atoi(cUpDn) ==1)	//sell
 			pOrd->cUpDn = 'D';
-		else
+		else if(atoi(cUpDn) == 2)	//BUY
 			pOrd->cUpDn = 'U';
+		else {
+			g_log.log(ERR, "SIDE Error(Side:%c)", pOrd->cUpDn);
+		}
+		ASSERT_BOOL(pThis->m_smOrd->GetIntegerFieldValue((char*)fldSTOPLossTick, 0, &pOrd->nTickCnt), pThis->m_smOrd->GetMsg());
 
-		ASSERT_BOOL(pThis->m_smOrd.GetIntegerFieldValue((char*)fldSTOPLossTick, 0, &pOrd->nTickCnt), pThis->m_smOrd.GetMsg());
-
+		g_log.log(INFO, "---------------------------------------------------------");
+		g_log.log(INFO, "[RECV ORD-%s](UserID:%s)(OrdNo:%d)(OrdPrc:%f)(UpDn:%c)(TickCnd:%d)",
+			zType, pOrd->sUserId.c_str(), pOrd->OrdNo, pOrd->dOrdPrc, pOrd->cUpDn, pOrd->nTickCnt);
 		pStkThread->RelayOrdAndPrc(_FBI::WM_ORD_RECV, pRecvData, sizeof(_FBI::ST_SLORD));
 	}
 	catch (CIRExcept e)
@@ -283,7 +418,6 @@ const int WM_ORD_FIRED		= WM_USER + 519;
 */
 unsigned WINAPI CFBIMainProc::SaveResultThread(LPVOID lp)
 {
-	return 0;
 	CFBIMainProc* pThis = (CFBIMainProc*)lp;
 	char zQ[1024];
 	
@@ -324,7 +458,8 @@ unsigned WINAPI CFBIMainProc::SaveResultThread(LPVOID lp)
 						g_log.log(NOTIFY, "Failed to read AA_ORD_RESULT_SL recordset(%s)", db->GetError());
 						break;
 					}
-					//TODO. pThis->SendToClient(cPack, 0);
+					
+					pThis->SendToClient(pSlOrd);
 				}
 
 				g_memPool.release((char*)pSlOrd);
@@ -336,32 +471,40 @@ unsigned WINAPI CFBIMainProc::SaveResultThread(LPVOID lp)
 	return 0;
 }
 
-VOID CFBIMainProc::SendToClient()
+VOID CFBIMainProc::SendToClient(_FBI::ST_SLORD* pOrdInfo)
 {
-	char zClientSendBuf[1024] = { 0, };
-	_FBI::PT_DEAL_STATUS *cPack = (_FBI::PT_DEAL_STATUS *)zClientSendBuf;
+	int nRet = 0;
+	char z[128];
+	SYSTEMTIME st;	char time[32];
+	GetLocalTime(&st); sprintf(time, "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+	
+	try
+	{
+		ASSERT_BOOL(m_smOrd->SetHeaderOfSMessage(Delivery_Push, (char*)EXEC_REAL_GW, (char*)MSGR_DEAL_STATUS_SL, 0), m_smOrd->GetMsg());
 
-	//FillMemory(zClientSendBuf, sizeof(_FBI::PT_DEAL_STATUS), 0x20);
-	//cPack->STX[0] = _FBI::STX;
+		//sprintf(z, "%.*s", sizeof(pOrdInfo->sUserId))
 
-	//char len[32];
-	//sprintf(len, "%d", sizeof(_FBI::PT_DEAL_STATUS));
-	//memcpy(cPack->Len, len, strlen(len));
-	////memcpy(cPack->ArtcCd, pSlOrd->sArtcCd.c_str(), min(sizeof(cPack->ArtcCd), pSlOrd->sArtcCd.size()));
-	//memcpy(cPack->StkCd, pSlOrd->sStkCd.c_str(), min(sizeof(cPack->StkCd), pSlOrd->sStkCd.size()));
-	////memcpy(cPack->DealSeq, z, strlen(z));
-	//cPack->DealStatus[0] = '5';
-	//cPack->OrdResult[0] = pSlOrd->cWinLose;
-	////memcpy(cPack->Time, pDeal->tm_end, sizeof(cPack->Time));
-	//memcpy(cPack->ClosePrc, pSlOrd->sFiredPrc.c_str(), min(sizeof(cPack->ClosePrc), pSlOrd->sFiredPrc.size()));
+		ASSERT_BOOL(m_smOrd->SetStringFieldValue((char*)fldHDUserID, (char*)pOrdInfo->sUserId.c_str()), m_smOrd->GetMsg());
+		ASSERT_BOOL(m_smOrd->SetStringFieldValue((char*)fldSymbol, (char*)pOrdInfo->sStkCd.c_str()), m_smOrd->GetMsg());
 
-	//// yyyymmddhhmm => hh:mm
-	////sprintf(pThis->m_zNextCandleTm, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
-	////sprintf(cPack->CandleTime, "%.2s:%.2s", zChartNm + 8, zChartNm + 10);
-	////memcpy(cPack->CandleTime, pDeal->tm_chart, sizeof(pDeal->tm_chart));
+		sprintf(z, "%d", pOrdInfo->OrdNo);
+		ASSERT_BOOL(m_smOrd->SetStringFieldValue((char*)fldOrderID, z), m_smOrd->GetMsg());
 
-	//cPack->ETX[0] = _FBI::ETX;
-	//*(cPack->ETX + 1) = 0x00;
+		sprintf(z, "%c", pOrdInfo->cWinLose);
+		ASSERT_BOOL(m_smOrd->SetStringFieldValue((char*)fldRealOrdFlag, z), m_smOrd->GetMsg());
+
+		ASSERT_BOOL(m_smOrd->SetStringFieldValue((char*)fldFxCloseTime, time), m_smOrd->GetMsg());
+		
+
+		ASSERT_BOOL(m_smOrd->SendData(), m_smOrd->GetMsg());
+	}
+	catch (CIRExcept e)
+	{
+		g_log.log(ERR, "[SendToClient]SM Error(%s)", e.GetMsg());
+		return ;
+	}
+	g_log.log(INFO, "[SendToClient][%s][%s](ID:%s)(OrdNo:%d)(WinLose:%c)",
+		EXEC_REAL_GW, MSGR_DEAL_STATUS_SL, pOrdInfo->sUserId.c_str(), pOrdInfo->OrdNo, pOrdInfo->cWinLose);
 }
 
 BOOL CFBIMainProc::LoadStkInfo()
@@ -401,10 +544,10 @@ BOOL CFBIMainProc::LoadStkInfo()
 			lDotCnt = db->GetLong("DOT_CNT");
 
 			//TODO
-			if (strncmp(zArtcCd, "CL", 2) != 0) {
-				db->Next();
-				continue;
-			}
+			//if (strncmp(zArtcCd, "CL", 2) != 0) {
+			//	db->Next();
+			//	continue;
+			//}
 			//////////////////////////////////////////////////////////////////////////////
 
 			/*
@@ -421,7 +564,6 @@ BOOL CFBIMainProc::LoadStkInfo()
 
 			m_lstStkInfo.push_back(info);
 			g_log.log(INFO, "LoadSymbol(%s)", zStCd);
-			printf("LoadSymbol(%s)\n", zStCd);
 
 			db->Next();
 			nIdx++;
@@ -441,7 +583,7 @@ VOID CFBIMainProc::ClearDealMap()
 	for (it = m_mapStkOrd.begin(); it != m_mapStkOrd.end(); ++it)
 	{
 		CStkOrdManager* s = (*it).second;
-		delete s;
+		//TODO. delete s;
 	}
 	m_mapStkOrd.clear();
 	LeaveCriticalSection(&m_csStkOrd);
