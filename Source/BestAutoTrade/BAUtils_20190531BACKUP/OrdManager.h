@@ -13,11 +13,8 @@ public:
 	COrdManager();
 	~COrdManager();
 
-	void BeginCheck();
-	int	DeletedOrderCnt();
-
-
-	int	AddNewOrder(
+	
+	void Initialize(
 		int		ticket
 		, int		type
 		, double	lots
@@ -31,9 +28,9 @@ public:
 		, double	swap
 		, double	profit
 		, char*		comment
-		, int		magic
-		, bool		bChecked
-	);
+		, int		magic);
+	void DeInitialize();
+	void SetComplete();
 
 	CHANGED_RET CheckChange(
 		int		ticket
@@ -56,16 +53,49 @@ public:
 		, /*out*/int&		oOpenedTm
 	);
 
-	int GetClosedOrd(int* arrTicket, double* arrLots);
+	bool	GetClosedOrd(
+		int& ticket
+		//, int&		type
+		, double&	lots
+		//, int&		open_time
+		//, double&	open_price
+		//, double&	stoploss
+		//, double&	takeprofit
+		//, int&		close_time
+		//, double&	close_price
+		//, double&	commission
+		//, double&	swap
+		//, double&	profit
+		//, char*		comment
+		//, int&		magic
+	);
 
 
 private:
-	void	Clear();
+	void	Clear(bool bMapLast);
+	CHANGED_RET CompareOrd(int ticket, MT4_ORD* pLast);
 
+	void  AddNewList(
+		int		ticket
+		, int		type
+		, double	lots
+		, int		open_time
+		, double	open_price
+		, double	stoploss
+		, double	takeprofit
+		, int		close_time
+		, double	close_price
+		, double	commission
+		, double	swap
+		, double	profit
+		, char*		comment
+		, int		magic
+		, bool		bInit = false
+	);
 private:
+
 	map<int, MT4_ORD*>		m_mapOrdLast;
+	map<int, MT4_ORD*>		m_mapOrdNew;
 	bool					m_bDeInit;
-
-	int						m_nUnCheckedCnt;
 };
 

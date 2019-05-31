@@ -27,7 +27,7 @@ void  BAUtils_OMInitialize(
 	, int		magic
 )
 {
-	g_oManager.AddNewOrder(
+	g_oManager.Initialize(
 		ticket
 		, type
 		, lots
@@ -42,16 +42,19 @@ void  BAUtils_OMInitialize(
 		, profit
 		, comment
 		, magic
-		, true
 	);
 }
 
 void BAUtils_OMDeInitialize()
 {
-	//g_oManager.DeInitialize();
+	g_oManager.DeInitialize();
 	g_log.Close();
 }
 
+void BAUtils_OMSetComplete()
+{
+	g_oManager.SetComplete();
+}
 
 CHANGED_RET BAUtils_OMCheckChange(
 //int BAUtils_OMCheckChange(
@@ -97,18 +100,39 @@ CHANGED_RET BAUtils_OMCheckChange(
 	);
 }
 
-int BAUtils_OMGetClosedOrd(int* arrTicket, double* arrLots)
+bool BAUtils_OMGetClosedOrd(
+	int& ticket
+	//, int&		type
+	, double&	lots
+	//, int&		open_time
+	//, double&	open_price
+	//, double&	stoploss
+	//, double&	takeprofit
+	//, int&		close_time
+	//, double&	close_price
+	//, double&	commission
+	//, double&	swap
+	//, double&	profit
+	//, char*		comment
+	//, int&		magic
+)
 {
-	return g_oManager.GetClosedOrd(arrTicket, arrLots);
-}
-
-void	BAUtils_OMBeginCheck()
-{
-	g_oManager.BeginCheck();
-}
-int	BAUtils_OMDeletedOrderCnt()
-{
-	return g_oManager.DeletedOrderCnt();
+	return g_oManager.GetClosedOrd(
+		ticket
+		//, type
+		, lots
+		//, open_time
+		//, open_price
+		//, stoploss
+		//, takeprofit
+		//, close_time
+		//, close_price
+		//, commission
+		//, swap
+		//, profit
+		//, comment
+		//, magic
+	);
 }
 
 

@@ -48,7 +48,7 @@ struct MT4_ORD
 	double      profit;
 	string      comment;
 	int         magic;
-	bool		bChecked;
+	CHANGED_RET	changedRet;
 };
 
 //+------------------------------------------------------------+
@@ -72,6 +72,7 @@ BA_UTILS void  BAUtils_OMInitialize(
 );
 
 BA_UTILS void BAUtils_OMDeInitialize();
+BA_UTILS void BAUtils_OMSetComplete();
 
 BA_UTILS CHANGED_RET BAUtils_OMCheckChange(
 	int		ticket
@@ -94,9 +95,23 @@ BA_UTILS CHANGED_RET BAUtils_OMCheckChange(
 	, /*out*/int&		oOpenedTm
 );
 
-BA_UTILS int	BAUtils_OMGetClosedOrd(int* arrTicket, double* arrLots);
-BA_UTILS void	BAUtils_OMBeginCheck();
-BA_UTILS int	BAUtils_OMDeletedOrderCnt();
+BA_UTILS bool	BAUtils_OMGetClosedOrd(
+	int& ticket
+	//, int&		type
+	, double&	lots
+	//, int&		open_time
+	//, double&	open_price
+	//, double&	stoploss
+	//, double&	takeprofit
+	//, int&		close_time
+	//, double&	close_price
+	//, double&	commission
+	//, double&	swap
+	//, double&	profit
+	//, char*		comment
+	//, int&		magic
+);
+
 
 //+------------------------------------------------------------+
 //	Utility
