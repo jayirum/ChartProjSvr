@@ -2,38 +2,39 @@
 #include "SmartMessage.h"
 #include "Util.h"
 
-TInitialize Initialize;
-TSMClientConnect SMClientConnect;
-TSMClientDisconnect SMClientDisconnect;
-TSMClientIsConnected SMClientIsConnected;
-TSMSetMessageParameters SMSetMessageParameters;
-TSMSetMessageBinaryField SMSetMessageBinaryField;
-TSMSetMessageStringField SMSetMessageStringField;
-TSMSetMessageIntegerField SMSetMessageIntegerField;
-TSMSendMessage SMSendMessage;
-TSMGetClientUniqKey SMGetClientUniqKey;
-TSMGetClientIP SMGetClientIP;
-TSMEventAddDestination SMEventAddDestination;
-TSMEventRemoveDestination SMEventRemoveDestination;
-TSMEventAllRemoveDestination SMEventAllRemoveDestination;
-TSMGetReceivedCnt SMGetReceivedCnt;
-TSMSetWorkEventCallBack SMSetWorkEventCallBack;
-TSMMessageGetBinaryFieldValue SMMessageGetBinaryFieldValue;
-TSMMessageGetBinaryFieldValueEx SMMessageGetBinaryFieldValueEx;
-TSMMessageGetStringFieldValue SMMessageGetStringFieldValue;
-TSMMessageGetIntegerFieldValue SMMessageGetIntegerFieldValue;
-TSMMessageGetDoubleFieldValue SMMessageGetDoubleFieldValue;
-TSMGetObjectsNumber SMGetObjectsNumber;
-TSMGetMaximumObjectsNumber SMGetMaximumObjectsNumber;
-TSMCreateInstance SMCreateInstance;
-TSMMessageGetDeliveryMode SMMessageGetDeliveryMode;
-TSMSendResponse SMSendResponse;
-TSMMessageGetDestination SMMessageGetDestination;
-TSMMessageGetMsg SMMessageGetMsg;
-TSMMessageGetClientSession SMMessageGetClientSession;
-TSMSMessageToSMessageEx SMSMessageToSMessageEx;
-TSMGetMsgOfRecvMsg SMGetMsgOfRecvMsg;
-TSetSMMessageHeader SetSMMessageHeader;
+TSMInitialize					SMInitialize;
+TSMDeInitialize					SMDeInitialize;
+TSMClientConnect				SMClientConnect;
+TSMClientDisconnect				SMClientDisconnect;
+TSMClientIsConnected			SMClientIsConnected;
+TSMSetMessageParameters			SMSetMessageParameters;
+TSMSetMessageBinaryField		SMSetMessageBinaryField;
+TSMSetMessageStringField		SMSetMessageStringField;
+TSMSetMessageIntegerField		SMSetMessageIntegerField;
+TSMSendMessage					SMSendMessage;
+TSMGetClientUniqKey				SMGetClientUniqKey;
+TSMGetClientIP					SMGetClientIP;
+TSMEventAddDestination			SMEventAddDestination;
+TSMEventRemoveDestination		SMEventRemoveDestination;
+TSMEventAllRemoveDestination	SMEventAllRemoveDestination;
+TSMGetReceivedCnt				SMGetReceivedCnt;
+TSMSetWorkEventCallBack			SMSetWorkEventCallBack;
+TSMMessageGetBinaryFieldValue	SMMessageGetBinaryFieldValue;
+TSMMessageGetBinaryFieldValueEx	SMMessageGetBinaryFieldValueEx;
+TSMMessageGetStringFieldValue	SMMessageGetStringFieldValue;
+TSMMessageGetIntegerFieldValue	SMMessageGetIntegerFieldValue;
+TSMMessageGetDoubleFieldValue	SMMessageGetDoubleFieldValue;
+TSMGetObjectsNumber				SMGetObjectsNumber;
+TSMGetMaximumObjectsNumber		SMGetMaximumObjectsNumber;
+TSMCreateInstance				SMCreateInstance;
+TSMMessageGetDeliveryMode		SMMessageGetDeliveryMode;
+TSMSendResponse					SMSendResponse;
+TSMMessageGetDestination		SMMessageGetDestination;
+TSMMessageGetMsg				SMMessageGetMsg;
+TSMMessageGetClientSession		SMMessageGetClientSession;
+TSMSMessageToSMessageEx			SMSMessageToSMessageEx;
+TSMGetMsgOfRecvMsg				SMGetMsgOfRecvMsg;
+TSetSMMessageHeader				SetSMMessageHeader;
 
 
 CSmartMessage::CSmartMessage()
@@ -51,6 +52,10 @@ CSmartMessage::~CSmartMessage()
 
 VOID CSmartMessage::End()
 {
+//	if (m_lIdx == 0) {
+//		SMDeInitialize();
+//	}
+	Sleep(100);
 	if(m_hIns)
 		FreeLibrary(m_hIns);
 	m_hIns = NULL;
@@ -379,11 +384,19 @@ BOOL CSmartMessage::Begin()
 
 		//ShowMessage(IntToStr((int)sizeof(TFutExec)));
 
-		Initialize = NULL;
-		Initialize = (TInitialize)GetProcAddress(m_hIns, "Initialize");
-		if (Initialize == NULL)
+		SMInitialize = NULL;
+		SMInitialize = (TSMInitialize)GetProcAddress(m_hIns, "Initialize");
+		if (SMInitialize == NULL)
 		{
 			sprintf(m_zMsg, "Initialize function not found in the DLL !\n");
+			return FALSE;
+		}
+
+		SMDeInitialize = NULL;
+		SMDeInitialize = (TSMDeInitialize)GetProcAddress(m_hIns, "DeInitialize");
+		if (SMDeInitialize == NULL)
+		{
+			sprintf(m_zMsg, "DeInitialize function not found in the DLL !\n");
 			return FALSE;
 		}
 
@@ -640,7 +653,7 @@ BOOL CSmartMessage::Begin()
 		}
 		
 
-		if (Initialize() != 0)
+		if (SMInitialize() != 0)
 			return FALSE;
 	}
 	return CreateInstance();
