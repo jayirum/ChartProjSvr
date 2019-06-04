@@ -989,8 +989,10 @@ void CDealManagerTenOp::UpdateDealStatus(_FBI::ST_DEAL_INFO_TENOP* pInfo)
 	}
 
 	// Result is sent after complete the result
-	if(pInfo->DealStatus != _FBI::DEAL_STATUS_RESULTING_TENOP)
+	if (pInfo->DealStatus != _FBI::DEAL_STATUS_RESULTING_TENOP) {
 		PostThreadMessage(m_unToClientThread, _FBI::WM_RESULT_START, 0, (LPARAM)pDeal);
+		g_log.log(INFO, "[10M][UpdateDealStatus](%s)", packet);
+	}
 }
 
 

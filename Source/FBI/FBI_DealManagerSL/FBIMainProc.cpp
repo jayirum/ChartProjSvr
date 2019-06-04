@@ -96,7 +96,7 @@ void CFBIMainProc::Finalize()
 
 VOID CFBIMainProc::ThreadFunc()
 {
-	LoadNcntrInfo();
+	//TODO. LoadNcntrInfo();
 	Is_TimeOfStop(INFINITE);
 }
 
@@ -503,8 +503,8 @@ VOID CFBIMainProc::SendToClient(_FBI::ST_SLORD* pOrdInfo)
 		g_log.log(ERR, "[SendToClient]SM Error(%s)", e.GetMsg());
 		return ;
 	}
-	g_log.log(INFO, "[SendToClient][%s][%s](ID:%s)(OrdNo:%d)(WinLose:%c)",
-		EXEC_REAL_GW, MSGR_DEAL_STATUS_SL, pOrdInfo->sUserId.c_str(), pOrdInfo->OrdNo, pOrdInfo->cWinLose);
+	g_log.log(INFO, "[SendToClient][%s][%s](ID:%s)(OrdNo:%d)(%s)(WinLose:%c)",
+		EXEC_REAL_GW, MSGR_DEAL_STATUS_SL, pOrdInfo->sUserId.c_str(), pOrdInfo->OrdNo, pOrdInfo->sStkCd.c_str(), pOrdInfo->cWinLose);
 }
 
 BOOL CFBIMainProc::LoadStkInfo()

@@ -124,10 +124,10 @@ BOOL CFBIMainProc::LoadStkCode()
 			}
 
 			//TODO
-			/*if (strncmp(zArtcCd, "CL", 2) != 0) {
-				db->Next();
-				continue;
-			}*/
+			//if (strncmp(zArtcCd, "CL", 2) != 0) {
+			//	db->Next();
+			//	continue;
+			//}
 			//////////////////////////////////////////////////////////////////////////////
 
 			//TODO
@@ -172,9 +172,9 @@ BOOL CFBIMainProc::LoadStkCode()
 			m_mapDealManagerTenOp[zStCd] = pTenOp;
 			LeaveCriticalSection(&m_csDMTenOp);
 
-			
-			g_log.log(INFO, "LoadSymbol(%s)", zStCd);
-			printf("LoadSymbol(%s)\n", zStCd);
+			//
+			//g_log.log(INFO, "LoadSymbol(%s)", zStCd);
+			//printf("LoadSymbol(%s)\n", zStCd);
 
 			CDBHandlerAdo db2(m_pDBPool->Get());
 			sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 성공.' ", zStCd);
@@ -284,8 +284,8 @@ unsigned WINAPI CFBIMainProc::SendToClientThread(LPVOID lp)
 				g_memPool.release((char*)p);
 				continue;
 			}
-			//g_log.log(INFO, "[SendToClient][%s][%s](Symbol:%s)(DealSeq:%s)(DealTp:%s)(DealStatus:%s)(OrdResult:%s)(CandleTM:%s)",
-			//	EXEC_REAL_GW, SMHeaderMsg, zSymbol, zDealSeq, zDealTp, zDealStatus, zOrdResult, zCandleTM);
+			g_log.log(INFO, "[SendToClient][%s][%s](Symbol:%s)(DealSeq:%s)(DealTp:%s)(DealStatus:%s)(OrdResult:%s)(CandleTM:%s)",
+				EXEC_REAL_GW, SMHeaderMsg, zSymbol, zDealSeq, zDealTp, zDealStatus, zOrdResult, zCandleTM);
 
 			g_memPool.release((char*)p);
 		} //if (msg.message == _FBI::WM_ORD_FIRED)
