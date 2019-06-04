@@ -6612,3 +6612,7 @@ Source/BestAutoTrade/NanoRep/Debug/NanoRep.exe
 Source/BestAutoTrade/NanoPairTest/Debug/nanomsg.dll
 Source/BestAutoTrade/NanoPairClient/Debug/nanomsg.dll
 Source/BestAutoTrade/NanoPairClient/Debug/NanoPairClient.exe
+*.ex4
+Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/nanomsg.dll
+Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/BAUtils.dll
+Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/_OANDA
