@@ -212,7 +212,7 @@ BOOL CDealManager::LoadDealInfo()
 		db->Next();
 	}
 	db->Close();
-	g_log.log(INFO, "Succeeded in DealInfo[%s][Count:%d]", m_zArtcCd, m_mapDeal.size());
+	g_log.log(INFO, "[ 3M]Succeeded in DealInfo[%s][Count:%d]", m_zArtcCd, m_mapDeal.size());
 	return TRUE;
 }
 

@@ -103,10 +103,10 @@ BOOL CFBIMainProc::LoadStkCode()
 			}
 
 			//TODO
-			//if (strncmp(zArtcCd, "CL", 2) != 0) {
-			//	db->Next();
-			//	continue;
-			//}
+			if (strncmp(zArtcCd, "CL", 2) != 0) {
+				db->Next();
+				continue;
+			}
 			//////////////////////////////////////////////////////////////////////////////
 
 			//TODO
