@@ -6616,3 +6616,8 @@ Source/BestAutoTrade/NanoPairClient/Debug/NanoPairClient.exe
 Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/nanomsg.dll
 Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/BAUtils.dll
 Source/BestAutoTrade/EASrc/BestAutoTrade_20190604_LOCAL/Experts/_OANDA
+Source/BestAutoTrade/EASrc/Experts/_OANDA
+Source/BestAutoTrade/EASrc/Experts/BAUtils.dll
+Source/BestAutoTrade/EASrc/Experts/nanomsg.dll
+Source/BestAutoTrade/EASrc/Experts/mqlcache.dat
+Source/_Bin/BA_RelayRemote.exe
