@@ -6605,3 +6605,10 @@ Source/BestAutoTrade/Release/BAUtils.lib
 Source/BestAutoTrade/Release/MyDll_1.dll
 Source/BestAutoTrade/Release/MyDll_1.exp
 Source/BestAutoTrade/Release/MyDll_1.lib
+Source/BestAutoTrade/NanoReq/Debug/NanoReq.exe
+Source/BestAutoTrade/NanoReq/Debug/nanomsg.dll
+Source/BestAutoTrade/NanoRep/Debug/nanomsg.dll
+Source/BestAutoTrade/NanoRep/Debug/NanoRep.exe
+Source/BestAutoTrade/NanoPairTest/Debug/nanomsg.dll
+Source/BestAutoTrade/NanoPairClient/Debug/nanomsg.dll
+Source/BestAutoTrade/NanoPairClient/Debug/NanoPairClient.exe
