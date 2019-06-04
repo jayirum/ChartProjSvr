@@ -103,58 +103,28 @@ CProtoGet::~CProtoGet()
 
 void CProtoGet::SetValByField(char* pzFd, char* pzVal, ST_VAL* pVal)
 {
-	SetValByField(atoi(pzFd), pzVal, pVal);
-}
-void CProtoGet::SetValByField(int nFd, char* pzVal, ST_VAL* pVal)
-{
-	switch (nFd)
+	int nFd = atoi(pzFd);
+	if (nFd > 0 && nFd < 100)
 	{
-
-	case FDS_CODE:
-	case FDS_COMMAND:
-	case FDS_SYS:
-	case FDS_TM_HEADER:
-	case FDS_BROKER:
-	case FDS_REGUNREG:
-	case FDS_SYMBOL:
-	case FDS_ORD_ACTION:
-	case FDS_OPENED_TM:
-	case FDS_CLOSED_TM:
-	case FDS_COMMENTS:
-	case FDS_LIVEDEMO:
 		pVal->sVal = pzVal;
-		break;
-
-	case FDN_ACCNO_MY:
-	case FDN_ACCNO_MASTER:
-	case FDN_OPENED_TICKET:
-	case FDN_CLOSED_TICKET:
-	case FDN_ORD_TYPE:
+	}
+	else if (nFd >= 100 && nFd < 200)
+	{
 		pVal->nVal = atoi(pzVal);
-		break;
-
-	case FDD_OPENED_PRC:
-	case FDD_CLOSED_PRC:
-	case FDD_OPENED_LOTS:
-	case FDD_CLOSED_LOTS:
-	case FDD_SLPRC:
-	case FDD_PTPRC:
-	case FDD_PROFIT:
-	case FDD_SWAP:
-	case FDD_COMMISSION:
+	}
+	else if (nFd>=200 && nFd<300){
 		pVal->dVal = atof(pzVal);
-		break;
 	}
 }
 
-int CProtoGet::Parsing(_In_  char* pData, int nDataLen)
+int CProtoGet::Parsing(_In_  const char* pData, int nDataLen)
 {
 	sprintf(m_zBuf, "%.*s",nDataLen, pData);
 	m_mapResult.erase(m_mapResult.begin(), m_mapResult.end());
 	char temp[1024];
 	char zFd[32], zVal[1024];
 	char* pEqual;
-	char* pFirst = pData;
+	char* pFirst = m_zBuf;
 	char* pDeli = strchr(pFirst, DEF_DELI);
 
 	// 1=1004/2=2049/

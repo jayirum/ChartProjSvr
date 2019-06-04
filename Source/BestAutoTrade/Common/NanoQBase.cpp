@@ -1,4 +1,5 @@
 #include "NanoQBase.h"
+#include "./utils/err.c"
 
 CNanoQ::CNanoQ() 
 {
@@ -33,7 +34,7 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 		{
 		case TP_PIPE_READER:
 		case TP_PIPE_WRITER:
-			sprintf(m_zChannelNm, "inproc://%s", RELAY_CHANNEL_NM);
+			sprintf(m_zChannelNm, "inproc://%s", LOCAL_RELAY_CHANNEL);
 			break;
 		case TP_PUB:
 		case TP_SUB:
@@ -47,7 +48,7 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 		{
 		case TP_PIPE_READER:
 		case TP_PIPE_WRITER:
-			sprintf(m_zChannelNm, "ipc://%s", RELAY_CHANNEL_NM);
+			sprintf(m_zChannelNm, "ipc://%s", LOCAL_RELAY_CHANNEL);
 			break;
 		case TP_PUB:
 		case TP_SUB:
@@ -61,11 +62,9 @@ BOOL CNanoQ::Begin(char* pzAccNo, int nTimeout, int nQueueTp, BOOL bCallbackUse)
 		{
 		case TP_PIPE_READER:
 		case TP_PIPE_WRITER:
-			sprintf(m_zChannelNm, "tcp://110.4.89.206:22121");
-			break;
 		case TP_PUB:
 		case TP_SUB:
-			sprintf(m_zChannelNm, "tcp://110.4.89.206:22122");
+			sprintf(m_zChannelNm, "tcp://%s", pzAccNo);
 			break;
 		}
 	}
