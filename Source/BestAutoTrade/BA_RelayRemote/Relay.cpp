@@ -35,7 +35,7 @@ BOOL CRelay::Begin()
 
 	// connection manager
 	m_connManager = new CConnManager;
-	m_connManager->RegCallBackForCloseSess(this, (PClosingCallBack)ClosingProc);
+	m_connManager->RegCallBackForCloseSess(this, (PResultCallBack)CallBackReturnClient);
 
 	m_pubMaster = new CPubToMS;
 	if (!m_pubMaster->InitChannel(CLIENT_TP::MASTR))
@@ -70,39 +70,29 @@ BOOL CRelay::RecvQInit()
 		return FALSE;
 	} 
 	
-	m_recvQ->RegisterCallBack((LPVOID)this, (PRecvCallBack)RecvProc);
+	m_recvQ->RegisterCallBack((LPVOID)this, (PRecvCallBack)CallBackRecvProc);
 	return TRUE;
 }
 
 
-//enum CLOSING_TP { SLAVE = 0, MASTER };
-void WINAPI CRelay::ClosingProc(void *pClassInstance, int nPubScopeTp, char *pClosingId)
+//enum PUBSCOPE_TP {
+//	ALLSLAVES_UNDER_ONEMASTER,	//	All slaves under one master id
+//	ONESLAVE_WITH_ID,			//	one Specific Slave
+//	ALLMASTERS,					//	All Masters
+//	ONEMASTER_WITH_ID,			//	one specific master
+//	ALL
+//};
+void WINAPI CRelay::CallBackReturnClient(CLIENT_TP , void *pClassInstance, const char* pPacket, const int nLen)
 {
 	CRelay* pThis = (CRelay*)pClassInstance;
 
-	char		temp[128];
-	char		zSendBuf[128];
-	int			nSendLen;
-	CProtoSet	ProtoSet;
+	pThis->m_pubSlave->PubData((char*)pPacket, nLen);
 
-	ProtoSet.Begin();
-	ProtoSet.SetVal(FDS_CODE, CODE_LOGOFF);
-	ProtoSet.SetVal(FDS_COMMAND, TP_COMMAND);
-	ProtoSet.SetVal(FDS_SYS, "RELAY");
-	ProtoSet.SetVal(FDS_TM_HEADER, Now(temp));
-	ProtoSet.SetVal(FDS_USERID_MASTER, pClosingId);
-	ProtoSet.SetVal(FDN_PUBSCOPE_TP, nPubScopeTp);
-	//ProtoSet.SetVal(FDS_USERID_MINE, m_sMyId);
-	//ProtoSet.SetVal(FDN_ACCNO_MY, m_nMyAccNo);
-	//ProtoSet.SetVal(FDN_ACCNO_MASTER, m_nMasterAccNo);
-	//ProtoSet.SetVal(FDS_BROKER, AccountInfoString(ACCOUNT_COMPANY));
-
-	nSendLen = ProtoSet.Complete(zSendBuf);
-	pThis->m_pubSlave->PubData(zSendBuf, nSendLen);
+	delete[]pPacket;
 }
 
 // class instance pointer, recv data, return value
-void WINAPI CRelay::RecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen)
+void WINAPI CRelay::CallBackRecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen)
 {
 	g_log.log(INFO,"[RECV][LEN:%d](%.*s)\n", nRecvLen, nRecvLen, pRecvBuf);
 
@@ -112,7 +102,7 @@ void WINAPI CRelay::RecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen)
 	string sCode;
 	if (!pThis->m_protoGet.GetCode(sCode))
 	{
-		g_log.log(INFO, "RecvProc but there is no Code");
+		g_log.log(INFO, "CallBackRecvProc but there is no Code");
 		return;
 	}
 

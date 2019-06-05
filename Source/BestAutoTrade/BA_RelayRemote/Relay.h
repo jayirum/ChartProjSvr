@@ -24,8 +24,8 @@ public:
 
 	BOOL Begin();
 	void End();
-	static void WINAPI RecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen);	// class instance pointer, recv data, return value
-	static void WINAPI ClosingProc(void *pClassInstance, int nPubScopeTp, char *pClosingId);	
+	static void WINAPI CallBackRecvProc(void *pClassInstance, char *pRecvBuf, int nRecvLen);	// class instance pointer, recv data, return value
+	static void WINAPI CallBackReturnClient(CLIENT_TP clientTp, void *pClassInstance, const char* pPacket, const int nLen);
 
 private:
 	BOOL	RecvQInit();

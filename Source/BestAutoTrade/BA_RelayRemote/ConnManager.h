@@ -10,17 +10,32 @@
 using namespace _BA_RELAY;
 using namespace std;
 
+struct ST_MASTER_COUNT
+{
+	UINT	unLimit;
+	UINT	unCurrCnt;
+};
+
+typedef map<string, ST_MASTER_COUNT>				MAP_MASTER;
+typedef map<string, ST_MASTER_COUNT>::iterator		ITMAP_MASTER;
+
 typedef map<string, UINT>					MAP_SESSION;
 typedef map<string, UINT>::iterator			ITMAP_SESSION;
 
-// class instance pointer, type, closing ID
-// type : enum PUBSCOPE_TP 
-typedef  void(__stdcall *PClosingCallBack)(void*, int, const char*);
+
+// class instance pointer, type, closing ID, message
+
+typedef  void(__stdcall *PResultCallBack)(
+	CLIENT_TP,		//	{ MASTR=0, SLAVE};
+	void*,			//	pClassInstance:class instance pointer
+	const char*,	//	pPacket
+	int				//	packet len
+	);
 
 struct SESS_TOBE_CLOSED
 {
-	PClosingCallBack	fn;
-	LPVOID				lpClassInstancePtr;
+	PResultCallBack	fn;
+	LPVOID			lpClassInstancePtr;
 };
 
 class CConnManager : public CBaseThread
@@ -34,7 +49,7 @@ public:
 	VOID UpdatePing(string sUserId);
 
 	void ThreadFunc();
-	void RegCallBackForCloseSess(LPVOID lpClassInstancePtr, PClosingCallBack lpCallBack);
+	void RegCallBackForCloseSess(LPVOID lpClassInstancePtr, PResultCallBack lpCallBack);
 
 private:
 	inline void LockMasters() { EnterCriticalSection(&m_csMasters); }
@@ -42,7 +57,7 @@ private:
 	inline void LockSess() { EnterCriticalSection(&m_csSess); }
 	inline void UnLockSess() { LeaveCriticalSection(&m_csSess); }
 private:
-	MAP_SESSION			m_mapMasters;	//	master id, slave count
+	MAP_MASTER			m_mapMasters;	//	master id, slave count
 	MAP_SESSION			m_mapSess;		//	master/slave id, last tickcount
 
 	CRITICAL_SECTION	m_csMasters;

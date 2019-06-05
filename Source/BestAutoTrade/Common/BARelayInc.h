@@ -8,12 +8,12 @@
 
 namespace _BA_RELAY
 {
-	enum QUEUE_TP { TP_INPROC, TP_INTERPROC, TP_TCP };
+	enum QUEUE_TP	{ TP_INPROC, TP_INTERPROC, TP_TCP };
 	enum NANOMSG_TP { TP_PIPE_READER, TP_PIPE_WRITER, TP_PUB, TP_SUB };
 
-	enum { Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
+	enum BA_RESULT	{ Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 
-	enum CLIENT_TP { MASTR=0, SLAVE};
+	enum CLIENT_TP	{ MASTR=0, SLAVE};
 	enum PUBSCOPE_TP {
 		ALLSLAVES_UNDER_ONEMASTER,	//	All slaves under one master id
 		ONESLAVE_WITH_ID,			//	one Specific Slave
@@ -33,14 +33,16 @@ namespace _BA_RELAY
 	const char CODE_PUBLISH_ORDER[]	= "1004";
 	const char CODE_PING[]			= "1005";
 	const char CODE_LOGOFF[]		= "1006";
+	const char CODE_LOGON[]			= "1007";
 	const char CODE_PUBLISH_TEST[]	= "9001";
 
-	const char TP_COMMAND = 'C';
-	const char TP_ORDER = 'O';
-	const char TP_REG = 'R';
-	const char TP_UNREG = 'U';
+	const char TP_COMMAND	= 'C';
+	const char TP_ORDER		= 'O';
+	const char TP_REG		= 'R';
+	const char TP_UNREG		= 'U';
 	
-	#define LEN_CHANNEL_NM 128	
+	#define LEN_CHANNEL_NM	128
+	#define BUF_SIZE		512
 	#define LOCAL_RELAY_CHANNEL	"BA_LOCALRELAY"
 
 	//+--------------------------------------------------------------------
@@ -63,6 +65,7 @@ namespace _BA_RELAY
 	#define FDS_LIVEDEMO		13
 	#define FDS_USERID_MINE		14
 	#define FDS_USERID_MASTER	15
+	#define FDS_LOGONOFF_MSG    16
 
 
 	#define FDN_ACCNO_MY        100
