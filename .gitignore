@@ -6621,3 +6621,8 @@ Source/BestAutoTrade/EASrc/Experts/BAUtils.dll
 Source/BestAutoTrade/EASrc/Experts/nanomsg.dll
 Source/BestAutoTrade/EASrc/Experts/mqlcache.dat
 Source/_Bin/BA_RelayRemote.exe
+Source/BestAutoTrade/BA_RelayRemote/Release/BAUtils.dll
+Source/BestAutoTrade/BA_RelayRemote/Release/BAUtils.exp
+Source/BestAutoTrade/BA_RelayRemote/Release/BAUtils.lib
+Source/BestAutoTrade/BA_RelayRemote/BA_RelayRemote.sln
+Source/BestAutoTrade/BA_RelayRemote/BA_RelayRemote.sln
