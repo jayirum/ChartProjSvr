@@ -12,6 +12,8 @@
 
 #include "../Include/BestAutoTrade/RelayFiles/CBARelayMaster.mqh"
 #include "../Include/BestAutoTrade/BAUtils.mqh"
+#include "../include/BestAutoTrade/LoadConfig.mqh"
+#include "../include/BestAutoTrade/CLogOnOff.mqh"
 #include <stderror.mqh>
 #include <stdlib.mqh>
 
@@ -21,44 +23,74 @@ input string    IsThisMaster_YN     = "Y";
 input string    InputMasterID       = "MasterJay";
 input string    InputMyID           = "MasterJay";
 input string    InputMasterAccNo    = "9051645";
-input string    SendChannel         = "110.4.89.206:64999";
-input string    RecvChannel         = "110.4.89.206:64998";
+//input string    SendChannel         = "110.4.89.206:64999";
+//input string    RecvChannel         = "110.4.89.206:64998";
 input int       CheckOrdTimeoutMS   = 10;   
 input string    PublishOrderYN      = "Y";
 input int       SleepMS             = 10;
     
 
-string          EA_NAME         = "BestAutoMaster";
-int             ReceiveTimeout  = 10;    // ms
+//+----------------------------------------------------------------------------------------
+// Global Variables
+string  EA_NAME         = "BestAutoMaster";
+int     ReceiveTimeout  = 10;    // ms
+string  SendChannel;
+string  RecvChannel;
 
-CBARelayMaster  g_Relay;
-CSleep          g_sleep(SleepMS);   // 0.01 sec
+string  g_sMsg;
+char    g_zMsg[UTILS_BUF_LEN];
 
-string          g_sMsg;
-char            g_zMsg[UTILS_BUF_LEN];
+char    g_zRecvBuff[BUF_LEN];
+string  g_sRecbBuff;
 
 #define MAX_DELETED_ORDERS  10
 int     DeletedTickets[MAX_DELETED_ORDERS];
 double  DeletedLots[MAX_DELETED_ORDERS];
 
+bool    g_bTrade = false;
+//+----------------------------------------------------------------------------------------
+
+
+//+----------------------------------------------------------------------------------------
+//  Classes
+CBARelayMaster  g_Relay;
+CSleep          g_sleep(SleepMS);   // 0.01 sec
+//+----------------------------------------------------------------------------------------
+
+
+
 
 int OnInit()
 {
+    //+----------------------------------------------------------------------------------------
+    // Open Log file
     StringToCharArray(EA_NAME, g_zMsg);
     BAUtils_OpenLog(g_zMsg);
     g_sMsg = StringFormat("============================= %s =============================", EA_NAME);
     printlog(g_sMsg);
+    //+----------------------------------------------------------------------------------------
     
-    //+----------------------
+    
+    //+----------------------------------------------------------------------------------------
+    // Load open position info from MT4 terminal
     LoadTradeInfo();
-    //+----------------------
+    //+----------------------------------------------------------------------------------------
+    
+    //+----------------------------------------------------------------------------------------
+    // Load config information
+    if(!Master_GetChannel(InputMasterID, SendChannel, RecvChannel) )
+        return -1;    
+    //+----------------------------------------------------------------------------------------
     
     
+    //+----------------------------------------------------------------------------------------
+    // initialze communication channel
     if(!g_Relay.InitChannel(InputMyID, InputMasterID, SendChannel, RecvChannel))
     {
         printlog(g_Relay.GetMsg());
         return -1;
     }
+    //+----------------------------------------------------------------------------------------
     
     EventSetMillisecondTimer(1000); //CheckOrdTimeoutMS);
     
@@ -95,21 +127,15 @@ void OnTimer()
     while(!IsStopped())
     {
         if(!IsExpertEnabled()) break;
+        
         g_sleep.Start();
         
-        MainProc();//
+        if(g_bTrade)
+            MainProc();//
         
         g_sleep.CheckSleep();
     }
 }
-
-//void OnClick()
-//{
-////---
-//Alert("OnClick");
-//g_Relay.RegisterAsMaster();
-//    //MainProc();
-//}
 
 
 void MainProc()
@@ -312,17 +338,7 @@ void SendCloseOrder(int ticket, string sOrdAction, double dOpenedLots)
     printlog(StringFormat("[SEND CLOSE](%s)",g_Relay.GetMsg()));
 }
 
-void OnChartEvent(const int id,         // Event ID
-                  const long& lparam,   // Parameter of type long event
-                  const double& dparam, // Parameter of type double event
-                  const string& sparam  // Parameter of type string events
-  )
-{
-    if(id==CHARTEVENT_CLICK)
-    {
-        MainProc();
-    }
-}
+
 
 void LoadTradeInfo()
 {
@@ -369,4 +385,37 @@ void LoadTradeInfo()
    }
    return;
 }
+
+
+void LogOn(char& RecvData[], int nRecvLen)
+{
+    CMasterLogOnOff logOn(InputMasterID, InputMyID);
+    if(!logOn.ParsingPacket(g_zRecvBuff, nRecvLen)){
+        return;
+    }
+        
+    printlog(logOn.GetLogOffMsg(),true);
+    
+    if( logOn.IsMyLogOn() )
+        g_bTrade = true;
+}
+
+
+void LogOff(char& RecvData[], int nRecvLen)
+{
+    CMasterLogOnOff logOff(InputMasterID, InputMyID);
+    if(!logOff.ParsingPacket(g_zRecvBuff, nRecvLen)){
+        return;
+    }
+
+
+    printlog(logOff.GetLogOffMsg(),true);
+    
+    if(logOff.IsMyLogOff()){
+        g_bTrade = true;
+        ExpertRemove();
+    }
+}
+
+
 //+------------------------------------------------------------------+

@@ -2,6 +2,9 @@
 #define _BA_PROTOCOL_H
 
 
+#include "BARelayInc.mqh"
+#include "../BAUtils.mqh"
+
 //+--------------------------------------------------------+//
 //  FIELD
 //  1~99    : STRING
@@ -25,6 +28,7 @@
 #define FDS_LIVEDEMO		13
 #define FDS_USERID_MINE		14
 #define FDS_USERID_MASTER	15
+#define FDS_LOGONOFF_MSG    16
 
 #define FDN_ACCNO_MY        100
 #define FDN_ACCNO_MASTER    101
@@ -62,25 +66,103 @@ const string CODE_MASTER_ORDER	= "1003";
 const string CODE_PUBLISH_ORDER	= "1004";
 const string CODE_PING			= "1005";
 const string CODE_LOGOFF		= "1006";
+const string CODE_LOGON			= "1007";
 
 const string TP_COMMAND = "C";
-const string TP_ORDER = "O";
-const string TP_REG = "R";
-const string TP_UNREG = "U";
+const string TP_ORDER   = "O";
+const string TP_REG     = "R";
+const string TP_UNREG   = "U";
 
+
+class CProtoUtils
+{
+public:
+    CProtoUtils(){}
+    ~CProtoUtils(){}
+    
+    static string PacketCode(char& RecvPack[])
+    {
+        string sPacket = CharArrayToString(RecvPack);
+        string sCode="";
+        
+        if( StringFind(sPacket, StringFormat("1=%s",CODE_PUBLISH_ORDER)))
+            sCode = CODE_PUBLISH_ORDER;
+        else if( StringFind(sPacket, StringFormat("1=%s",CODE_LOGOFF)))
+            sCode = CODE_LOGOFF;
+            
+        return sCode;
+    }
+};
+
+struct PackHeader
+{
+    string      sCode;
+    string      sMasterId;
+    string      sMyId;
+    int         nMasterAcc;
+    int         nMyAcc;
+    datetime    dtHeader;
+    string      sBroker;
+    string      sSystem;
+    PUBSCOPE_TP pubScope;
+};
+
+//enum PUBSCOPE_TP {
+//		ALLSLAVES_UNDER_ONEMASTER,	//	All slaves under one master id
+//		ONESLAVE_WITH_ID,			//	one Specific Slave
+//		ALLMASTERS,					//	All Masters
+//		ONEMASTER_WITH_ID,			//	one specific master
+//		ALL
+//	};
+    
 class CProtoGet
 {
 public:
-    CProtoGet();
+    CProtoGet(string sMasterId, string sMyId);
     ~CProtoGet();
-    static int ParsingPack(/*in*/string& sPacket, /*out*/string& result[]);
+    int     SplitPacket(/*in*/char& RecvPack[], int nRecvLen, /*out*/string& result[]);
+    virtual bool    ParsingPacket(/*in*/char& RecvPack[], int nRecvLen) = 0;
+
+    bool    IsMyMaster()    { return (m_h.sMasterId==m_sMasterId);}
+    bool    IsMyId()        { return (m_h.sMyId==m_sMyId);}
+    
+    int     MasterAcc()     { return m_h.nMasterAcc;}
+    int     MyAcc()         { return m_h.nMyAcc;}
+    string  MasterId()      { return m_h.sMasterId;}
+    string  MyId()          { return m_h.sMyId;}
+    PUBSCOPE_TP PubScope()  { return m_h.pubScope;}
+    
+    void    GetRecvBuff(string& s)  {s = m_sRecvPack;}
+    void    GetMsg(string& s)       {s = m_sMsg;}
+
+protected:
+    string      m_sRecvPack;
+    string      m_sMsg; 
+    
+protected:
+    PackHeader  m_h;    
+    string      m_sMasterId;
+    string      m_sMyId;
 };
 
-int CProtoGet::ParsingPack(/*in*/string& sPacket, /*out*/string& result[])
+CProtoGet::CProtoGet(string sMasterId, string sMyId)
+{
+    ZeroMemory(m_h);
+    m_sMasterId = sMasterId;
+    m_sMyId    = sMyId;
+}
+CProtoGet::~CProtoGet()
+{
+}
+
+int CProtoGet::SplitPacket(/*in*/char& RecvPack[], int nRecvLen, /*out*/string& result[])
 {
     ushort deli = DEF_DELI;
     
-    int nCnt = StringSplit(sPacket,deli,result);
+    m_sRecvPack = CharArrayToString(RecvPack);
+    printlog(StringFormat("[RECV][%d](%s)", nRecvLen, m_sRecvPack));
+        
+    int nCnt = StringSplit(m_sRecvPack,deli,result);
     
     return nCnt;
 };
