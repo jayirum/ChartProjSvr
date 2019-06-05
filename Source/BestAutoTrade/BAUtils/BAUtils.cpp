@@ -6,7 +6,9 @@
 #include "BAUtils.h"
 #include "OrdManager.h"
 #include "../../IRUM_UTIL/Log.h"
+#include "SymbolPair.h"
 
+CSymbolPair	g_symbolPair;
 COrdManager g_oManager;
 CLog g_log;
 
@@ -145,4 +147,16 @@ BA_UTILS void BAUtils_HeaderTime(_Out_ char* zTime)
 	sprintf(zTime, "%04d%02d%02d_%02d%02d%02d%03d",
 		st.wYear, st.wMonth, st.wDay,
 		st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+}
+
+
+
+BA_UTILS void BAUtils_SymbolPairAdd(char* pzMasterSymbol, char* pzSlaveSymbol)
+{
+	g_symbolPair.Add(pzMasterSymbol, pzSlaveSymbol);
+}
+
+BA_UTILS bool BAUtils_SymbolPairGet(_In_ char* pzMasterSymbol, char* _Out_ pzSlaveSymbol)
+{
+	return g_symbolPair.Get(pzMasterSymbol, pzSlaveSymbol);
 }
