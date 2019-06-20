@@ -15,7 +15,7 @@ OP_SELLSTOP - sell stop pending order.
 
 sAction           // O:Open, C:Close, M:Modify
 */
-#include "../RelayFiles/BAProtocol.mqh"
+#include "../BAProtocol.mqh"
 #include "../BAUtils.mqh"
 
 class CMasterOrdInfo
@@ -43,9 +43,8 @@ public:
     void    GetMsg(string& s)       {s = m_sMsg;}
 private:
     string  m_sRecvPack;
-    string  m_sMsg; 
+    string  m_sMsg;
 private:
-    string  m_sMasterId;
     int     m_nMasterAcc;
     int     m_nMasterTicket;
     string  m_sOrdAction;
@@ -126,17 +125,11 @@ bool CMasterOrdInfo::ParsingPacket(int nRecvLen, char& RecvPack[])
         nCode =  (int)StringToInteger(unit[0]);
         switch(nCode)
         {
-        case FDS_USERID_MASTER:
-            m_sMasterId = unit[1];
-            printlog(StringFormat("[MASTERORD]FDS_USERID_MASTER:%s",m_sMasterId));
-            break;
         case FDN_ACCNO_MASTER://     101:
             m_nMasterAcc = (int)StringToInteger(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDN_ACCNO_MASTER:%d",m_nMasterAcc));
             break;
         case FDN_OPENED_TICKET:
             m_nMasterTicket = (int)StringToInteger(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDN_OPENED_TICKET:%d",m_nMasterTicket));
             break;
         case FDS_SYMBOL: 
             m_sSymbol = unit[1];
@@ -146,26 +139,21 @@ bool CMasterOrdInfo::ParsingPacket(int nRecvLen, char& RecvPack[])
             break;
         case FDN_ORD_TYPE:
             m_nOrdType = (int)StringToInteger(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDN_ORD_TYPE:%d",m_nOrdType));
             break;
         case FDD_OPENED_PRC:
             m_dOpenPrc = StringToDouble(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDD_OPENED_PRC:%f",m_dOpenPrc));
             break;
         case FDD_OPENED_LOTS:
             m_dOpenLots = StringToDouble(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDD_OPENED_LOTS:%f",m_dOpenLots));
             break;
         case FDN_OPENED_TM:
             m_nOpenTm = (int)StringToInteger(unit[1]);
             break;
         case FDD_CLOSED_PRC:
             m_dClosePrc = StringToDouble(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDD_CLOSED_PRC:%f",m_dClosePrc));
             break;
         case FDD_CLOSED_LOTS:
             m_dCloseLots = StringToDouble(unit[1]);
-            printlog(StringFormat("[MASTERORD]FDD_CLOSED_LOTS:%f",m_dCloseLots));
             break;
         case FDN_CLOSED_TM:
             m_nCloseTm = (int)StringToInteger(unit[1]);
@@ -182,8 +170,8 @@ bool CMasterOrdInfo::ParsingPacket(int nRecvLen, char& RecvPack[])
         }//switch(nCode)
     }//for(int i=0; i<nCnt; i++)
 
-    //printlog(StringFormat("(MasterAcc:%d)(MasterTicket:%d)(SYMBOL:%s)(ORD_ACTION:%s)(ORD_TYPE:%d)", m_nMasterAcc, m_nMasterTicket, m_sSymbol, m_sOrdAction , m_nOrdType));
-    //printlog(StringFormat("(O_PRC:%.5f)(O_LOTS:%.5f)(O_TM:%d)(C_PRC:%.5f)(C_LOTS:%.5f)(C_TM:%d)(SLPRC:%f)(PTPRC:%f)(COMMENT:%s)",m_dOpenPrc, m_dOpenLots, m_nOpenTm, m_dClosePrc, m_dCloseLots, m_nCloseTm, m_nCloseTm, m_dSLPrc, m_dPTPrc, m_sComment));
+    printlog(StringFormat("(MasterAcc:%d)(MasterTicket:%d)(SYMBOL:%s)(ORD_ACTION:%s)(ORD_TYPE:%d)", m_nMasterAcc, m_nMasterTicket, m_sSymbol, m_sOrdAction , m_nOrdType));
+    printlog(StringFormat("(O_PRC:%.5f)(O_LOTS:%.5f)(O_TM:%d)(C_PRC:%.5f)(C_LOTS:%.5f)(C_TM:%d)(SLPRC:%f)(PTPRC:%f)(COMMENT:%s)",m_dOpenPrc, m_dOpenLots, m_nOpenTm, m_dClosePrc, m_dCloseLots, m_nCloseTm, m_nCloseTm, m_dSLPrc, m_dPTPrc, m_sComment));
         
         
     printlog(m_sMsg);

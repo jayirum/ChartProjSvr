@@ -27,7 +27,7 @@ public:
     
     bool    SetFilter(){return true;};      //TODO
     bool    SetLotsFilter(LOT_TYPE tp, double  dAutoScale, double  dFixedLots, double dMaxLotSize);
-    //bool    SetMaxSlippagePips(int nVal){m_dMaxSlippagePip = dVal; return true;} 
+    bool    SetMaxSlippagePips(double dVal) {m_dMaxSlippagePip = dVal; return true;} 
     
     //double  GetMaxSlippagePips(string sSymbol);
     double  GetLots(string sSymbol, double dOrgLots);
@@ -38,7 +38,7 @@ private:
     
 private:
     LOTS_INFO   m_lots;
-    //double      m_dMaxSlippagePip;
+    double      m_dMaxSlippagePip;
     int         m_nMultiple;
     string      m_sLotsTp;
     string      m_msg; 

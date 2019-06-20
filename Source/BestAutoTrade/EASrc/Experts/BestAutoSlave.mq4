@@ -14,14 +14,7 @@ input string    LicenseKey;
 input string    InputMasterID       = "MasterJay";
 input string    InputMyID           = "SlaveJay";
 input string    InputMasterAccNo    = "9051645";
-//input string    SendChannel         = "110.4.89.206:64999";
-//input string    RecvChannel         = "110.4.89.206:64997";
-input string    UseAlertYN          = "Y";
-input string    LotsAutoScaleYN     = "Y";
-input double    LotsAutoScaleValue  = 1.0;
-input string    LotsFixedYN         = "N";
-input double    LotsFixedValue      = 0.02;
-input double    MaxLotSize          = 5;
+
 input double    MaxSlippagePoint    = 50;
 input int       SleepMS             = 10;
 
@@ -31,7 +24,7 @@ input int       SleepMS             = 10;
 #include "../include/BestAutoTrade/SlaveFiles/CSendOrder.mqh"
 #include "../include/BestAutoTrade/SlaveFiles/CMasterOrdInfo.mqh"
 #include "../include/BestAutoTrade/CLogOnOff.mqh"
-#include "../include/BestAutoTrade/LoadConfig.mqh"
+#include "../include/BestAutoTrade/SlaveFiles/CGUICnfgSlave.mqh"
 
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -48,8 +41,11 @@ void    SaveSymbolPairs()
 //+----------------------------------------------------------------------------------------
 // Global Variables
 
-string  EA_NAME         = "BestAutoSlave";
+string  EA_NAME         = WindowExpertName();//"BestAutoSlave";
 int     TIMER_TIMOUT_MS = 10;
+int     GUICHECK_CNT    = 100;
+int     g_nGuiCheckCnt  = 0;
+
 string  SendChannel;
 string  RecvChannel;
 
@@ -66,9 +62,10 @@ bool    g_bTrade = false;
 //+----------------------------------------------------------------------------------------
 // classes
 CBARelaySlave   g_Relay;
+CSleep          g_sleep(SleepMS);   // 0.01 sec
 CFilter         *g_filter;
 CSendOrder      *g_ordSend;
-CSleep          g_sleep(SleepMS);   // 0.01 sec
+CGUICnfgSlave   *g_guiCnfg;
 //+----------------------------------------------------------------------------------------
 
 
@@ -81,38 +78,45 @@ int OnInit()
     g_sMsg = StringFormat("============================= %s =============================", EA_NAME);
     printlog(g_sMsg);
     //+----------------------------------------------------------------------------------------
-   
-   
-    
+       
     //+----------------------------------------------------------------------------------------
     // Load config information
     //+----------------------------------------------------------------------------------------
-    if(!Slave_GetChannel(InputMasterID, SendChannel, RecvChannel) )
+    g_guiCnfg = new CGUICnfgSlave(InputMasterID);
+    if(!g_guiCnfg.LoadChannelInfo() ){
         return -1;    
+    }
+    
+    // Load GUI for config
+    if(!g_guiCnfg.LoadGUI()){
+        return false;
+    }
+    
     
     //+----------------------------------------------------------------------------------------
-    SaveSymbolPairs();
+    //TODO SaveSymbolPairs();
     //+----------------------------------------------------------------------------------------
     
     //+----------------------------------------------------------------------------------------
     // filters
     g_filter = new CFilter;    
-    LOT_TYPE tp = (LotsAutoScaleYN=="Y")? AUTO:FIXED;
-    g_filter.SetLotsFilter(tp, LotsAutoScaleValue,LotsFixedValue,MaxLotSize);
+    LOT_TYPE tp = (g_guiCnfg.IsAutoScaleYN())? AUTO:FIXED;
+    g_filter.SetLotsFilter(tp, g_guiCnfg.LotsAutoScaleValue(), g_guiCnfg.LotsAutoScaleValue(), g_guiCnfg.LotsAutoScaleValue());
     //+----------------------------------------------------------------------------------------
     
-    //+----------------------------------------------------------------------------------------
-    // create send copy order class
-    g_ordSend = new CSendOrder(g_filter);
-    //+----------------------------------------------------------------------------------------
+//    //+----------------------------------------------------------------------------------------
+//    // create send copy order class
+//    g_ordSend = new CSendOrder(g_filter);
+//    //+----------------------------------------------------------------------------------------
+//    
+//    //+----------------------------------------------------------------------------------------
+//    // initialze communication channel
+//    if(!g_Relay.InitChannel(InputMyID, InputMasterID, SendChannel, RecvChannel))
+//        return -1;
+//    //+----------------------------------------------------------------------------------------
     
-    //+----------------------------------------------------------------------------------------
-    // initialze communication channel
-    if(!g_Relay.InitChannel(InputMyID, InputMasterID, SendChannel, RecvChannel))
-        return -1;
-    //+----------------------------------------------------------------------------------------
+    EventSetMillisecondTimer(1000);
     
-    EventSetMillisecondTimer(500);
     
     return(INIT_SUCCEEDED);
 }
@@ -126,6 +130,9 @@ void OnDeinit(const int reason)
         
     if(CheckPointer(g_ordSend)!=POINTER_INVALID)
         delete g_ordSend;
+
+    if(CheckPointer(g_guiCnfg)!=POINTER_INVALID)
+        delete g_guiCnfg;
 
     g_Relay.UnRegisterAsSlave(InputMasterAccNo);
     BAUtils_OMDeInitialize();
@@ -142,7 +149,8 @@ void OnTick()
 
         g_sleep.Start();
         
-        if(g_filter.IsAbleTradeNow() && g_bTrade)
+        
+        if(g_filter.IsAbleTradeNow() && g_bTrade && g_guiCnfg.IsClosedGUI() )
         {
             ZeroMemory(g_zRecvBuff);
             int nRet = g_Relay.RecvData(g_zRecvBuff, BUF_LEN); 
@@ -164,10 +172,15 @@ void OnTick()
                 {
                     LogOn(g_zRecvBuff, nRet);
                 }
-            }
+            } // if( nRet>0)
             
         }// if(g_filter.IsAbleTradeNow())
         
+        if( ++g_nGuiCheckCnt > GUICHECK_CNT )
+        {
+            g_guiCnfg.CheckGUI();
+            g_nGuiCheckCnt = 0;
+        }    
         g_sleep.CheckSleep();
     }
      
