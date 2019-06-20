@@ -82,7 +82,7 @@
       <AdditionalIncludeDirectories>C:\poco-1.7.8\Data\include;C:\poco-1.7.8\Data\ODBC\include;C:\poco-1.7.8\Foundation\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>PocoFoundationd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -124,13 +124,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\IRUM_UTIL\PocoODBC.cpp" />
-    <ClCompile Include="..\..\IRUM_UTIL\TimeInterval.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\IRUM_UTIL\PocoODBC.h" />
     <ClInclude Include="..\..\IRUM_UTIL\TimeInterval.h" />
+    <ClInclude Include="Source.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
