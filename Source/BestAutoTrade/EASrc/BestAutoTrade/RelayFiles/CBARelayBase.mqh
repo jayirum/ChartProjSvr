@@ -97,10 +97,10 @@ bool CBARelayBase::InitChannel(string sMyId, string sMasterId, string sSendChann
     m_sMasterId     = sMasterId;
     m_sSendChannel  = StringFormat("tcp://%s",sSendChannel);
     m_sRecvChannel  = StringFormat("tcp://%s",sRecvChannel);
-        
+
     if(!InitSendChannel())
         return false;
-    
+
     if(!InitRecvChannel())
         return false;
     
@@ -110,32 +110,34 @@ bool CBARelayBase::InitChannel(string sMyId, string sMasterId, string sSendChann
 
 bool CBARelayBase::InitSendChannel()
 {
-    m_chSend.sock = nn_socket(AF_SP, NN_PUSH); 
-    if (m_chSend.sock == -1) {
-        m_msg = StringFormat( "Send Channel create Failed(%s):%s", m_sSendChannel, nn_err_strerror(nn_errno()));
-		return false;
-	}
+   m_chSend.sock = nn_socket(AF_SP, NN_PUSH); 
+   if (m_chSend.sock == -1) {
+      m_msg = StringFormat( "Send Channel create Failed(%s):%s", m_sSendChannel, nn_err_strerror(nn_errno()));
+      printlog(m_msg);
+      return false;
+   }
 
 	StringToCharArray(m_sSendChannel, m_chSend.chName);
 	m_chSend.endpoint = nn_connect(m_chSend.sock, m_chSend.chName);
 	if (m_chSend.endpoint < 0){
 		m_msg = StringFormat( "Connect Server Channel Failed(%s):%s", m_sSendChannel, nn_err_strerror(nn_errno()));
-		return false;
+      printlog(m_msg);		
+      return false;
 	}
 
 	int nTimeout = TIMEOUT_MS_SEND;
-    int ret = nn_setsockopt(m_chSend.sock, NN_SOL_SOCKET, NN_SNDTIMEO, nTimeout, sizeof(nTimeout));
+   int ret = nn_setsockopt(m_chSend.sock, NN_SOL_SOCKET, NN_SNDTIMEO, nTimeout, sizeof(nTimeout));
 	if (ret == -1) {
 		m_msg = StringFormat( "nn_setsockopt for send timeout Failed:%s", nn_err_strerror(nn_errno()));
+		printlog(m_msg);
 		return false;
 	}
 
 	m_msg = StringFormat("Server Channel Ok(Channel:%s) (SendTimeout:%d ms) (Symbol:%s) (Broker:%s) (MyAcc:%d)[%s] ", 
-	                m_sSendChannel, nTimeout, Symbol(), AccountInfoString(ACCOUNT_COMPANY), m_nMyAccNo, AccTp());
-	       
+	                m_sSendChannel, nTimeout, Symbol(), AccountInfoString(ACCOUNT_COMPANY), m_nMyAccNo, AccTp());       
 	m_chSend.bInit = true;
 	         
-    printlog(m_msg);
+   printlog(m_msg);
     
 	return true;
 }
@@ -145,6 +147,7 @@ bool CBARelayBase::InitRecvChannel()
     m_chRecv.sock = nn_socket(AF_SP, NN_SUB);    
     if (m_chRecv.sock == -1) {
         m_msg = StringFormat( "Receive Channel create Failed(%s):%s", m_sRecvChannel, nn_err_strerror(nn_errno()));
+        printlog(m_msg);
         return false;
     }
     
@@ -152,6 +155,7 @@ bool CBARelayBase::InitRecvChannel()
     int ret = nn_setsockopt(m_chRecv.sock, NN_SUB, NN_SUB_SUBSCRIBE, val, 0);
     if (ret == -1) {
         m_msg = StringFormat( "nn_setsockopt for subscribe Failed(%s):%s",m_sRecvChannel, nn_err_strerror(nn_errno()));
+        printlog(m_msg);
         return false;
     }
     
@@ -160,6 +164,7 @@ bool CBARelayBase::InitRecvChannel()
     m_chRecv.endpoint = nn_connect(m_chRecv.sock, m_chRecv.chName);
     if (m_chRecv.endpoint < 0){
         m_msg = StringFormat( "Connect Receive Channel Failed:%s", nn_err_strerror(nn_errno()));
+        printlog(m_msg);
         return false;
     }
     
@@ -167,6 +172,7 @@ bool CBARelayBase::InitRecvChannel()
     ret = nn_setsockopt(m_chRecv.sock, NN_SOL_SOCKET, NN_RCVTIMEO, nTimeout, sizeof(nTimeout));
     if (ret == -1) {
         m_msg = StringFormat( "nn_setsockopt for recv timeout Failed:%s", nn_err_strerror(nn_errno()));
+        printlog(m_msg);
         return false;
     }
     
@@ -205,6 +211,7 @@ int  CBARelayBase::RecvData(char& RecvBuff[], int nBuffLen)
 			return Q_TIMEOUT;
 		}
 		m_msg = StringFormat("Failed to recv: %s\n", nn_err_strerror(err));
+		printlog(m_msg);
 		return Q_ERROR;
 	}
     	
@@ -265,6 +272,7 @@ void CBARelayBase::Ping(void)
 			return ;
 		}
 		m_msg = StringFormat( "Failed to send:%s", nn_err_strerror(err));
+		printlog(m_msg);
 		return ;
 	}
 	else

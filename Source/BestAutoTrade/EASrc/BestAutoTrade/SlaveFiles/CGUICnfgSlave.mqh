@@ -45,6 +45,9 @@ SLAVE_SUB_PORT=64997
 string  BTN_SAVE    = "Save";
 string  BTN_CANCEL  = "Cancel";
 
+int GUISHOW_BTN_W = 300;
+int GUISHOW_BTN_H = 50;
+
 struct BASIC
 {
     int pnlX;
@@ -99,12 +102,14 @@ public:
 private:
 
     void    GUIShowButton(bool bShow);
+    void    SymbolShowButton(bool bShow);
 
     void    SetBasicPos();
     bool    LoadTradeSignalCnfg();
     bool    LoadLotsCnfg();
     bool    LoadMaxSlippage();
     void    LoadSaveCancelBtn();
+    void    LoadSymbolList();
     
     void    Save();
     void    Cancel();
@@ -145,7 +150,7 @@ private:
     
     int     m_btnSave, m_btnCancel;
     
-    int     m_btnShowUI;
+    int     m_btnShowUI, m_btnShowSymbol;
     
     GUI_HANDLES m_guiHandles;
     
@@ -166,7 +171,8 @@ CGUICnfgSlave::CGUICnfgSlave(string sMasterId)
     m_sCnfgFull = m_sCnfgPath+"/"+m_sCnfgFile;
     StringToCharArray(m_sCnfgFull, m_zCnfgFull);
     
-    m_btnShowUI = -1;
+    m_btnShowUI      = -1;
+    m_btnShowSymbol  = -1;
     
     ZeroMemory(m_cnfgVal);
 }
@@ -283,6 +289,8 @@ void CGUICnfgSlave::EraseAll()
     ClearHandles();
     
     GUIShowButton(true);
+    
+    SymbolShowButton(true);
 }
 
 
@@ -298,7 +306,8 @@ void CGUICnfgSlave::GUIShowButton(bool bShow)
     }
     
     if(bShow){
-        m_btnShowUI = guiAdd( m_hwnd, "button", 0, 0, 300, 50, "Show & Set Configuration");
+        m_btnShowUI = guiAdd( m_hwnd, "button", 0, 0, GUISHOW_BTN_W, GUISHOW_BTN_H, "Show & Set [Configuration]");
+        guiSetBgColor(m_hwnd, m_btnShowUI, clrLightYellow);
     }
     else{
         guiRemove(m_hwnd, m_btnShowUI);
@@ -306,6 +315,30 @@ void CGUICnfgSlave::GUIShowButton(bool bShow)
     }
         
 }
+
+
+void CGUICnfgSlave::SymbolShowButton(bool bShow)
+{
+    if(m_hwnd==-1)
+    {
+        m_hwnd = WindowHandle(Symbol(),Period());    
+        if(m_hwnd==0){
+            printlog("WindowHandle error", true);
+            return ;
+        }
+    }
+    
+    if(bShow){
+        m_btnShowSymbol = guiAdd( m_hwnd, "button", 0, GUISHOW_BTN_H, GUISHOW_BTN_W, GUISHOW_BTN_H, "Show & Set [Symbols]");
+        guiSetBgColor(m_hwnd, m_btnShowSymbol, clrLightPink);
+    }
+    else{
+        guiRemove(m_hwnd, m_btnShowSymbol);
+        m_btnShowSymbol = -1;
+    }
+        
+}
+
 
 void CGUICnfgSlave::PrintCnfgErr(string sSection, string sKey)
 {
@@ -386,7 +419,10 @@ bool CGUICnfgSlave::LoadChannelInfo()
 
 void CGUICnfgSlave::CheckGUI()
 {
-    if(m_hwnd<0)    return;
+    if(m_hwnd<0){
+      printlog("if(m_hwnd<0)");
+      return;
+    }
     
     for ( int i=0; i<m_guiHandles.nTotalGui; i++ )
     {
@@ -429,6 +465,8 @@ bool CGUICnfgSlave::LoadGUI()
     ClearHandles();
     
     GUIShowButton(false);
+    
+    SymbolShowButton(false);
     
     SetBasicPos();
     
@@ -564,6 +602,7 @@ bool CGUICnfgSlave::LoadLotsCnfg()
         guiSetChecked(m_hwnd, m_rdoLotsScale, true);
         guiSetChecked(m_hwnd, m_rdoLotsFixed, false);
         guiSetText(m_hwnd, m_edtLotsScale, sValScaling, 0, "");
+
     }
     
     // fixed
@@ -574,6 +613,7 @@ bool CGUICnfgSlave::LoadLotsCnfg()
         guiSetChecked(m_hwnd, m_rdoLotsScale, false);
         guiSetChecked(m_hwnd, m_rdoLotsFixed, true);
         guiSetText(m_hwnd, m_edtLotsFixed, sValFixed, 0, "");
+
     }
 
     nCurrY += 30+15;
@@ -606,9 +646,10 @@ bool CGUICnfgSlave::LoadLotsCnfg()
         
         if( !GetCnfgValue("LOTSIZE", "VALUE_MAXLOT", sValLots) )
             sValLots = "";
-            
+        
         guiSetText(m_hwnd, m_edtMaxLotSize, sValLots, 0, "");
     }
+      
     //+---------------------------------------------------------------------------------------------------
     
     return true;
@@ -659,6 +700,20 @@ bool CGUICnfgSlave::LoadMaxSlippage()
     return true;
 }
 
+void CGUICnfgSlave::LoadSymbolList()
+{
+   DrawHeader("Symbol List");
+    
+    // pannel
+    int pnlBodyH = 100;
+    int PannelBody = guiAdd(m_hwnd,"label", m_basic.pnlX, m_basic.currHeaderY, m_basic.pnlW, pnlBodyH, "");
+    
+    int nY      = m_basic.currHeaderY + 20;
+    
+    m_basic.currHeaderY += pnlBodyH;
+}
+
+
 
 void CGUICnfgSlave::LoadSaveCancelBtn()
 {
@@ -680,10 +735,12 @@ void CGUICnfgSlave::LoadSaveCancelBtn()
     int nPos = nMiddle - (nGap) - nBtnW;
     
     m_btnSave = guiAdd(m_hwnd, "button", nPos, nY, nBtnW, nBtnH, BTN_SAVE);
+    guiSetBgColor(m_hwnd, m_btnSave, clrAqua);
     AddHandle(m_btnSave);
 
     nPos = nMiddle + (nGap);// + nBtnW;
     m_btnCancel = guiAdd(m_hwnd, "button", nPos, nY, nBtnW, nBtnH, BTN_CANCEL);
+    guiSetBgColor(m_hwnd, m_btnCancel, clrDarkGray);
     AddHandle(m_btnCancel);    
 }
 

@@ -45,11 +45,11 @@ private:
     int		m_nOrdType;
     double	m_dOpenLots;
     int     m_nOpenTm;
-    double	m_dOpenPrc;;
+    double	m_dOpenPrc;
     double	m_dSLPrc;
     double	m_dPTPrc;
     double  m_dCloseLots;
-    int 	m_nCloseTm;
+    int 	   m_nCloseTm;
     double	m_dClosePrc;
     string  m_sComment;
     string  m_sSymbol;

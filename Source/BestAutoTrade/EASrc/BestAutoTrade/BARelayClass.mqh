@@ -197,10 +197,12 @@ bool CBARelay::RegUnregSlave(string sMasterAcc, int nRecvTimeoutMs, string sRegU
 {
     m_nMasterAccNo = (int)StringToInteger(sMasterAcc);
     m_nRecvTimeoutMs = nRecvTimeoutMs;
-    
+
     if(!InitSlave())
-        return false;
-    
+    {
+      return false;
+    }
+
     m_ProtoSet.Begin();
     m_ProtoSet.SetVal(FDS_CODE, CODE_REG_SLAVE);
     m_ProtoSet.SetVal(FDS_COMMAND, TP_COMMAND);
@@ -211,11 +213,11 @@ bool CBARelay::RegUnregSlave(string sMasterAcc, int nRecvTimeoutMs, string sRegU
     m_ProtoSet.SetVal(FDS_REGUNREG, sRegUnreg);
     m_ProtoSet.SetVal(FDN_ACCNO_MASTER, m_nMasterAccNo);
 	
-    string result;
-	int nSend = m_ProtoSet.Complete(result);
-	char zBuffer[];
-    ArrayResize(zBuffer, nSend);
-    StringToCharArray(result, zBuffer);
+   string result;
+   int nSend = m_ProtoSet.Complete(result);
+   char zBuffer[];
+   ArrayResize(zBuffer, nSend);
+   StringToCharArray(result, zBuffer);
     
 	int ret = nn_send(m_chToSrv.sock, zBuffer, nSend, 0);
 	if (ret < 0)
@@ -228,7 +230,6 @@ bool CBARelay::RegUnregSlave(string sMasterAcc, int nRecvTimeoutMs, string sRegU
 		m_msg = StringFormat( "Failed to send: %s\n", nn_err_strerror(err));
 		return false;
 	}
-	
 	
 	m_msg = StringFormat("Reg Slave(%s)", result);
 	printlog(m_msg);

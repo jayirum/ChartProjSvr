@@ -14,8 +14,6 @@ input string    LicenseKey;
 input string    InputMasterID       = "MasterJay";
 input string    InputMyID           = "SlaveJay";
 input string    InputMasterAccNo    = "9051645";
-
-input double    MaxSlippagePoint    = 50;
 input int       SleepMS             = 10;
 
 #include "../Include/BestAutoTrade/BAUtils.mqh"
@@ -42,8 +40,9 @@ void    SaveSymbolPairs()
 // Global Variables
 
 string  EA_NAME         = WindowExpertName();//"BestAutoSlave";
-int     TIMER_TIMOUT_MS = 10;
-int     GUICHECK_CNT    = 100;
+
+int     TIMER_TIMOUT_MS = 3000;  //10;
+int     GUICHECK_CNT    = 2;  //100;
 int     g_nGuiCheckCnt  = 0;
 
 string  SendChannel;
@@ -89,7 +88,7 @@ int OnInit()
     
     // Load GUI for config
     if(!g_guiCnfg.LoadGUI()){
-        return false;
+        return -1;
     }
     
     
@@ -104,16 +103,18 @@ int OnInit()
     g_filter.SetLotsFilter(tp, g_guiCnfg.LotsAutoScaleValue(), g_guiCnfg.LotsAutoScaleValue(), g_guiCnfg.LotsAutoScaleValue());
     //+----------------------------------------------------------------------------------------
     
-//    //+----------------------------------------------------------------------------------------
-//    // create send copy order class
-//    g_ordSend = new CSendOrder(g_filter);
-//    //+----------------------------------------------------------------------------------------
-//    
-//    //+----------------------------------------------------------------------------------------
-//    // initialze communication channel
-//    if(!g_Relay.InitChannel(InputMyID, InputMasterID, SendChannel, RecvChannel))
-//        return -1;
-//    //+----------------------------------------------------------------------------------------
+    //+----------------------------------------------------------------------------------------
+    // create send copy order class
+    g_ordSend = new CSendOrder(g_filter);
+    //+----------------------------------------------------------------------------------------
+    
+    //+----------------------------------------------------------------------------------------
+    // initialze communication channel
+    SendChannel = g_guiCnfg.SendChannel();
+    RecvChannel = g_guiCnfg.RecvChannel();
+    if(!g_Relay.InitChannel(InputMyID, InputMasterID, SendChannel, RecvChannel))
+        return -1;
+    //+----------------------------------------------------------------------------------------
     
     EventSetMillisecondTimer(1000);
     
@@ -143,14 +144,25 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+
+     
+}
+//+------------------------------------------------------------------+
+//| Timer function                                                   |
+//+------------------------------------------------------------------+
+void OnTimer()
+{
+
+    EventKillTimer();
+    g_Relay.RegisterAsSlave(InputMasterAccNo);
+
     while(!IsStopped())
     {
         if(!IsExpertEnabled())  break;
 
         g_sleep.Start();
         
-        
-        if(g_filter.IsAbleTradeNow() && g_bTrade && g_guiCnfg.IsClosedGUI() )
+        //TODO if(g_filter.IsAbleTradeNow() && g_bTrade && g_guiCnfg.IsClosedGUI() )
         {
             ZeroMemory(g_zRecvBuff);
             int nRet = g_Relay.RecvData(g_zRecvBuff, BUF_LEN); 
@@ -174,24 +186,16 @@ void OnTick()
                 }
             } // if( nRet>0)
             
-        }// if(g_filter.IsAbleTradeNow())
+        }// if(g_filter.IsAbleTradeNow() && g_bTrade && g_guiCnfg.IsClosedGUI() )
         
+        g_sleep.CheckSleep();
+
         if( ++g_nGuiCheckCnt > GUICHECK_CNT )
         {
             g_guiCnfg.CheckGUI();
             g_nGuiCheckCnt = 0;
         }    
-        g_sleep.CheckSleep();
     }
-     
-}
-//+------------------------------------------------------------------+
-//| Timer function                                                   |
-//+------------------------------------------------------------------+
-void OnTimer()
-{
-    EventKillTimer();
-    g_Relay.RegisterAsSlave(InputMasterAccNo);
 }
 
 
@@ -258,7 +262,8 @@ void CopyOrders(char& RecvData[], int nRecvLen)
     {
         int nSlaveTicket = g_ordSend.SendNewOrder(mOrder.MasterAcc(),mOrder.MasterTicket(), SymboPair(mOrder.SymbolCode()), mOrder.OrdType(), mOrder.OrdLots(), mOrder.OrdPrc(), 0);
         if(nSlaveTicket<0){
-            printlog(g_ordSend.GetMsg());
+            //TODO printlog(g_ordSend.GetMsg());
+            printlog("if(nSlaveTicket<0)");
             return;
          }
          //printlog(StringFormat("[New Ord OK]Ticket:%d", nSlaveTicket));
