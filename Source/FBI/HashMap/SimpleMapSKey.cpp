@@ -178,3 +178,11 @@ bool CSimpleMapSKey::GetValue(char* key, _Out_ RECORD_VAL* pVal, int nValSize)
 
 	return true;
 }
+
+void CSimpleMapSKey::Del(char* key)
+{
+	if (m_mapS != nullptr)	m_mapS->Del(key);
+	if (m_mapL != nullptr)	m_mapL->Del(key);
+	if (m_mapD != nullptr)	m_mapD->Del(key);
+	if (m_mapR != nullptr)	m_mapR->Del(key);
+}

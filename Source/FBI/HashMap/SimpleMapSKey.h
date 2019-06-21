@@ -21,6 +21,8 @@ public:
 	bool	GetValue(char* key, _Out_ double* pVal,		int nValSize=0);	// nValSize 값 불필요
 	bool	GetValue(char* key, _Out_ RECORD_VAL* pVal,	int nValSize=0);	// nValSize 값 반드시필요
 
+	void	Del(char* key);
+
 	int		GetLastErr() { return m_nLastErr; }
 private:
 	CSimpleMapBase<string, string>		*m_mapS;

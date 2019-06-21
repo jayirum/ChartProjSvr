@@ -38,4 +38,5 @@ enum MAP_STATUS {
 struct RECORD_VAL
 {
 	char val[MAX_VALUE_SIZE];
+	//RECORD_VAL* pNext;
 };

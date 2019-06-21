@@ -36,6 +36,12 @@
     <ClCompile Include="SimpleMapSKey.cpp">
       <Filter>MapClasses</Filter>
     </ClCompile>
+    <ClCompile Include="ListMapSKey.cpp">
+      <Filter>MapClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="ListMapLKey.cpp">
+      <Filter>MapClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HashMap.h">
@@ -55,6 +61,15 @@
     </ClInclude>
     <ClInclude Include="HashMapIF.h">
       <Filter>헤더파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MapClassListBase.h">
+      <Filter>MapClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="ListMapSKey.h">
+      <Filter>MapClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="ListMapLKey.h">
+      <Filter>MapClasses</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

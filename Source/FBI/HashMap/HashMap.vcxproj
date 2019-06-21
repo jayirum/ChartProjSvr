@@ -158,6 +158,8 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="HashMap.cpp" />
+    <ClCompile Include="ListMapLKey.cpp" />
+    <ClCompile Include="ListMapSKey.cpp" />
     <ClCompile Include="SimpleMapLKey.cpp" />
     <ClCompile Include="SimpleMapSKey.cpp" />
   </ItemGroup>
@@ -165,6 +167,9 @@
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashMapIF.h" />
     <ClInclude Include="HashMapInc.h" />
+    <ClInclude Include="ListMapLKey.h" />
+    <ClInclude Include="ListMapSKey.h" />
+    <ClInclude Include="MapClassListBase.h" />
     <ClInclude Include="MapClassSimpleBase.h" />
     <ClInclude Include="SimpleMapLKey.h" />
     <ClInclude Include="SimpleMapSKey.h" />

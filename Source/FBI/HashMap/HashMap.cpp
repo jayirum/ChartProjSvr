@@ -1,7 +1,8 @@
 #include "HashMap.h"
 #include "SimpleMapSKey.h"
 #include "SimpleMapLKey.h"
-
+#include "ListMapSKey.h"
+#include "ListMapLKey.h"
 
 void*	SimpMAP_CreateSS()
 {
@@ -65,9 +66,14 @@ void*	SimpMAP_CreateLR()
 	return (void*)p;
 }
 
-void	SimpMAP_Delete(void* pMap)
+void	SimpMAP_DestroyS(void* pMap)
 {
 	delete (CSimpleMapSKey*)pMap;
+}
+
+void	SimpMAP_DestroyL(void* pMap)
+{
+	delete (CSimpleMapLKey*)pMap;
 }
 
 bool	SimpMAP_AddValueSS(void* pMap, char* key, char* val, int nValSize, bool bUpdate)
@@ -162,7 +168,111 @@ bool SimpMAP_GetDblValueL(void* pMap, long key, /*out*/double* pResult)
 	return ((CSimpleMapLKey*)pMap)->GetValue(key, pResult);
 }
 
-bool SimpMAP_GetRecordValueL(void* pMap, long key, /*out*/RECORD_VAL* pResult, int nRecordSize)
+bool SimpMAP_GetRecordValueL(void* pMap, long key, /*out*/RECORD_VAL* pResult)
 {
-	return ((CSimpleMapLKey*)pMap)->GetValue(key, pResult, nRecordSize);
+	return ((CSimpleMapLKey*)pMap)->GetValue(key, pResult, sizeof(RECORD_VAL));
+}
+
+
+void SimpMAP_DelS(void* pMap, char* k)
+{
+	((CSimpleMapSKey*)pMap)->Del(k);
+}
+
+void SimpMAP_DelL(void* pMap, long k)
+{
+	((CSimpleMapLKey*)pMap)->Del(k);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//
+//		List Map
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// create
+void*	ListMAP_CreateS()
+{
+	CListMapSKey* p = new CListMapSKey();
+	p->Initialize();
+	return (void*)p;
+}
+void*	ListMAP_CreateL()
+{
+	CListMapLKey* p = new CListMapLKey();
+	p->Initialize();
+	return (void*)p;
+}
+
+// destroy
+void	ListMAP_DestroyS(void* pMap)
+{
+	delete (CListMapSKey*)pMap;
+}
+
+void	ListMAP_DestroyL(void* pMap)
+{
+	delete (CListMapLKey*)pMap;
+}
+
+
+// add
+bool	ListMAP_AddValueS(void* pMap, char* key, RECORD_VAL* val)
+{
+	return ((CListMapSKey*)pMap)->AddValue(key, val);
+}
+
+bool	ListMAP_AddValueL(void* pMap, long key, RECORD_VAL* val)
+{
+	return ((CListMapLKey*)pMap)->AddValue(key, val);
+}
+
+// get
+RECORD_VAL* ListMAP_GetRecordValueS(void* pMap, char* key, /*out*/int* pnRecordCnt)
+{
+	return ((CListMapSKey*)pMap)->GetValue(key, pnRecordCnt);
+}
+
+RECORD_VAL* ListMAP_GetRecordValueL(void* pMap, long key, /*out*/int* pnRecordCnt)
+{
+	return ((CListMapLKey*)pMap)->GetValue(key, pnRecordCnt);
+}
+
+
+// is exists
+bool ListMAP_IsExistsS(void* pMap, char* key)
+{
+	return ((CListMapSKey*)pMap)->IsExists(key);
+}
+
+bool ListMAP_IsExistsL(void* pMap, long key)
+{
+	return ((CListMapLKey*)pMap)->IsExists(key);
+}
+
+// delete value
+void ListMAP_DelS(void* pMap, char* k)
+{
+	return ((CListMapSKey*)pMap)->Del(k);
+}
+
+void ListMAP_DelL(void* pMap, long k)
+{
+	return ((CListMapLKey*)pMap)->Del(k);
+}
+
+
+void ListMap_MemFreeS(void* pMap, void* ptr)
+{
+	((CListMapSKey*)pMap)->MemFree(ptr);
+}
+
+void ListMap_MemFreeL(void* pMap, void* ptr)
+{
+	((CListMapLKey*)pMap)->MemFree(ptr);
 }

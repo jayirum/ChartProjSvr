@@ -30,6 +30,16 @@ C. STRUCTURE 의 경우는 모든 필드는 반드시 CHAR 배열 이어야 함
 
 #include "HashMapInc.h"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//
+//		Simple Map
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //+------------------------------------------------------------
 //	+ dll 을 사용하기전에 반드시 호출해야 한다.
 //	+ return value
@@ -48,7 +58,8 @@ _HASH_MAP_EXPORS void*	SimpMAP_CreateLR();
 //+------------------------------------------------------------
 //	dll 을 사용 종료시 반드시 호출해야 한다. Otherwise, memory leak
 //+------------------------------------------------------------
-_HASH_MAP_EXPORS void	SimpMAP_Delete(void* pMap);
+_HASH_MAP_EXPORS void	SimpMAP_DestroyS(void* pMap);
+_HASH_MAP_EXPORS void	SimpMAP_DestroyL(void* pMap);
 
 //+----------------------------------------------------------------
 //	+ long value 를 저장한다.
@@ -89,55 +100,54 @@ _HASH_MAP_EXPORS bool SimpMAP_GetLongValueL		(void* pMap, long key, /*out*/long*
 _HASH_MAP_EXPORS bool SimpMAP_GetDblValueL		(void* pMap, long key, /*out*/double* pResult);
 _HASH_MAP_EXPORS bool SimpMAP_GetRecordValueL	(void* pMap, long key, /*out*/RECORD_VAL* pResult);
 
-//
-////+------------------------------------------------------------
-////	+ key 의 long value 를 반환
-////	+ 해당 key 가 없으면 return false
-////+------------------------------------------------------------
-//template <class KEY, class VAL>
-//_HASH_MAP_EXPORS bool SMAP_GetLongValue(char* pMap, KEY k, /*out*/long* pResult)
-//{
-//	bool bRet = (CSimpleMap*)pMap)->GetValue(k, pResult, sizeof(long));
-//	return bRet;
-//}
-//
-////+------------------------------------------------------------
-////	+ key 의 double value 를 반환
-////	+ 해당 key 가 없으면 return false
-////+------------------------------------------------------------
-//template <class KEY, class VAL>
-//_HASH_MAP_EXPORS bool SMAP_GetDblValue(char* pMap, KEY k, double* pResult)
-//{
-//	bool bRet = (CSimpleMap*)pMap)->GetValue(k, pResult, sizeof(double));
-//	return bRet;
-//}
-//
 
-//
-//
-////+------------------------------------------------------------
-////	+ key 의 structure(record) value 를 반환
-////	+ nRecordSize 만큼만 copy 되어서 반환된다.
-////	+ 해당 key 가 없으면 return false
-////+------------------------------------------------------------
-//template <class KEY, class VAL>
-//_HASH_MAP_EXPORS bool SMAP_GetRecordValue(char* pMap, KEY k, /*out*/char* pResult, int nRecordSize)
-//{
-//	bool bRet = (CSimpleMap*)pMap)->GetValue(k, (VAL*)pResult, nRecordSize);
-//	return bRet;
-//}
-//
-////+------------------------------------------------------------
-////	+ 해당 key 와 value 를 map 에서 제거
-////+------------------------------------------------------------
-//template <class KEY, class VAL>
-//_HASH_MAP_EXPORS void SMAP_Del(char* pMap, KEY k)
-//{
-//	return ((CSimpleMap*)pMap)->Del(k);
-//}
-//
-//template <class KEY, class VAL>
+//+------------------------------------------------------------
+//	+ 해당 key 와 value 를 map 에서 제거
+//+------------------------------------------------------------
+_HASH_MAP_EXPORS void SimpMAP_DelS(void* pMap, char* k);
+_HASH_MAP_EXPORS void SimpMAP_DelL(void* pMap, long k);
+
+
 //_HASH_MAP_EXPORS int SMAP_GetLastErr(char* pMap, )
 //{ 
 //	return ((CSimpleMap*)pMap)->GetLastErr();
 //}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//
+//		List Map
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// create
+_HASH_MAP_EXPORS void*	ListMAP_CreateS();
+_HASH_MAP_EXPORS void*	ListMAP_CreateL();
+
+// destroy
+_HASH_MAP_EXPORS void	ListMAP_DestroyS(void* pMap);
+_HASH_MAP_EXPORS void	ListMAP_DestroyL(void* pMap);
+
+// add
+_HASH_MAP_EXPORS bool	ListMAP_AddValueS(void* pMap, char* key, RECORD_VAL* val);
+_HASH_MAP_EXPORS bool	ListMAP_AddValueL(void* pMap, long key, RECORD_VAL* val);
+
+// get
+_HASH_MAP_EXPORS RECORD_VAL* ListMAP_GetRecordValueS(void* pMap, char* key, /*out*/int* pnRecordCnt);
+_HASH_MAP_EXPORS RECORD_VAL* ListMAP_GetRecordValueL(void* pMap, long key, /*out*/int* pnRecordCnt);
+
+// is exists
+_HASH_MAP_EXPORS bool ListMAP_IsExistsS(void* pMap, char* key);
+_HASH_MAP_EXPORS bool ListMAP_IsExistsL(void* pMap, long key);
+
+// delete value
+_HASH_MAP_EXPORS void ListMAP_DelS(void* pMap, char* k);
+_HASH_MAP_EXPORS void ListMAP_DelL(void* pMap, long k);
+
+// free memory
+_HASH_MAP_EXPORS void ListMap_MemFreeS(void* pMap, void* ptr);
+_HASH_MAP_EXPORS void ListMap_MemFreeL(void* pMap, void* ptr);
