@@ -48,13 +48,13 @@ struct MT4_ORD
 	double      profit;
 	string      comment;
 	int         magic;
-	CHANGED_RET	changedRet;
+	bool		bChecked;
 };
 
 //+------------------------------------------------------------+
 //	COrdManager
 //+------------------------------------------------------------+
-BA_UTILS void  BAUtils_Initialize(
+BA_UTILS void  BAUtils_OMInitialize(
 	int		ticket
 	, int		type
 	, double	lots
@@ -71,10 +71,9 @@ BA_UTILS void  BAUtils_Initialize(
 	, int		magic
 );
 
-BA_UTILS void BAUtils_DeInitialize();
-BA_UTILS void BAUtils_SetComplete();
+BA_UTILS void BAUtils_OMDeInitialize();
 
-BA_UTILS CHANGED_RET BAUtils_CheckChange(
+BA_UTILS CHANGED_RET BAUtils_OMCheckChange(
 	int		ticket
 	, int		type
 	, double	lots
@@ -95,23 +94,9 @@ BA_UTILS CHANGED_RET BAUtils_CheckChange(
 	, /*out*/int&		oOpenedTm
 );
 
-BA_UTILS bool	BAUtils_GetClosedOrd(
-	int& ticket
-	, int&		type
-	, double&	lots
-	, int&		open_time
-	, double&	open_price
-	, double&	stoploss
-	, double&	takeprofit
-	, int&		close_time
-	, double&	close_price
-	, double&	commission
-	, double&	swap
-	, double&	profit
-	, char*		comment
-	, int&		magic
-);
-
+BA_UTILS int	BAUtils_OMGetClosedOrd(int* arrTicket, double* arrLots);
+BA_UTILS void	BAUtils_OMBeginCheck();
+BA_UTILS int	BAUtils_OMDeletedOrderCnt();
 
 //+------------------------------------------------------------+
 //	Utility
@@ -123,6 +108,17 @@ BA_UTILS void BAUtils_HeaderTime(_Out_ char* zTime);
 //+------------------------------------------------------------+
 //	CLog
 //+------------------------------------------------------------+
-
-BA_UTILS void BAUtils_OpenLog(char* pzEAName);
+BA_UTILS void BAUtils_OpenLog(char* pzDir, char* pzEAName);
 BA_UTILS void BAUtils_Log(char* pzData);
+
+//+------------------------------------------------------------+
+//	Symbol Pairs
+//+------------------------------------------------------------+
+BA_UTILS void BAUtils_SymbolPairAdd(char* pzMasterSymbol, char* pzSlaveSymbol);
+BA_UTILS bool BAUtils_SymbolPairGet(_In_ char* pzMasterSymbol, char* _Out_ pzSlaveSymbol);
+
+//+------------------------------------------------------------+
+//	Config File
+//+------------------------------------------------------------+
+BA_UTILS bool BAUtils_GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+BA_UTILS bool BAUtils_SetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* i_psValue);

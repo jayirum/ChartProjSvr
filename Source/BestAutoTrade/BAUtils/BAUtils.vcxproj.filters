@@ -16,6 +16,12 @@
     <Filter Include="OrdManager">
       <UniqueIdentifier>{fc952899-da8c-430b-a76d-04a36a5127ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SlaveTicketList">
+      <UniqueIdentifier>{fd1c5718-495f-40f2-a356-b6fc9c08972b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SymbolManager">
+      <UniqueIdentifier>{f29d309c-40db-4f2b-bd48-553a7b037759}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -36,6 +42,9 @@
     <ClCompile Include="OrdManagerSlave.cpp">
       <Filter>OrdManager</Filter>
     </ClCompile>
+    <ClCompile Include="SymbolPair.cpp">
+      <Filter>SymbolManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BAUtils.h">
@@ -49,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="OrdManagerSlave.h">
       <Filter>OrdManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolPair.h">
+      <Filter>SymbolManager</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

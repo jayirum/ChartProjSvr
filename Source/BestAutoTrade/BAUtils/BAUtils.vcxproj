@@ -162,12 +162,14 @@
     </ClCompile>
     <ClCompile Include="OrdManager.cpp" />
     <ClCompile Include="OrdManagerSlave.cpp" />
+    <ClCompile Include="SymbolPair.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\IRUM_UTIL\Log.h" />
     <ClInclude Include="BAUtils.h" />
     <ClInclude Include="OrdManager.h" />
     <ClInclude Include="OrdManagerSlave.h" />
+    <ClInclude Include="SymbolPair.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

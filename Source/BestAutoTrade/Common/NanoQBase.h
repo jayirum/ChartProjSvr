@@ -6,6 +6,7 @@
 // project option > C/C++ > Preprocessor : NN_HAVE_WINDOWS;
 
 #include "nn.h"
+#include "tcp.h"
 #include "./utils/attr.h"
 #include "./utils/err.h"
 #include "../../IRUM_UTIL/BaseThread.h"
