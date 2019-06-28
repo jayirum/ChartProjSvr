@@ -108,14 +108,17 @@ BA_UTILS void BAUtils_HeaderTime(_Out_ char* zTime);
 //+------------------------------------------------------------+
 //	CLog
 //+------------------------------------------------------------+
-
-BA_UTILS void BAUtils_OpenLog(char* pzEAName);
+BA_UTILS void BAUtils_OpenLog(char* pzDir, char* pzEAName);
 BA_UTILS void BAUtils_Log(char* pzData);
-
-
 
 //+------------------------------------------------------------+
 //	Symbol Pairs
 //+------------------------------------------------------------+
 BA_UTILS void BAUtils_SymbolPairAdd(char* pzMasterSymbol, char* pzSlaveSymbol);
 BA_UTILS bool BAUtils_SymbolPairGet(_In_ char* pzMasterSymbol, char* _Out_ pzSlaveSymbol);
+
+//+------------------------------------------------------------+
+//	Config File
+//+------------------------------------------------------------+
+BA_UTILS bool BAUtils_GetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* o_psValue);
+BA_UTILS bool BAUtils_SetConfig(char* i_psCnfgFileNm, char* i_psSectionNm, char* i_psKeyNm, char* i_psValue);

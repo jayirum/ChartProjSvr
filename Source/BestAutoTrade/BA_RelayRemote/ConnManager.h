@@ -10,6 +10,7 @@
 using namespace _BA_RELAY;
 using namespace std;
 
+#define TEMP_MAX_LIMIT	100
 struct ST_MASTER_COUNT
 {
 	UINT	unLimit;

@@ -35,6 +35,7 @@ VOID CConnManager::RegUnregMaster(string sUserId, char cTpReg)
 			//TODO.	Get Master LimitCount from DB
 			// insert into map
 			ST_MASTER_COUNT st; ZeroMemory(&st, sizeof(st));
+			st.unLimit = TEMP_MAX_LIMIT;	//TODO
 			m_mapMasters[sUserId]	= st;
 			m_mapSess	[sUserId]	= GetTickCount();
 
