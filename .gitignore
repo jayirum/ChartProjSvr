@@ -6626,3 +6626,11 @@ Source/BestAutoTrade/BA_RelayRemote/Release/BAUtils.exp
 Source/BestAutoTrade/BA_RelayRemote/Release/BAUtils.lib
 Source/BestAutoTrade/BA_RelayRemote/BA_RelayRemote.sln
 Source/BestAutoTrade/BA_RelayRemote/BA_RelayRemote.sln
+Source/FBI/HashMap/Debug/HashMap.dll
+Source/FBI/HashMap/Debug/HashMap.lib
+Source/FBI/HashMap/Demo/Debug/Demo.exe
+Source/FBI/HashMap/Demo/Debug/HashMap.dll
+Source/FBI/HashMap/Debug/HashMap.exp
+Source/FBI/HashMap/Release/HashMap.exp
+Source/FBI/HashMap/Release/HashMap.lib
+Source/FBI/HashMap/Release/HashMap.dll

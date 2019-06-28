@@ -86,11 +86,11 @@ double CSendOrder::CalcOrderPrc(string sSymbol, double dOrgPrc, int nOrdType, bo
 
 int CSendOrder::SendNewOrder(int nMasterAcc, int nMasterTicket, string sMasterSymbol, int nMasterOrdType, double dMasterLots, double dMasterPrc, int nMasterSlippage)
 {
-    double dLotsF   = m_filter.GetLots(sMasterSymbol, dMasterLots);  
-    if(dLotsF)
+    double dLotsF   = dMasterLots;  //TODO m_filter.GetLots(sMasterSymbol, dMasterLots); 
+    if(dLotsF<0)
         return -1;
         
-    double dNewPrc  = CalcOrderPrc(sMasterSymbol, dMasterPrc, nMasterOrdType, false);
+    double dNewPrc  = 0;   //TODO CalcOrderPrc(sMasterSymbol, dMasterPrc, nMasterOrdType, false);
     int nSlippage   = nMasterSlippage;  //CalSlippage();
     
     printlog(StringFormat( "[BEFORE NEW ORD](symbol:%s)(OrdType:%d)(Lots:%f)(Prc:%f)(Magic:%d)",sMasterSymbol, nMasterOrdType, dLotsF, dNewPrc, nMasterTicket));

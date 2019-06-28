@@ -1,8 +1,6 @@
 #ifndef _CFILTER_H
 #define _CFILTER_H
 
-#include "../BAUtils.mqh"
-
 /*
     Manage the Filters & Options for Order and Risk Management
     
@@ -40,7 +38,6 @@ private:
     LOTS_INFO   m_lots;
     //double      m_dMaxSlippagePip;
     int         m_nMultiple;
-    string      m_sLotsTp;
     string      m_msg; 
 };
 
@@ -85,7 +82,6 @@ bool CFilter::SetLotsFilter(LOT_TYPE tp, double  dAutoScale, double  dFixedLots,
     m_lots.tp = tp;
     if(tp==FIXED)
     {
-        m_sLotsTp = "FIXED";
         if(dFixedLots<=0)
         {
             m_msg = "FIXED type needs fixed lots size";
@@ -94,7 +90,6 @@ bool CFilter::SetLotsFilter(LOT_TYPE tp, double  dAutoScale, double  dFixedLots,
     }
     if(tp==AUTO)
     {
-        m_sLotsTp = "AUTO";
         if(dAutoScale<=0)
         {
             m_msg = "AUTO type needs auto scale";
@@ -104,9 +99,6 @@ bool CFilter::SetLotsFilter(LOT_TYPE tp, double  dAutoScale, double  dFixedLots,
     m_lots.dAutoScale = dAutoScale;
     m_lots.dFixedLots = dFixedLots;
     m_lots.dMaxLotSize  = dMaxLotSize;
-    
-    printlog(StringFormat("TP:%s, dAutoScale:%f, dFixedLots:%f", m_sLotsTp, dAutoScale, dFixedLots));
-    
     return true;
 }
 
@@ -116,8 +108,6 @@ double  CFilter::GetLots(string sSymbol, double dOrgLots)
     if(m_lots.tp==FIXED) dOrdLots = m_lots.dFixedLots;
 
     if(m_lots.tp==AUTO) dOrdLots = m_lots.dAutoScale * dOrgLots;
-    
-    printlog(StringFormat("[GetLots] orglots:%f, dAutoScale:%f", dOrgLots, m_lots.dAutoScale));
     
     if(dOrdLots < MarketInfo(sSymbol,MODE_MINLOT))
     {
