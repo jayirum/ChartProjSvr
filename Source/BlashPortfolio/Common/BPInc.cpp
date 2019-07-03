@@ -1,7 +1,7 @@
-#include "BARelayInc.h"
+#include "BPInc.h"
 #include <stdio.h>
 
-char* _BA_RELAY::Now(char* pBuf)
+char* _BLASHPF::Now(char* pBuf)
 {
 	SYSTEMTIME st;
 	GetLocalTime(&st);

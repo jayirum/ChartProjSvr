@@ -1,0 +1,4 @@
+#pragma once
+
+enum { CTX_DIE = 990, /*CTX_MT4PING,*/ CTX_RQST_SEND, CTX_RQST_RECV };
+enum { CK_TYPE_NORMAL, CK_TYPE_COMMUNICATION };

@@ -6,21 +6,21 @@
 #include <Windows.h>
 #include <string>
 
-namespace _BA_RELAY
+namespace _BLASHPF
 {
-	enum QUEUE_TP	{ TP_INPROC, TP_INTERPROC, TP_TCP };
-	enum NANOMSG_TP { TP_PIPE_READER, TP_PIPE_WRITER, TP_PUB, TP_SUB };
+	//enum QUEUE_TP	{ TP_INPROC, TP_INTERPROC, TP_TCP };
+	//enum NANOMSG_TP { TP_PIPE_READER, TP_PIPE_WRITER, TP_PUB, TP_SUB };
 
-	enum BA_RESULT	{ Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
+	//enum RESULT	{ Q_ERROR = -1, Q_SUCCESS, Q_TIMEOUT };
 
 	enum CLIENT_TP	{ MASTR=0, SLAVE};
-	enum PUBSCOPE_TP {
-		ALLSLAVES_UNDER_ONEMASTER,	//	All slaves under one master id
-		ONESLAVE_WITH_ID,			//	one Specific Slave
-		ALLMASTERS,					//	All Masters
-		ONEMASTER_WITH_ID,			//	one specific master
-		ALL
-	};
+	//enum PUBSCOPE_TP {
+	//	ALLSLAVES_UNDER_ONEMASTER,	//	All slaves under one master id
+	//	ONESLAVE_WITH_ID,			//	one Specific Slave
+	//	ALLMASTERS,					//	All Masters
+	//	ONEMASTER_WITH_ID,			//	one specific master
+	//	ALL
+	//};
 
 	const char SYS_MT4[] = "MT4";
 	const char SYS_NINJA[] = "NINJA";
@@ -41,9 +41,9 @@ namespace _BA_RELAY
 	const char TP_REG		= 'R';
 	const char TP_UNREG		= 'U';
 	
-	#define LEN_CHANNEL_NM	128
+	//#define LEN_CHANNEL_NM	128
 	#define BUF_SIZE		512
-	#define LOCAL_RELAY_CHANNEL	"BA_LOCALRELAY"
+	//#define LOCAL_RELAY_CHANNEL	"BA_LOCALRELAY"
 
 	//+--------------------------------------------------------------------
 	//+	Field
