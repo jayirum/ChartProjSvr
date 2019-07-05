@@ -6634,3 +6634,6 @@ Source/FBI/HashMap/Debug/HashMap.exp
 Source/FBI/HashMap/Release/HashMap.exp
 Source/FBI/HashMap/Release/HashMap.lib
 Source/FBI/HashMap/Release/HashMap.dll
+Source/_Bin/HashMap.dll
+Source/FBI/HashMap/Debug/Demo.exe
+Source/FBI/HashMap/Demo/HashMap.dll
