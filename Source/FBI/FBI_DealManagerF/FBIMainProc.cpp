@@ -152,25 +152,25 @@ BOOL CFBIMainProc::LoadStkCode()
 
 			//////////////////////////////////////////////////////////////////////////////
 			//TODO
-			CDealManagerTenOp* pTenOp = new CDealManagerTenOp(zStCd, zArtcCd, nIdx, m_unToClient);
-			if (!pTenOp->Initialize()) 
-			{
-				CDBHandlerAdo db3(m_pDBPool->Get());
-				sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 실패.프로세스종료(TENOP).' ", zStCd);
-				if (FALSE == db3->ExecQuery(zQ))
-				{
-					g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
-				}
+			//CDealManagerTenOp* pTenOp = new CDealManagerTenOp(zStCd, zArtcCd, nIdx, m_unToClient);
+			//if (!pTenOp->Initialize()) 
+			//{
+			//	CDBHandlerAdo db3(m_pDBPool->Get());
+			//	sprintf(zQ, "EXEC AA_LOG_PROCESS_STATUS 'DealManager', '[%s] 초기화 실패.프로세스종료(TENOP).' ", zStCd);
+			//	if (FALSE == db3->ExecQuery(zQ))
+			//	{
+			//		g_log.log(ERR/*NOTIFY*/, "AA_LOG_PROCESS_STATUS Error(%s)", zQ);
+			//	}
 
-				g_log.log(NOTIFY, "[%s] Initialize failed", zStCd);
-				delete pTenOp;
-				exit(0);
-				return FALSE;
-			}
+			//	g_log.log(NOTIFY, "[%s] Initialize failed", zStCd);
+			//	delete pTenOp;
+			//	exit(0);
+			//	return FALSE;
+			//}
 
-			EnterCriticalSection(&m_csDMTenOp);
-			m_mapDealManagerTenOp[zStCd] = pTenOp;
-			LeaveCriticalSection(&m_csDMTenOp);
+			//EnterCriticalSection(&m_csDMTenOp);
+			//m_mapDealManagerTenOp[zStCd] = pTenOp;
+			//LeaveCriticalSection(&m_csDMTenOp);
 
 			//
 			//g_log.log(INFO, "LoadSymbol(%s)", zStCd);
