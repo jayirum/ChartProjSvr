@@ -26,8 +26,8 @@ typedef void*	(*TSimpMAP_CreateLR)();
 
 
 // destroy
-typedef void	(*TSimpMAP_DestroyS)(void*);	// map class pointer
-typedef void	(*TSimpMAP_DestroyL)(void*);	// map class pointer
+typedef int		(*TSimpMAP_DestroyS)(void*);	// map class pointer
+typedef int		(*TSimpMAP_DestroyL)(void*);	// map class pointer
 
 // add value
 typedef bool	(*TSimpMAP_AddValueSS)(void*, char*, char*, int, bool);		// map pointer, key, value, value size, update
@@ -52,8 +52,8 @@ typedef bool	(*TSimpMAP_GetDoubleValueL)	(void*, long, /*out*/double*);
 typedef bool	(*TSimpMAP_GetRecordValueL)	(void*, long, /*out*/RECORD_VAL*);
 
 // delete
-typedef void	(*TSimpMAP_DelS) (void*, char*);	// map pointer, key
-typedef void	(*TSimpMAP_DelL) (void*, char*);
+typedef int		(*TSimpMAP_DelS) (void*, char*);	// map pointer, key
+typedef int		(*TSimpMAP_DelL) (void*, char*);
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -70,8 +70,8 @@ typedef void*	(*TListMAP_CreateS)();
 typedef void*	(*TListMAP_CreateL)();
 
 // destroy
-typedef void	(*TListMAP_DestroyS)(void*);	// map class pointer
-typedef void	(*TListMAP_DestroyL)(void*);
+typedef int		(*TListMAP_DestroyS)(void*);	// map class pointer
+typedef int		(*TListMAP_DestroyL)(void*);
 
 // add value
 typedef bool	(*TListMAP_AddValueS)(void*, char*, RECORD_VAL*);	// map pointer, key, value
@@ -82,10 +82,10 @@ typedef RECORD_VAL* (*TListMAP_GetRecordValueS)	(void*, char*, /*out*/int*);	// 
 typedef RECORD_VAL* (*TListMAP_GetRecordValueL)	(void*, long, /*out*/int*);		// map pointer, key, record count
 
 // del
-typedef void	(*TListMAP_DelS)(void*);	// map class pointer
-typedef void	(*TListMAP_DelL)(void*);
+typedef int		(*TListMAP_DelS)(void*);	// map class pointer
+typedef int		(*TListMAP_DelL)(void*);
 
 // mem free
-typedef void	(*TListMap_MemFreeS)(void*, void*);	// map class pointer, pointer to be free
-typedef void	(*TListMap_MemFreeL)(void*, void*);
+typedef int		(*TListMap_MemFreeS)(void*, void*);	// map class pointer, pointer to be free
+typedef int		(*TListMap_MemFreeL)(void*, void*);
 

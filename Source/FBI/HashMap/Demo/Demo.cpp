@@ -14,6 +14,7 @@ TSimpMAP_CreateSL	SimpMAP_CreateSL;
 TSimpMAP_CreateSD	SimpMAP_CreateSD;
 TSimpMAP_CreateSR	SimpMAP_CreateSR;
 
+TSimpMAP_CreateLS	SimpMAP_CreateLS;
 //TSimpMAP_Delete	SimpMAP_Delete;
 
 TSimpMAP_AddValueSS SimpMAP_AddValueSS;
@@ -78,6 +79,12 @@ void Initialize()
 	SimpMAP_CreateSR = (TSimpMAP_CreateSR)GetProcAddress(g_hIns, "SimpMAP_CreateSR");
 	if (SimpMAP_CreateSR == NULL) {
 		printf("SimpMAP_CreateSR is not found !\n");
+		return;
+	}
+
+	SimpMAP_CreateLS = (TSimpMAP_CreateLS)GetProcAddress(g_hIns, "SimpMAP_CreateLS");
+	if (SimpMAP_CreateLS == NULL) {
+		printf("SimpMAP_CreateLS is not found !\n");
 		return;
 	}
 

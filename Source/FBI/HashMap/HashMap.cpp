@@ -66,14 +66,16 @@ void*	SimpMAP_CreateLR()
 	return (void*)p;
 }
 
-void	SimpMAP_DestroyS(void* pMap)
+int	SimpMAP_DestroyS(void* pMap)
 {
 	delete (CSimpleMapSKey*)pMap;
+	return 0;
 }
 
-void	SimpMAP_DestroyL(void* pMap)
+int SimpMAP_DestroyL(void* pMap)
 {
 	delete (CSimpleMapLKey*)pMap;
+	return 0;
 }
 
 bool	SimpMAP_AddValueSS(void* pMap, char* key, char* val, int nValSize, bool bUpdate)
@@ -174,14 +176,16 @@ bool SimpMAP_GetRecordValueL(void* pMap, long key, /*out*/RECORD_VAL* pResult)
 }
 
 
-void SimpMAP_DelS(void* pMap, char* k)
+int SimpMAP_DelS(void* pMap, char* k)
 {
 	((CSimpleMapSKey*)pMap)->Del(k);
+	return 0;
 }
 
-void SimpMAP_DelL(void* pMap, long k)
+int SimpMAP_DelL(void* pMap, long k)
 {
 	((CSimpleMapLKey*)pMap)->Del(k);
+	return 0;
 }
 
 
@@ -210,14 +214,16 @@ void*	ListMAP_CreateL()
 }
 
 // destroy
-void	ListMAP_DestroyS(void* pMap)
+int	ListMAP_DestroyS(void* pMap)
 {
 	delete (CListMapSKey*)pMap;
+	return 0;
 }
 
-void	ListMAP_DestroyL(void* pMap)
+int	ListMAP_DestroyL(void* pMap)
 {
 	delete (CListMapLKey*)pMap;
+	return 0;
 }
 
 
@@ -256,23 +262,27 @@ bool ListMAP_IsExistsL(void* pMap, long key)
 }
 
 // delete value
-void ListMAP_DelS(void* pMap, char* k)
+int ListMAP_DelS(void* pMap, char* k)
 {
-	return ((CListMapSKey*)pMap)->Del(k);
+	((CListMapSKey*)pMap)->Del(k);
+	return 0;
 }
 
-void ListMAP_DelL(void* pMap, long k)
+int ListMAP_DelL(void* pMap, long k)
 {
-	return ((CListMapLKey*)pMap)->Del(k);
+	((CListMapLKey*)pMap)->Del(k);
+	return 0;
 }
 
 
-void ListMap_MemFreeS(void* pMap, void* ptr)
+int ListMap_MemFreeS(void* pMap, void* ptr)
 {
 	((CListMapSKey*)pMap)->MemFree(ptr);
+	return 0;
 }
 
-void ListMap_MemFreeL(void* pMap, void* ptr)
+int ListMap_MemFreeL(void* pMap, void* ptr)
 {
 	((CListMapLKey*)pMap)->MemFree(ptr);
+	return 0;
 }

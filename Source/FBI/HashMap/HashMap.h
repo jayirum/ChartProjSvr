@@ -58,8 +58,8 @@ _HASH_MAP_EXPORS void*	SimpMAP_CreateLR();
 //+------------------------------------------------------------
 //	dll 을 사용 종료시 반드시 호출해야 한다. Otherwise, memory leak
 //+------------------------------------------------------------
-_HASH_MAP_EXPORS void	SimpMAP_DestroyS(void* pMap);
-_HASH_MAP_EXPORS void	SimpMAP_DestroyL(void* pMap);
+_HASH_MAP_EXPORS int	SimpMAP_DestroyS(void* pMap);
+_HASH_MAP_EXPORS int	SimpMAP_DestroyL(void* pMap);
 
 //+----------------------------------------------------------------
 //	+ long value 를 저장한다.
@@ -104,8 +104,8 @@ _HASH_MAP_EXPORS bool SimpMAP_GetRecordValueL	(void* pMap, long key, /*out*/RECO
 //+------------------------------------------------------------
 //	+ 해당 key 와 value 를 map 에서 제거
 //+------------------------------------------------------------
-_HASH_MAP_EXPORS void SimpMAP_DelS(void* pMap, char* k);
-_HASH_MAP_EXPORS void SimpMAP_DelL(void* pMap, long k);
+_HASH_MAP_EXPORS int SimpMAP_DelS(void* pMap, char* k);
+_HASH_MAP_EXPORS int SimpMAP_DelL(void* pMap, long k);
 
 
 //_HASH_MAP_EXPORS int SMAP_GetLastErr(char* pMap, )
@@ -129,8 +129,8 @@ _HASH_MAP_EXPORS void*	ListMAP_CreateS();
 _HASH_MAP_EXPORS void*	ListMAP_CreateL();
 
 // destroy
-_HASH_MAP_EXPORS void	ListMAP_DestroyS(void* pMap);
-_HASH_MAP_EXPORS void	ListMAP_DestroyL(void* pMap);
+_HASH_MAP_EXPORS int	ListMAP_DestroyS(void* pMap);
+_HASH_MAP_EXPORS int	ListMAP_DestroyL(void* pMap);
 
 // add
 _HASH_MAP_EXPORS bool	ListMAP_AddValueS(void* pMap, char* key, RECORD_VAL* val);
@@ -145,9 +145,9 @@ _HASH_MAP_EXPORS bool ListMAP_IsExistsS(void* pMap, char* key);
 _HASH_MAP_EXPORS bool ListMAP_IsExistsL(void* pMap, long key);
 
 // delete value
-_HASH_MAP_EXPORS void ListMAP_DelS(void* pMap, char* k);
-_HASH_MAP_EXPORS void ListMAP_DelL(void* pMap, long k);
+_HASH_MAP_EXPORS int ListMAP_DelS(void* pMap, char* k);
+_HASH_MAP_EXPORS int ListMAP_DelL(void* pMap, long k);
 
 // free memory
-_HASH_MAP_EXPORS void ListMap_MemFreeS(void* pMap, void* ptr);
-_HASH_MAP_EXPORS void ListMap_MemFreeL(void* pMap, void* ptr);
+_HASH_MAP_EXPORS int ListMap_MemFreeS(void* pMap, void* ptr);
+_HASH_MAP_EXPORS int ListMap_MemFreeL(void* pMap, void* ptr);
